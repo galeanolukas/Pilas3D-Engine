@@ -40,7 +40,27 @@ python3 -m venv .venv
 .venv/bin/python ejemplos/juego_recolectar.py   # mini-juego completo
 .venv/bin/python ejemplos/camara_orbital.py     # órbita con mouse + debug
 .venv/bin/python ejemplos/juego_doom.py         # mini-FPS: WASD + mouse + click
+.venv/bin/python ejemplos/sonido.py             # efectos de audio
 ```
+
+## Modo interactivo (consola de Python)
+
+`pilas.ejecutar()` bloquea la terminal; para ir construyendo el juego
+paso a paso desde el REPL se usa `pilas.paso()`, que avanza un frame:
+
+```python
+>>> import pilas3d
+>>> pilas = pilas3d.iniciar()
+>>> cubo = pilas.actores.Cubo()      # la ventana ya muestra la escena
+>>> cubo.color = pilas.colores.rojo
+>>> pilas.paso()                     # redibuja con el cambio
+>>> for i in range(180):             # anima ~3 segundos
+...     cubo.rotacion_y += 2
+...     pilas.paso()
+>>> pilas.ayuda()                    # guía rápida de toda la API
+```
+
+`pilas.ayuda()` imprime una chuleta con toda la API disponible.
 
 ## Tests
 

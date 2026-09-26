@@ -511,6 +511,12 @@ def test_animacion_no_ciclica_se_elimina():
     assert anim not in escena.actores
 
 
+def test_paso_sin_ventana_no_falla():
+    pilas = crear_pilas()
+    pilas.paso()   # sin ventana solo avisa; no debe explotar
+    pilas.ayuda()  # imprime la guía
+
+
 def test_disparo_usa_radio_de_disparo():
     pilas = crear_pilas()
     camara = pilas.escena_actual().camara
