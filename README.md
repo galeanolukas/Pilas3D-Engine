@@ -37,6 +37,7 @@ python3 -m venv .venv
 ```bash
 .venv/bin/python ejemplos/hola_cubo.py
 .venv/bin/python ejemplos/mover_con_teclado.py   # flechas o WASD
+.venv/bin/python ejemplos/juego_recolectar.py   # mini-juego completo
 ```
 
 ## Tests
@@ -56,6 +57,8 @@ python3 -m venv .venv
 | `pilas.escenas.Normal()`      | `pilas.escenas.Normal()`             |
 | `escena.camara.x/y`           | `camara.x/y/z` + `camara.objetivo`   |
 | `pilas.control.izquierda`…    | igual (flechas + WASD)               |
+| `pilas.actores.Texto/Puntaje` | `pilas.actores.Texto()` / `Puntaje()` (overlay 2D) |
+| `actor.colisiona_con(otro)`   | igual (esfera-esfera con `radio_de_colision`) |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
 
 ## Licencia

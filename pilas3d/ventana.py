@@ -2,7 +2,12 @@
 """Ventana principal: reemplaza al QGLWidget de pilas-engine 2D."""
 
 import pyglet
-from pyglet.gl import glEnable, glClearColor, GL_DEPTH_TEST
+from pyglet.gl import (
+    glEnable,
+    glDisable,
+    glClearColor,
+    GL_DEPTH_TEST,
+)
 from pyglet.math import Mat4
 from pyglet.window import key
 
@@ -39,3 +44,12 @@ class Ventana(pyglet.window.Window):
             )
             programa["vista"] = escena.camara.matriz_vista()
             escena.dibujar()
+
+        if escena.tiene_overlays():
+            glDisable(GL_DEPTH_TEST)
+            self.projection = Mat4.orthogonal_projection(
+                0, self.width, 0, self.height, -255, 255
+            )
+            self.view = Mat4()
+            escena.dibujar_overlay()
+            glEnable(GL_DEPTH_TEST)

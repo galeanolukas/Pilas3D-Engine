@@ -23,6 +23,9 @@ class Actor(object):
         cubo.rotacion_y = 45
     """
 
+    #: Si es True se dibuja en el overlay 2D (texto), no en la escena 3D.
+    es_overlay = False
+
     def __init__(self, pilas, x=0, y=0, z=0):
         self.pilas = pilas
 
@@ -183,6 +186,17 @@ class Actor(object):
     def transparencia(self, valor):
         self._transparencia = valor
         self._reconstruir_gl()
+
+    # -- colisiones -----------------------------------------------------------
+
+    def distancia_con(self, otro):
+        """Distancia euclidiana 3D entre los centros de dos actores."""
+        return math.dist(self.posicion, otro.posicion)
+
+    def colisiona_con(self, otro):
+        """True si las esferas de colisión de ambos actores se tocan."""
+        radios = self.radio_de_colision + otro.radio_de_colision
+        return self.distancia_con(otro) <= radios
 
     # -- ciclo de vida --------------------------------------------------------
 

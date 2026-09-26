@@ -83,3 +83,31 @@ def test_actualizar_de_la_escena_llama_a_actores():
 
 def test_colores_normalizar():
     assert colores.normalizar((255, 0, 0)) == (1.0, 0.0, 0.0)
+
+
+def test_colisiona_con():
+    pilas = crear_pilas()
+    a = pilas.actores.Cubo()          # radio ~0.87
+    b = pilas.actores.Esfera(radio=0.5)
+    b.x = 5.0                         # lejos: no colisiona
+    assert not a.colisiona_con(b)
+    b.x = 1.0                         # 1.0 < 0.87 + 0.5 -> colisiona
+    assert a.colisiona_con(b)
+
+
+def test_distancia_con_es_3d():
+    pilas = crear_pilas()
+    a = pilas.actores.Cubo()
+    b = pilas.actores.Cubo(x=3, z=4)  # distancia en el plano XZ
+    assert a.distancia_con(b) == 5.0
+
+
+def test_puntaje_sin_ventana():
+    pilas = crear_pilas()
+    puntaje = pilas.actores.Puntaje(prefijo="Puntos: ")
+    assert puntaje.es_overlay
+    assert puntaje.texto == "Puntos: 0"
+    puntaje.aumentar()
+    puntaje.aumentar(5)
+    assert puntaje.valor == 6
+    assert puntaje.texto == "Puntos: 6"

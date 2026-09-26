@@ -26,5 +26,16 @@ class Escena(object):
             actor.actualizar()
 
     def dibujar(self):
+        """Dibuja los actores 3D (los overlays se dibujan aparte)."""
         for actor in list(self.actores):
-            actor.dibujar()
+            if not actor.es_overlay:
+                actor.dibujar()
+
+    def dibujar_overlay(self):
+        """Dibuja los actores de overlay 2D (texto, puntajes)."""
+        for actor in list(self.actores):
+            if actor.es_overlay:
+                actor.dibujar()
+
+    def tiene_overlays(self):
+        return any(a.es_overlay for a in self.actores)
