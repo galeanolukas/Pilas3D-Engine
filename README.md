@@ -39,6 +39,7 @@ python3 -m venv .venv
 .venv/bin/python ejemplos/mover_con_teclado.py   # flechas o WASD
 .venv/bin/python ejemplos/juego_recolectar.py   # mini-juego completo
 .venv/bin/python ejemplos/camara_orbital.py     # órbita con mouse + debug
+.venv/bin/python ejemplos/juego_doom.py         # mini-FPS: WASD + mouse + click
 ```
 
 ## Tests
@@ -65,6 +66,9 @@ python3 -m venv .venv
 | `pilas.depurador.definir_modos` | `fps`, `ejes`, `radios_de_colision`, `puntos_de_control` |
 | `pilas.fps.ver()`             | igual                                |
 | —                             | `camara.usar_control_orbital()` (mouse: orbitar + zoom) |
+| —                             | `habilidades.CaminarEnPrimeraPersona` (FPS: mouse look + WASD) |
+| —                             | `camara.disparar_rayo(actores)` (rayo-esfera, para disparos) |
+| —                             | `pilas.actores.Pared()` + `escena.obstaculos` (bloquean el paso) |
 | `pilas.control.mouse_x/y`     | posición y botones del mouse         |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
 

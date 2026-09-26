@@ -28,6 +28,16 @@ class Pared(Actor):
         # Esfera envolvente: media diagonal del prisma.
         self.radio_de_colision = math.sqrt(
             ancho ** 2 + alto ** 2 + profundidad ** 2) / 2.0
+        escena = pilas.escena_actual()
+        if escena is not None:
+            escena.obstaculos.append(self)
+
+    def obtener_caja(self):
+        """AABB (min_x, max_x, min_z, max_z) para colisiones de suelo."""
+        from pilas3d import colisiones
+
+        return colisiones.caja_desde_actor(
+            self, self.ancho, self.profundidad)
 
     def _generar_geometria(self):
         return mallas.cuboide(self.ancho, self.alto, self.profundidad)

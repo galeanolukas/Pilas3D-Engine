@@ -42,6 +42,36 @@ class Camara(object):
             Vec3(0, 1, 0),
         )
 
+    # -- rayo / disparo -----------------------------------------------------
+
+    def direccion(self):
+        """Vector unitario desde la cámara hacia el objetivo."""
+        o = Vec3(self.x, self.y, self.z)
+        return (Vec3(*self.objetivo) - o).normalize()
+
+    def disparar_rayo(self, actores, alcance=100.0):
+        """Retorna el actor más cercano alcanzado por un rayo de vista.
+
+        Intersección rayo-esfera usando ``radio_de_colision`` de cada
+        actor. Devuelve None si no alcanza a nadie.
+        """
+        origen = Vec3(self.x, self.y, self.z)
+        direccion = self.direccion()
+        mejor = None
+        t_min = alcance
+
+        for actor in actores:
+            oc = Vec3(*actor.posicion) - origen
+            t = oc.dot(direccion)
+            if t < 0 or t > t_min:
+                continue
+            punto = origen + direccion * t
+            if (Vec3(*actor.posicion) - punto).length() <= \
+                    actor.radio_de_colision:
+                mejor = actor
+                t_min = t
+        return mejor
+
     # -- control orbital con el mouse -------------------------------------
 
     def usar_control_orbital(self):

@@ -13,6 +13,7 @@ class Escena(object):
         self.camara = Camara(self)
         self.fondo = colores.gris_oscuro
         self.tareas = Tareas(self, pilas)
+        self.obstaculos = []  # actores con caja sólida (p. ej. Pared)
         self.pilas._definir_escena(self)
 
     def agregar_actor(self, actor):
@@ -21,6 +22,8 @@ class Escena(object):
     def eliminar_actor(self, actor):
         if actor in self.actores:
             self.actores.remove(actor)
+        if actor in self.obstaculos:
+            self.obstaculos.remove(actor)
 
     def actualizar(self, dt):
         """Ejecuta tareas, habilidades y ``actualizar`` de cada actor."""

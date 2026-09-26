@@ -284,3 +284,67 @@ def test_control_nulo_mouse():
     pilas = crear_pilas()
     assert pilas.control.mouse_x == 0
     assert pilas.control.boton_izquierdo is False
+
+
+# -- colisiones con obstáculos ------------------------------------------------
+
+def test_pared_es_obstaculo():
+    pilas = crear_pilas()
+    pared = pilas.actores.Pared(z=-5, ancho=4, profundidad=0.3)
+    assert pared in pilas.escena_actual().obstaculos
+    caja = pared.obtener_caja()
+    assert caja == (-2.0, 2.0, -5.15, -4.85)
+
+
+def test_pared_rotada_intercambia_dimensiones():
+    pilas = crear_pilas()
+    pared = pilas.actores.Pared(z=-5, ancho=4, profundidad=0.3)
+    pared.rotacion_y = 90
+    min_x, max_x, min_z, max_z = pared.obtener_caja()
+    assert abs((max_x - min_x) - 0.3) < 0.01   # ahora es angosta en x
+    assert abs((max_z - min_z) - 4.0) < 0.01   # y ancha en z
+
+
+def test_resolver_circulo_empuja_fuera():
+    from pilas3d import colisiones
+    cajas = [(-2.0, 2.0, -5.0, -4.0)]
+    # El círculo penetra la caja por abajo (z = -4.8 > min_z)
+    x, z = colisiones.resolver_circulo_en_cajas(0, -4.8, 0.5, cajas)
+    assert z <= -4.5 + 1e-6  # quedó fuera: dist >= radio del borde
+
+
+def test_resolver_circulo_libre_no_mueve():
+    from pilas3d import colisiones
+    x, z = colisiones.resolver_circulo_en_cajas(0, 0, 0.5, [])
+    assert (x, z) == (0, 0)
+
+
+# -- rayo de cámara -------------------------------------------------------------
+
+def test_disparar_rayo_acierta_al_centro():
+    pilas = crear_pilas()
+    camara = pilas.escena_actual().camara  # mira al origen
+    enemigo = pilas.actores.Esfera(radio=1.0)  # en el origen
+    lejos = pilas.actores.Esfera(x=50, y=50, radio=1.0)
+    assert camara.disparar_rayo([enemigo, lejos]) is enemigo
+
+
+def test_disparar_rayo_falla_fuera_de_alcance():
+    pilas = crear_pilas()
+    camara = pilas.escena_actual().camara
+    enemigo = pilas.actores.Esfera(radio=0.5)
+    assert camara.disparar_rayo([enemigo], alcance=1.0) is None
+
+
+def test_primera_persona_posiciona_camara():
+    pilas = crear_pilas()
+    jugador = pilas.actores.Esfera(radio=0.4, y=0.4)
+    jugador.aprender(pilas.habilidades.CaminarEnPrimeraPersona,
+                     velocidad=6, altura=1.6)
+    pilas.escena_actual().actualizar(1 / 60.0)
+    camara = pilas.escena_actual().camara
+    assert abs(camara.x - 0) < 0.01
+    assert abs(camara.y - 2.0) < 0.01
+    assert abs(camara.z - 0) < 0.01
+    # objetivo a 1 unidad de distancia en la dirección de vista (-Z)
+    assert abs(camara.objetivo[2] - (-1.0)) < 0.01

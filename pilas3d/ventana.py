@@ -6,7 +6,11 @@ from pyglet.gl import (
     glEnable,
     glDisable,
     glClearColor,
+    glBlendFunc,
     GL_DEPTH_TEST,
+    GL_BLEND,
+    GL_SRC_ALPHA,
+    GL_ONE_MINUS_SRC_ALPHA,
 )
 from pyglet.math import Mat4
 from pyglet.window import key
@@ -25,6 +29,8 @@ class Ventana(pyglet.window.Window):
         self.pilas = pilas
         self.set_minimum_size(160, 120)
         glEnable(GL_DEPTH_TEST)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         self.teclas = key.KeyStateHandler()
         self.push_handlers(self.teclas)

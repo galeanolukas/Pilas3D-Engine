@@ -11,6 +11,8 @@ from pilas3d.habilidades.habilidad import Habilidad
 from pilas3d.habilidades.moverse_con_el_teclado import MoverseConElTeclado
 from pilas3d.habilidades.rebotar_como_pelota import RebotarComoPelota
 from pilas3d.habilidades.girar_constamente import GirarConstantemente
+from pilas3d.habilidades.caminar_en_primera_persona import (
+    CaminarEnPrimeraPersona)
 
 
 class Habilidades(object):
@@ -23,12 +25,14 @@ class Habilidades(object):
     MoverseConElTeclado = MoverseConElTeclado
     RebotarComoPelota = RebotarComoPelota
     GirarConstantemente = GirarConstantemente
+    CaminarEnPrimeraPersona = CaminarEnPrimeraPersona
 
     def buscar_habilidad_por_nombre(self, nombre):
         disponibles = {
             'moverseconelteclado': MoverseConElTeclado,
             'rebotarcomopelota': RebotarComoPelota,
             'girarconstantemente': GirarConstantemente,
+            'caminarenprimerapersona': CaminarEnPrimeraPersona,
         }
         try:
             return disponibles[nombre.lower()]
