@@ -25,6 +25,23 @@ from pilas3d.habilidades import Habilidades
 VERSION = "0.1.0"
 
 
+class _Fps(object):
+    """Acceso a la visualización de FPS: ``pilas.fps.ver()``."""
+
+    def __init__(self, pilas):
+        self._pilas = pilas
+
+    def ver(self):
+        self._pilas._fps_visible = True
+
+    def ocultar(self):
+        self._pilas._fps_visible = False
+
+    @property
+    def visible(self):
+        return self._pilas._fps_visible
+
+
 class Pilas(object):
     """Representa el área de juego; es el contenedor principal.
 
@@ -36,6 +53,9 @@ class Pilas(object):
                  sin_ventana=False):
         self.dt = 1 / 60.0
         self._escena_actual = None
+        self._actor_ejes = None
+        self._fps_visible = False
+        self.fps = _Fps(self)
 
         self.actores = Actores(self)
         self.escenas = Escenas(self)
@@ -60,6 +80,16 @@ class Pilas(object):
     def tareas(self):
         """El planificador de tareas de la escena actual."""
         return self._escena_actual.tareas
+
+    def mostrar_ejes(self, largo=50):
+        """Muestra los ejes X (rojo), Y (verde) y Z (azul) del origen."""
+        if self._actor_ejes is None:
+            self._actor_ejes = self.actores.Ejes(largo=largo)
+
+    def ocultar_ejes(self):
+        if self._actor_ejes is not None:
+            self._actor_ejes.eliminar()
+            self._actor_ejes = None
 
     def _definir_escena(self, escena):
         self._escena_actual = escena

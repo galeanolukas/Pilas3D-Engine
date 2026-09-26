@@ -28,6 +28,7 @@ class Ventana(pyglet.window.Window):
 
         self.teclas = key.KeyStateHandler()
         self.push_handlers(self.teclas)
+        self._fps_display = None
 
     def on_draw(self):
         escena = self.pilas.escena_actual()
@@ -45,11 +46,15 @@ class Ventana(pyglet.window.Window):
             programa["vista"] = escena.camara.matriz_vista()
             escena.dibujar()
 
-        if escena.tiene_overlays():
+        if escena.tiene_overlays() or self.pilas._fps_visible:
             glDisable(GL_DEPTH_TEST)
             self.projection = Mat4.orthogonal_projection(
                 0, self.width, 0, self.height, -255, 255
             )
             self.view = Mat4()
             escena.dibujar_overlay()
+            if self.pilas._fps_visible:
+                if self._fps_display is None:
+                    self._fps_display = pyglet.window.FPSDisplay(self)
+                self._fps_display.draw()
             glEnable(GL_DEPTH_TEST)

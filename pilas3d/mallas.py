@@ -75,11 +75,15 @@ def rejilla(tamano=10, divisiones=10):
 
 
 def ejes(largo=5):
-    """Líneas de los ejes X, Y, Z con colores propios por vértice."""
+    """Líneas de los ejes X, Y, Z con colores propios por vértice.
+
+    Van a y=0.01 para no pelear en profundidad con la rejilla del piso.
+    """
+    e = 0.01
     posiciones = [
-        0, 0, 0, largo, 0, 0,   # X: rojo
-        0, 0, 0, 0, largo, 0,   # Y: verde
-        0, 0, 0, 0, 0, largo,   # Z: azul
+        0, e, 0, largo, e, 0,   # X: rojo
+        0, e, 0, 0, largo, 0,   # Y: verde
+        0, e, 0, 0, e, largo,   # Z: azul
     ]
     normales = [0.0] * 18
     colores = [

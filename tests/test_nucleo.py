@@ -204,3 +204,26 @@ def test_aprender_por_nombre():
     cubo = pilas.actores.Cubo()
     cubo.aprender('GirarConstantemente')
     assert cubo.tiene_habilidad(pilas.habilidades.GirarConstantemente)
+
+
+# -- debug -------------------------------------------------------------------
+
+def test_fps_ver_y_ocultar():
+    pilas = crear_pilas()
+    pilas.fps.ver()
+    assert pilas._fps_visible
+    assert pilas.fps.visible
+    pilas.fps.ocultar()
+    assert not pilas._fps_visible
+
+
+def test_mostrar_y_ocultar_ejes():
+    pilas = crear_pilas()
+    pilas.mostrar_ejes()
+    assert pilas._actor_ejes in pilas.escena_actual().actores
+    pilas.ocultar_ejes()
+    assert pilas._actor_ejes is None
+    assert all(
+        type(a).__name__ != 'Ejes'
+        for a in pilas.escena_actual().actores
+    )
