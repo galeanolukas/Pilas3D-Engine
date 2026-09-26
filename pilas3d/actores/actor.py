@@ -216,6 +216,19 @@ class Actor(object):
         radios = self.radio_de_colision + otro.radio_de_colision
         return self.distancia_con(otro) <= radios
 
+    def distancia_plana_con(self, otro):
+        """Distancia en el plano XZ, ignorando la altura ``y``."""
+        return math.hypot(self.x - otro.x, self.z - otro.z)
+
+    def colisiona_en_plano_con(self, otro):
+        """Colisión tipo Doom: solo sobre el plano XZ.
+
+        Útil cuando dos actores tienen distinta ``y`` (el jugador
+        apoyado en el piso, un enemigo flotando, etc.).
+        """
+        radios = self.radio_de_colision + otro.radio_de_colision
+        return self.distancia_plana_con(otro) <= radios
+
     # -- habilidades ----------------------------------------------------------
 
     def aprender(self, clase_habilidad, *args, **kwargs):

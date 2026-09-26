@@ -7,10 +7,12 @@ from pilas3d.actores.actor import Actor
 class Esfera(Actor):
     """Una esfera de radio configurable centrada en su posición."""
 
-    def __init__(self, pilas, x=0, y=0, z=0, radio=1.0):
+    def __init__(self, pilas, x=0, y=0, z=0, radio=1.0,
+                 radio_de_colision=None):
         self.radio = radio
         super(Esfera, self).__init__(pilas, x=x, y=y, z=z)
-        self.radio_de_colision = radio
+        self.radio_de_colision = (
+            radio if radio_de_colision is None else radio_de_colision)
 
     def _generar_geometria(self):
         return mallas.esfera(self.radio)

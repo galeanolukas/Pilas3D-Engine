@@ -26,8 +26,9 @@ class Actores(object):
     def Cubo(self, x=0, y=0, z=0):
         return Cubo(self._pilas, x=x, y=y, z=z)
 
-    def Esfera(self, x=0, y=0, z=0, radio=1.0):
-        return Esfera(self._pilas, x=x, y=y, z=z, radio=radio)
+    def Esfera(self, x=0, y=0, z=0, radio=1.0, radio_de_colision=None):
+        return Esfera(self._pilas, x=x, y=y, z=z, radio=radio,
+                      radio_de_colision=radio_de_colision)
 
     def Piso(self, x=0, y=0, z=0, tamano=20, divisiones=20):
         return Piso(

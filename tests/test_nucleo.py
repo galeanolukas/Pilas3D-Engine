@@ -102,6 +102,26 @@ def test_distancia_con_es_3d():
     assert a.distancia_con(b) == 5.0
 
 
+def test_colisiona_en_plano_ignora_y():
+    pilas = crear_pilas()
+    a = pilas.actores.Esfera(radio=0.4, y=0.4)
+    b = pilas.actores.Esfera(radio=0.4, y=2.0)
+    b.x = 0.5
+    # En 3D no colisionan (distancia > radios), en el plano XZ sí.
+    assert not a.colisiona_con(b)
+    assert a.colisiona_en_plano_con(b)
+
+
+def test_esfera_radio_de_colision_independiente():
+    pilas = crear_pilas()
+    e = pilas.actores.Esfera(radio=0.7, radio_de_colision=0.45)
+    assert e.radio == 0.7
+    assert e.radio_de_colision == 0.45
+    # sin argumento, el radio de colisión sigue siendo el visual
+    e2 = pilas.actores.Esfera(radio=0.7)
+    assert e2.radio_de_colision == 0.7
+
+
 def test_puntaje_sin_ventana():
     pilas = crear_pilas()
     puntaje = pilas.actores.Puntaje(prefijo="Puntos: ")

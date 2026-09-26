@@ -44,7 +44,10 @@ class Enemigo(Esfera):
     """Esfera roja que persigue al jugador por el plano XZ."""
 
     def __init__(self, pilas, jugador=None, **kw):
-        super(Enemigo, self).__init__(pilas, radio=0.7, **kw)
+        # radio_de_colision más chico que el visual: hay que acercarse
+        # de verdad para que "toque".
+        super(Enemigo, self).__init__(pilas, radio=0.7,
+                                      radio_de_colision=0.45, **kw)
         self.color = pilas.colores.rojo
         self.jugador = jugador
 
@@ -59,7 +62,8 @@ class Enemigo(Esfera):
         self.rotacion_y += 60 * self.pilas.dt
 
         # Si toca al jugador: una vida menos y vuelta al inicio.
-        if self.colisiona_con(j):
+        # (en el plano XZ: el jugador y el enemigo tienen distinta y)
+        if self.colisiona_en_plano_con(j):
             j.posicion = jugador_inicio
             vidas.valor -= 1
             vidas.texto = "Vidas: %d" % vidas.valor
@@ -72,7 +76,8 @@ class Jugador(Esfera):
     """El cuerpo del jugador (se ve al mirar hacia abajo)."""
 
     def __init__(self, pilas, enemigos, **kw):
-        super(Jugador, self).__init__(pilas, radio=0.4, **kw)
+        super(Jugador, self).__init__(pilas, radio=0.4,
+                                      radio_de_colision=0.35, **kw)
         self.color = pilas.colores.celeste
         self.enemigos = enemigos
         self.espera_disparo = 0.0
