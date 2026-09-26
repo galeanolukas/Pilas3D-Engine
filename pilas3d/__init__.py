@@ -78,6 +78,8 @@ Depuración
     pilas.fps.ver()   pilas.mostrar_ejes()
     pilas.depurador.definir_modos(fps=True, ejes=True,
         radios_de_colision=True, puntos_de_control=True)
+    Atajos de la ventana: ESC salir - F9 ejes - F10 radios de
+    colisión - F11 FPS - F12 puntos de control
 
 Audio
     pilas.sonidos.cargar('explosion.wav').reproducir()
@@ -198,7 +200,10 @@ class Pilas(object):
         self.ventana.switch_to()
         self.ventana.dispatch_events()
         self._tick(self.dt if dt is None else dt)
+        # dispatch_event encola el evento; dispatch_pending_events lo
+        # ejecuta ya, así paso() dibuja en el mismo llamado.
         self.ventana.dispatch_event('on_draw')
+        self.ventana.dispatch_pending_events()
         self.ventana.flip()
 
     def ayuda(self):

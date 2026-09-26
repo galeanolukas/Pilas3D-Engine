@@ -40,6 +40,30 @@ class Ventana(pyglet.window.Window):
         self.mouse_y = 0
         self.mouse_botones = 0
 
+    def on_key_press(self, simbolo, modificadores):
+        """Atajos globales de la ventana.
+
+        - ESC: termina el juego (cierra la ventana)
+        - F9:  ejes X/Y/Z del origen
+        - F10: radios de colisión (como en pilas 1.x)
+        - F11: FPS
+        - F12: puntos de control (como en pilas 1.x)
+        """
+        dep = self.pilas.depurador
+        if simbolo == key.ESCAPE:
+            self.pilas.terminar()
+        elif simbolo == key.F9:
+            dep.definir_modos(
+                ejes=self.pilas._actor_ejes is None)
+        elif simbolo == key.F10:
+            dep.definir_modos(
+                radios_de_colision=not dep.radios_de_colision)
+        elif simbolo == key.F11:
+            dep.definir_modos(fps=not self.pilas.fps.visible)
+        elif simbolo == key.F12:
+            dep.definir_modos(
+                puntos_de_control=not dep.puntos_de_control)
+
     def on_mouse_motion(self, x, y, dx, dy):
         self.mouse_x = x
         self.mouse_y = y
