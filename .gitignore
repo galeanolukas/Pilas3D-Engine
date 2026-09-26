@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+_deb_extract/
+*.deb
+.pytest_cache/

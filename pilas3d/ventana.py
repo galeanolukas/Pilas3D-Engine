@@ -1,0 +1,41 @@
+# -*- encoding: utf-8 -*-
+"""Ventana principal: reemplaza al QGLWidget de pilas-engine 2D."""
+
+import pyglet
+from pyglet.gl import glEnable, glClearColor, GL_DEPTH_TEST
+from pyglet.math import Mat4
+from pyglet.window import key
+
+from pilas3d import shaders
+from pilas3d import colores
+
+
+class Ventana(pyglet.window.Window):
+    """Ventana con contexto OpenGL donde se dibuja la escena 3D."""
+
+    def __init__(self, pilas, ancho=640, alto=480, titulo="pilas3d"):
+        super(Ventana, self).__init__(
+            width=ancho, height=alto, caption=titulo, resizable=True
+        )
+        self.pilas = pilas
+        self.set_minimum_size(160, 120)
+        glEnable(GL_DEPTH_TEST)
+
+        self.teclas = key.KeyStateHandler()
+        self.push_handlers(self.teclas)
+
+    def on_draw(self):
+        escena = self.pilas.escena_actual()
+        fondo = colores.normalizar(escena.fondo)
+        glClearColor(fondo[0], fondo[1], fondo[2], 1.0)
+        self.clear()
+
+        programa = shaders.obtener_programa()
+        aspecto = self.width / float(self.height)
+
+        with programa:
+            programa["proyeccion"] = Mat4.perspective_projection(
+                aspecto, 0.1, 1000.0, fov=60
+            )
+            programa["vista"] = escena.camara.matriz_vista()
+            escena.dibujar()
