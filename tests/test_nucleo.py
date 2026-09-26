@@ -588,6 +588,39 @@ def test_interpolacion_inversa():
     assert interp2.valores == [3, 1]
 
 
+def test_cargar_obj(tmp_path):
+    from pilas3d import modelos
+    obj = tmp_path / "tetraedro.obj"
+    obj.write_text(
+        "v 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\n"
+        "vt 0 0\nvt 1 0\nvt 0 1\n"
+        "f 1/1 2/2 3/3\n"          # sin normales: se calculan
+        "f 1/1 4/2 2/3\nf 1/1 3/2 4/3\nf 2/1 4/2 3/3\n")
+    d = modelos.cargar_obj(str(obj))
+    assert d['triangulos'] == 4
+    assert len(d['posiciones']) == 36
+    assert len(d['normales']) == 36
+    assert d['radio'] == 1.0
+    # segunda carga usa el caché (mismo objeto)
+    assert modelos.cargar_obj(str(obj)) is d
+
+
+def test_modelo_actor(tmp_path):
+    from pilas3d import modelos
+    obj = tmp_path / "cubo.obj"
+    obj.write_text(
+        "v -1 -1 -1\nv 1 -1 -1\nv 1 1 -1\nv -1 1 -1\n"
+        "v -1 -1 1\nv 1 -1 1\nv 1 1 1\nv -1 1 1\n"
+        "f 1 2 3 4\nf 5 6 7 8\nf 1 2 6 5\n"
+        "f 2 3 7 6\nf 3 4 8 7\nf 4 1 5 8\n")
+    pilas = crear_pilas()
+    m = pilas.actores.Modelo(str(obj), escala=2)
+    assert m in pilas.escena_actual().actores
+    assert m.radio_de_colision > 1.7 * 2 - 0.01  # esfera envolvente ×2
+    m.rotacion_y = 45
+    m.eliminar()
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()

@@ -115,6 +115,7 @@ bloquear con `ejecutar()`:
 | `pilas.musica.cargar()`       | igual (streaming, bucle por defecto, `detener_gradualmente`) |
 | `Grilla`/`Animacion`          | `pilas.actores.Animacion(img, columnas, filas, velocidad)` (billboard animado) |
 | —                             | `pilas.actores.Cartel()` (sprite que siempre mira a la cámara) |
+| —                             | `pilas.actores.Modelo('x.obj')` (carga modelos Wavefront .obj) |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
 
 ## Licencia

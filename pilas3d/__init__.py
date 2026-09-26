@@ -48,6 +48,7 @@ Actores  (posición x/y/z, rotacion_x/y/z, escala, color, imagen)
     pilas.actores.Animacion('x.png', columnas=8, velocidad=10)
     pilas.actores.Mapa(texto, {'#': constructor, 'E': otro})
     pilas.actores.Texto('hola')  Puntaje(prefijo='Puntos: ')
+    pilas.actores.Modelo('modelos/arbol.obj', escala=0.1)  # archivo .obj
 
 Cada actor
     actor.x = 3      actor.rotacion_y = 45    actor.escala = 2

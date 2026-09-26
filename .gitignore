@@ -5,3 +5,16 @@ __pycache__/
 _deb_extract/
 *.deb
 .pytest_cache/
+
+# Modelos 3D y archivos pesados del usuario (no van al repo)
+modelos/
+/*.rar
+/*.zip
+/*.obj
+/*.mtl
+/*.fbx
+/*.gltf
+/*.glb
+/*.stl
+/*.3ds
+/*.dae
