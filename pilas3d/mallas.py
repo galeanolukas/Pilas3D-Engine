@@ -1,8 +1,14 @@
 # -*- encoding: utf-8 -*-
-"""Generadores de geometría: retornan (posiciones, normales, modo).
+"""Generadores de geometría.
 
-Las posiciones y normales son listas planas de floats (x, y, z, ...).
-``modo`` es una constante de pyglet.gl (GL_TRIANGLES o GL_LINES).
+Cada función retorna ``(posiciones, normales, modo, colores, uvs)``:
+
+- ``posiciones`` y ``normales``: listas planas de floats (x, y, z, ...).
+- ``modo``: constante de pyglet.gl (GL_TRIANGLES o GL_LINES).
+- ``colores``: listas planas (r, g, b, a) por vértice, o None para usar
+  el color del actor.
+- ``uvs``: coordenadas de textura (u, v) por vértice. Los valores mayores
+  a 1 repiten la textura (requiere GL_REPEAT).
 """
 
 import math
@@ -11,24 +17,41 @@ from pyglet.gl import GL_TRIANGLES, GL_LINES
 
 
 def cuboide(ancho=1.0, alto=1.0, profundidad=1.0):
-    """Prisma rectangular centrado en el origen."""
+    """Prisma rectangular centrado en el origen, con UVs que repiten
+    la textura una vez por unidad de longitud."""
     ax, ay, az = ancho / 2.0, alto / 2.0, profundidad / 2.0
-    # (normal, 4 vértices de la cara)
+    # (normal, 4 vértices, escala de UV horizontal/vertical)
     caras = [
-        ((0, 0, 1), [(-ax, -ay, az), (ax, -ay, az), (ax, ay, az), (-ax, ay, az)]),
-        ((0, 0, -1), [(ax, -ay, -az), (-ax, -ay, -az), (-ax, ay, -az), (ax, ay, -az)]),
-        ((1, 0, 0), [(ax, -ay, az), (ax, -ay, -az), (ax, ay, -az), (ax, ay, az)]),
-        ((-1, 0, 0), [(-ax, -ay, -az), (-ax, -ay, az), (-ax, ay, az), (-ax, ay, -az)]),
-        ((0, 1, 0), [(-ax, ay, az), (ax, ay, az), (ax, ay, -az), (-ax, ay, -az)]),
-        ((0, -1, 0), [(-ax, -ay, -az), (ax, -ay, -az), (ax, -ay, az), (-ax, -ay, az)]),
+        ((0, 0, 1),
+         [(-ax, -ay, az), (ax, -ay, az), (ax, ay, az), (-ax, ay, az)],
+         (ancho, alto)),
+        ((0, 0, -1),
+         [(ax, -ay, -az), (-ax, -ay, -az), (-ax, ay, -az), (ax, ay, -az)],
+         (ancho, alto)),
+        ((1, 0, 0),
+         [(ax, -ay, az), (ax, -ay, -az), (ax, ay, -az), (ax, ay, az)],
+         (profundidad, alto)),
+        ((-1, 0, 0),
+         [(-ax, -ay, -az), (-ax, -ay, az), (-ax, ay, az), (-ax, ay, -az)],
+         (profundidad, alto)),
+        ((0, 1, 0),
+         [(-ax, ay, az), (ax, ay, az), (ax, ay, -az), (-ax, ay, -az)],
+         (ancho, profundidad)),
+        ((0, -1, 0),
+         [(-ax, -ay, -az), (ax, -ay, -az), (ax, -ay, az), (-ax, -ay, az)],
+         (ancho, profundidad)),
     ]
     posiciones = []
     normales = []
-    for normal, v in caras:
-        for triangulo in (v[0], v[1], v[2], v[0], v[2], v[3]):
-            posiciones.extend(triangulo)
+    uvs = []
+    uv_quad = [(0, 0), (1, 0), (1, 1), (0, 1)]
+    for normal, v, (su, sv) in caras:
+        quad_uv = [(u * su, t * sv) for u, t in uv_quad]
+        for i in (0, 1, 2, 0, 2, 3):
+            posiciones.extend(v[i])
             normales.extend(normal)
-    return posiciones, normales, GL_TRIANGLES
+            uvs.extend(quad_uv[i])
+    return posiciones, normales, GL_TRIANGLES, None, uvs
 
 
 def cubo(lado=1.0):
@@ -37,15 +60,17 @@ def cubo(lado=1.0):
 
 
 def esfera(radio=1.0, meridianos=24, paralelos=16):
-    """Esfera UV centrada en el origen."""
+    """Esfera UV centrada en el origen (u = longitud, v = latitud)."""
     posiciones = []
     normales = []
+    uvs = []
 
     def punto(lon, lat):
         x = radio * math.sin(lat) * math.cos(lon)
         y = radio * math.cos(lat)
         z = radio * math.sin(lat) * math.sin(lon)
-        return (x, y, z)
+        uv = (lon / (2 * math.pi), lat / math.pi)
+        return (x, y, z), uv
 
     for i in range(paralelos):
         lat0 = math.pi * i / paralelos
@@ -59,10 +84,28 @@ def esfera(radio=1.0, meridianos=24, paralelos=16):
                 punto(lon1, lat1),
                 punto(lon1, lat0),
             ]
-            for v in (quad[0], quad[1], quad[2], quad[0], quad[2], quad[3]):
+            for i2 in (0, 1, 2, 0, 2, 3):
+                v, uv = quad[i2]
                 posiciones.extend(v)
                 normales.extend((v[0] / radio, v[1] / radio, v[2] / radio))
-    return posiciones, normales, GL_TRIANGLES
+                uvs.extend(uv)
+    return posiciones, normales, GL_TRIANGLES, None, uvs
+
+
+def plano(ancho=20.0, profundidad=20.0):
+    """Cuadrado horizontal sobre XZ, centrado — ideal para piso
+    con textura (la textura se repite una vez por unidad)."""
+    ax, az = ancho / 2.0, profundidad / 2.0
+    v = [(-ax, 0, -az), (ax, 0, -az), (ax, 0, az), (-ax, 0, az)]
+    uv = [(0, 0), (ancho, 0), (ancho, profundidad), (0, profundidad)]
+    posiciones = []
+    normales = []
+    uvs = []
+    for i in (0, 1, 2, 0, 2, 3):
+        posiciones.extend(v[i])
+        normales.extend((0, 1, 0))
+        uvs.extend(uv[i])
+    return posiciones, normales, GL_TRIANGLES, None, uvs
 
 
 def esfera_alambrada(radio=1.0, meridianos=16, paralelos=10):
@@ -97,7 +140,8 @@ def esfera_alambrada(radio=1.0, meridianos=16, paralelos=10):
 
     normales = [0.0] * len(posiciones)
     colores = [1.0, 0.3, 0.3, 1.0] * (len(posiciones) // 3)
-    return posiciones, normales, GL_LINES, colores
+    uvs = [0.0] * (len(posiciones) // 3 * 2)
+    return posiciones, normales, GL_LINES, colores, uvs
 
 
 def rejilla(tamano=10, divisiones=10):
@@ -111,7 +155,8 @@ def rejilla(tamano=10, divisiones=10):
         posiciones.extend([d, 0, -mitad, d, 0, mitad])
         posiciones.extend([-mitad, 0, d, mitad, 0, d])
         normales.extend([0.0] * 12)
-    return posiciones, normales, GL_LINES
+    uvs = [0.0] * (len(posiciones) // 3 * 2)
+    return posiciones, normales, GL_LINES, None, uvs
 
 
 def ejes(largo=5):
@@ -131,4 +176,5 @@ def ejes(largo=5):
         0, 1, 0, 1, 0, 1, 0, 1,
         0, 0, 1, 1, 0, 0, 1, 1,
     ]
-    return posiciones, normales, GL_LINES, colores
+    uvs = [0.0] * 12
+    return posiciones, normales, GL_LINES, colores, uvs

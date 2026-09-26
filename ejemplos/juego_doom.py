@@ -1,32 +1,36 @@
 # -*- encoding: utf-8 -*-
-"""Mini-FPS estilo Doom: laberinto, enemigos que persiguen y disparo.
+"""Mini-FPS estilo Doom con mapa ASCII y texturas.
 
+- El laberinto se define como texto: '#' pared, 'E' enemigo, 'J' jugador
 - WASD/flechas: caminar (las paredes bloquean)
 - Mouse: mirar alrededor
 - Click izquierdo: disparar (rayo desde la cámara)
 - Si un enemigo te toca: volvés al inicio y perdés una vida
 """
 
-import random
-
 import pilas3d
 from pilas3d.actores.esfera import Esfera
 
-AREA = 14
+# 13 filas x 14 columnas; cada celda mide 2 unidades.
+MAPA = """
+##############
+#............#
+#.E..........#
+#....####....#
+#....#...E...#
+#....#.......#
+#.E..#....E..#
+#............#
+#....####....#
+#........E...#
+#.....J......#
+##############
+"""
 
 pilas = pilas3d.iniciar(ancho=800, alto=600, titulo="pilas3d - mini doom")
 
-pilas.actores.Piso(tamano=2 * AREA, divisiones=2 * AREA)
-
-# Perímetro del laberinto
-for pos in (-AREA, AREA):
-    pilas.actores.Pared(z=pos, ancho=2 * AREA, alto=3)
-    pilas.actores.Pared(x=pos, ancho=2 * AREA, alto=3).rotacion_y = 90
-
-# Paredes internas del laberinto
-pilas.actores.Pared(x=-4, z=-3, ancho=8)
-pilas.actores.Pared(x=5, z=4, ancho=8).rotacion_y = 90
-pilas.actores.Pared(x=-6, z=7, ancho=6).rotacion_y = 90
+TEX_PARED = pilas3d.obtener_ruta('data/caja.png')
+TEX_PISO = pilas3d.obtener_ruta('data/pasto.png')
 
 puntaje = pilas.actores.Puntaje(x=10, y=60, prefijo="Puntos: ")
 vidas = pilas.actores.Puntaje(x=200, y=60, prefijo="Vidas: ")
@@ -39,12 +43,10 @@ pilas.actores.Texto("WASD moverse - mouse mirar - click disparar",
 class Enemigo(Esfera):
     """Esfera roja que persigue al jugador por el plano XZ."""
 
-    def __init__(self, pilas, jugador, **kw):
+    def __init__(self, pilas, jugador=None, **kw):
         super(Enemigo, self).__init__(pilas, radio=0.7, **kw)
         self.color = pilas.colores.rojo
         self.jugador = jugador
-        self.posicion = (random.uniform(-AREA + 2, AREA - 2), 0.7,
-                         random.uniform(-AREA + 2, AREA - 2))
 
     def actualizar(self):
         j = self.jugador
@@ -58,11 +60,11 @@ class Enemigo(Esfera):
 
         # Si toca al jugador: una vida menos y vuelta al inicio.
         if self.colisiona_con(j):
-            j.posicion = (0, 0.4, 10)
+            j.posicion = jugador_inicio
             vidas.valor -= 1
             vidas.texto = "Vidas: %d" % vidas.valor
             if vidas.valor <= 0:
-                pilas.actores.Texto("¡PERDISTE!", x=320, y=200, tamano=40)
+                pilas.actores.Texto("PERDISTE!", x=320, y=200, tamano=40)
                 self.pilas.tareas.una_vez(2, pilas.terminar)
 
 
@@ -89,12 +91,45 @@ class Jugador(Esfera):
                 self.enemigos.remove(blanco)
                 puntaje.aumentar()
                 if not self.enemigos:
-                    pilas.actores.Texto("¡GANASTE!", x=340, y=200,
+                    pilas.actores.Texto("GANASTE!", x=340, y=200,
                                         tamano=40)
 
 
-enemigos = [Enemigo(pilas, None) for _ in range(4)]
-jugador = Jugador(pilas, enemigos, y=0.4, z=10)
+# -- construcción del mapa desde texto ---------------------------------------
+
+enemigos = []
+spawn = {}
+jugador_inicio = (0, 0.4, 0)
+
+
+def hacer_pared(p, x, z):
+    pared = p.actores.Pared(x=x, z=z, ancho=2, alto=3, profundidad=2)
+    pared.imagen = TEX_PARED
+    return pared
+
+
+def hacer_enemigo(p, x, z):
+    enemigo = Enemigo(p, x=x, y=0.7, z=z)
+    enemigos.append(enemigo)
+    return enemigo
+
+
+def marcar_jugador(p, x, z):
+    spawn['pos'] = (x, 0.4, z)
+
+
+mapa = pilas.actores.Mapa(MAPA, {
+    '#': hacer_pared,
+    'E': hacer_enemigo,
+    'J': marcar_jugador,
+})
+
+piso = pilas.actores.Plano(ancho=30, profundidad=30)
+piso.imagen = TEX_PISO
+
+jugador = Jugador(pilas, enemigos)
+jugador_inicio = spawn['pos']
+jugador.posicion = jugador_inicio
 for enemigo in enemigos:
     enemigo.jugador = jugador
 

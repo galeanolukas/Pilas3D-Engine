@@ -39,18 +39,20 @@ class Depurador(object):
 
     def _obtener_esfera_wire(self):
         if self._vlist_esfera is None:
-            pos, nor, modo, col = mallas.esfera_alambrada(1.0)
+            pos, nor, modo, col, uv = mallas.esfera_alambrada(1.0)
             self._vlist_esfera = shaders.obtener_programa().vertex_list(
                 len(pos) // 3, modo,
-                position=("f", pos), normal=("f", nor), color=("f", col))
+                position=("f", pos), normal=("f", nor), color=("f", col),
+                texcoords=("f", uv))
         return self._vlist_esfera
 
     def _obtener_ejes(self):
         if self._vlist_ejes is None:
-            pos, nor, modo, col = mallas.ejes(1.0)
+            pos, nor, modo, col, uv = mallas.ejes(1.0)
             self._vlist_ejes = shaders.obtener_programa().vertex_list(
                 len(pos) // 3, modo,
-                position=("f", pos), normal=("f", nor), color=("f", col))
+                position=("f", pos), normal=("f", nor), color=("f", col),
+                texcoords=("f", uv))
         return self._vlist_ejes
 
     def dibujar(self, actores):

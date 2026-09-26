@@ -348,3 +348,57 @@ def test_primera_persona_posiciona_camara():
     assert abs(camara.z - 0) < 0.01
     # objetivo a 1 unidad de distancia en la dirección de vista (-Z)
     assert abs(camara.objetivo[2] - (-1.0)) < 0.01
+
+
+# -- mapa desde texto y texturas ------------------------------------------------
+
+def test_mapa_desde_texto_crea_actores():
+    pilas = crear_pilas()
+    matriz = [
+        "###",
+        "#.#",
+        "###",
+    ]
+    mapa = pilas.actores.Mapa(
+        matriz,
+        {'#': lambda p, x, z: p.actores.Pared(x=x, z=z, ancho=1)},
+    )
+    assert mapa.filas == 3 and mapa.columnas == 3
+    assert len(mapa.creados) == 8          # 8 '#', el '.' queda vacío
+    assert len(pilas.escena_actual().obstaculos) == 8
+    assert mapa.celda(1, 1) == '.'
+
+
+def test_mapa_acepta_string_multilinea():
+    pilas = crear_pilas()
+    posiciones = []
+    mapa = pilas.actores.Mapa(
+        "##\n#.",
+        {'#': lambda p, x, z: posiciones.append((x, z))},
+        tamano_celda=2.0,
+    )
+    assert len(posiciones) == 3
+    # esquina superior-izquierda (fila 0, col 0) en -x/-z del centro
+    assert (-1.0, -1.0) in posiciones
+
+
+def test_mapa_simbolo_desconocido_se_ignora():
+    pilas = crear_pilas()
+    mapa = pilas.actores.Mapa("X#", {'#': lambda p, x, z: 'p'})
+    assert mapa.creados == ['p']
+
+
+def test_actor_imagen():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    assert cubo.imagen is None
+    cubo.imagen = pilas3d.obtener_ruta('data/caja.png')
+    assert cubo.imagen.endswith('caja.png')
+    assert cubo._textura is None  # carga diferida hasta el primer dibujar
+
+
+def test_obtener_ruta():
+    ruta = pilas3d.obtener_ruta('data/pasto.png')
+    assert ruta.endswith('/pilas3d/data/pasto.png')
+    import os
+    assert os.path.exists(ruta)

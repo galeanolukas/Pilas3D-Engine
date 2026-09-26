@@ -1,8 +1,9 @@
 # -*- encoding: utf-8 -*-
 """Shaders GLSL compartidos por todos los actores.
 
-Usa un único programa con iluminación difusa simple. Los vértices sin
-normal (normales de longitud cero, como las líneas del piso o los ejes)
+Usa un único programa con iluminación difusa simple y soporte opcional
+de texturas (uniform ``usar_textura`` + sampler ``textura``). Los
+vértices sin normal (longitud cero, como las líneas del piso o los ejes)
 se dibujan con su color plano.
 """
 
@@ -11,12 +12,14 @@ VERTEX_SHADER = """#version 330 core
 in vec3 position;
 in vec3 normal;
 in vec4 color;
+in vec2 texcoords;
 
 uniform mat4 proyeccion;
 uniform mat4 vista;
 uniform mat4 modelo;
 
 out vec4 v_color;
+out vec2 v_tex;
 
 void main()
 {
@@ -28,17 +31,24 @@ void main()
     float factor = length(normal) < 0.001 ? 1.0 : (0.35 + 0.65 * difusa);
 
     v_color = vec4(color.rgb * factor, color.a);
+    v_tex = texcoords;
 }
 """
 
 FRAGMENT_SHADER = """#version 330 core
 
 in vec4 v_color;
+in vec2 v_tex;
+
+uniform sampler2D textura;
+uniform bool usar_textura;
+
 out vec4 fragmento;
 
 void main()
 {
-    fragmento = v_color;
+    vec4 base = usar_textura ? texture(textura, v_tex) : vec4(1.0);
+    fragmento = base * v_color;
 }
 """
 

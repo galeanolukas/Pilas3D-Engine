@@ -7,6 +7,9 @@ Equivalente a ``pilasengine.actores.actor.Actor`` pero con geometría
 
 import math
 
+from pyglet.gl import glBindTexture, glTexParameteri
+from pyglet.gl import GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T
+from pyglet.gl import GL_REPEAT
 from pyglet.math import Mat4, Vec3
 
 from pilas3d import colores, shaders
@@ -41,6 +44,8 @@ class Actor(object):
         self._escala_z = 1.0
         self._transparencia = 0
         self._color = colores.blanco
+        self._imagen = None
+        self._textura = None
 
         self.radio_de_colision = 1.0
         self._habilidades = []
@@ -190,6 +195,16 @@ class Actor(object):
         self._transparencia = valor
         self._reconstruir_gl()
 
+    @property
+    def imagen(self):
+        """Ruta a una textura PNG/JPG para cubrir la superficie."""
+        return self._imagen
+
+    @imagen.setter
+    def imagen(self, ruta):
+        self._imagen = ruta
+        self._textura = None
+
     # -- colisiones -----------------------------------------------------------
 
     def distancia_con(self, otro):
@@ -295,14 +310,25 @@ class Actor(object):
             self._vertex_list.delete()
             self._vertex_list = None
 
+    def _cargar_textura(self):
+        from pyglet.image import load
+
+        self._textura = load(self._imagen).get_texture()
+        glBindTexture(GL_TEXTURE_2D, self._textura.id)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+
     def _construir_gl(self):
         datos = self._generar_geometria()
         posiciones, normales, modo = datos[0], datos[1], datos[2]
         colores_vertices = datos[3] if len(datos) > 3 else None
+        uvs = datos[4] if len(datos) > 4 else None
         cantidad = len(posiciones) // 3
 
         if colores_vertices is None:
             colores_vertices = self._colores_planos(cantidad)
+        if uvs is None:
+            uvs = [0.0] * (cantidad * 2)
 
         self._modo = modo
         self._vertex_list = shaders.obtener_programa().vertex_list(
@@ -311,6 +337,7 @@ class Actor(object):
             position=("f", posiciones),
             normal=("f", normales),
             color=("f", colores_vertices),
+            texcoords=("f", uvs),
         )
 
     def matriz_modelo(self):
@@ -341,4 +368,12 @@ class Actor(object):
             self._construir_gl()
         programa = shaders.obtener_programa()
         programa["modelo"] = self.matriz_modelo()
+        if self._imagen is not None:
+            if self._textura is None:
+                self._cargar_textura()
+            glBindTexture(GL_TEXTURE_2D, self._textura.id)
+            programa["textura"] = 0
+            programa["usar_textura"] = True
+        else:
+            programa["usar_textura"] = False
         self._vertex_list.draw(self._modo)

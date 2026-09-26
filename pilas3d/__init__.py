@@ -14,6 +14,8 @@ Uso básico::
     pilas.ejecutar()
 """
 
+import os
+
 import pyglet
 
 from pilas3d import colores
@@ -113,6 +115,14 @@ class Pilas(object):
         if self.ventana is not None:
             self.ventana.close()
             self.ventana = None
+
+
+def obtener_ruta(nombre):
+    """Ruta absoluta a un recurso dentro del paquete.
+
+    >>> pilas3d.obtener_ruta('data/caja.png')
+    """
+    return os.path.join(os.path.dirname(__file__), nombre)
 
 
 def iniciar(ancho=640, alto=480, titulo="pilas3d", sin_ventana=False):
