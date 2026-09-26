@@ -26,6 +26,7 @@ from pilas3d.habilidades import Habilidades
 from pilas3d.depurador import Depurador
 from pilas3d.sonidos import Sonidos
 from pilas3d.musica import _Musica
+from pilas3d import interpolaciones
 
 VERSION = "0.1.0"
 
@@ -134,6 +135,7 @@ class Pilas(object):
         self.depurador = Depurador(self)
         self.sonidos = Sonidos(self)
         self.musica = _Musica(self)
+        self.interpolaciones = interpolaciones
 
         if sin_ventana:
             self.ventana = None
@@ -209,6 +211,18 @@ class Pilas(object):
     def ayuda(self):
         """Imprime una guía rápida de la API en la consola."""
         print(AYUDA)
+
+    def interpolar(self, actor, atributo, valores, duracion=1.0,
+                   demora=0.0, tipo=None):
+        """Anima una propiedad del actor (como pilas.utils.interpolar).
+
+        >>> pilas.interpolar(cubo, 'x', 10, duracion=2)
+        >>> pilas.interpolar(cubo, 'rotacion', 360,
+        ...                  tipo=interpolaciones.ReboteFinal)
+        """
+        clase = tipo or interpolaciones.Lineal
+        clase(valores, duracion=duracion, demora=demora).iniciar(
+            actor, atributo)
 
     def terminar(self):
         if self.ventana is not None:

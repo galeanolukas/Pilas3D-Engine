@@ -517,6 +517,88 @@ def test_paso_sin_ventana_no_falla():
     pilas.ayuda()  # imprime la guía
 
 
+# -- interpolaciones -----------------------------------------------------------
+
+def actualizar_n_veces(pilas, n):
+    escena = pilas.escena_actual()
+    for _ in range(n):
+        escena.actualizar(1 / 60.0)
+
+
+def test_interpolacion_lista():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    cubo.x = [10]           # 1 segundo = 60 frames
+    actualizar_n_veces(pilas, 30)
+    assert 0 < cubo.x < 10
+    actualizar_n_veces(pilas, 40)
+    assert cubo.x == 10
+    assert cubo._interpolaciones == []
+
+
+def test_interpolacion_varios_valores():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    cubo.y = [2, 0]         # sube a 2 y vuelve a 0
+    actualizar_n_veces(pilas, 30)
+    assert cubo.y > 1.5     # en la primera mitad va subiendo
+    actualizar_n_veces(pilas, 40)
+    assert cubo.y == 0
+
+
+def test_interpolacion_tupla_con_duracion():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    cubo.x = ([100], 2.0)   # 2 segundos = 120 frames
+    actualizar_n_veces(pilas, 60)
+    assert 45 < cubo.x < 55
+    actualizar_n_veces(pilas, 70)
+    assert cubo.x == 100
+
+
+def test_interpolacion_clases_de_easing():
+    from pilas3d import interpolaciones as I
+    pilas = crear_pilas()
+    a = pilas.actores.Cubo()
+    b = pilas.actores.Cubo()
+    a.x = I.ReboteFinal([10], duracion=1)
+    b.x = I.DesaceleracionGradual([10], duracion=1)
+    actualizar_n_veces(pilas, 30)
+    # con ease-out la mitad del tiempo ya recorrió más de la mitad
+    assert b.x > 5
+    actualizar_n_veces(pilas, 40)
+    assert a.x == 10 and b.x == 10
+
+
+def test_interpolar_facade_y_demora():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    pilas.interpolar(cubo, 'x', 5, duracion=1, demora=1)
+    actualizar_n_veces(pilas, 30)
+    assert cubo.x == 0      # todavía en la demora
+    actualizar_n_veces(pilas, 100)
+    assert cubo.x == 5
+
+
+def test_interpolacion_inversa():
+    from pilas3d import interpolaciones as I
+    interp = -I.Lineal([5], duracion=2)
+    assert interp.valores == [5]
+    interp2 = -I.Lineal([1, 3])
+    assert interp2.valores == [3, 1]
+
+
+def test_interpolacion_transparencia():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    cubo.transparencia = [100]
+    actualizar_n_veces(pilas, 70)
+    assert cubo.transparencia == 100
+    pilas = crear_pilas()
+    pilas.paso()   # sin ventana solo avisa; no debe explotar
+    pilas.ayuda()  # imprime la guía
+
+
 def test_disparo_usa_radio_de_disparo():
     pilas = crear_pilas()
     camara = pilas.escena_actual().camara

@@ -54,6 +54,7 @@ class Actor(object):
         self.radio_de_disparo = None
 
         self.radio_de_colision = 1.0
+        self._interpolaciones = []
         self._habilidades = []
         self.habilidades = ProxyHabilidades(self._habilidades)
         self._vertex_list = None
@@ -67,12 +68,36 @@ class Actor(object):
 
     # -- posición ---------------------------------------------------------
 
+    def _definir_o_interpolar(self, atributo, valor):
+        """Si el valor es una interpolación, la agenda y retorna True.
+
+        Soporta la sintaxis de pilas::
+
+            actor.x = [100]              # Lineal, 1 segundo
+            actor.x = ([100, -50], 3)    # (valores, duración)
+            actor.x = interpolaciones.ReboteFinal([2])
+        """
+        from pilas3d.interpolaciones import Interpolacion, Lineal
+
+        if isinstance(valor, Interpolacion):
+            valor.iniciar(self, atributo)
+        elif isinstance(valor, list):
+            Lineal(valor).iniciar(self, atributo)
+        elif isinstance(valor, tuple):
+            valores, duracion = valor
+            Lineal(valores, duracion=duracion).iniciar(self, atributo)
+        else:
+            return False
+        return True
+
     @property
     def x(self):
         return self._x
 
     @x.setter
     def x(self, valor):
+        if self._definir_o_interpolar('x', valor):
+            return
         self._x = valor
         self._matriz_sucia = True
 
@@ -82,6 +107,8 @@ class Actor(object):
 
     @y.setter
     def y(self, valor):
+        if self._definir_o_interpolar('y', valor):
+            return
         self._y = valor
         self._matriz_sucia = True
 
@@ -92,6 +119,8 @@ class Actor(object):
 
     @z.setter
     def z(self, valor):
+        if self._definir_o_interpolar('z', valor):
+            return
         self._z = valor
         self._matriz_sucia = True
 
@@ -112,6 +141,8 @@ class Actor(object):
 
     @rotacion_x.setter
     def rotacion_x(self, valor):
+        if self._definir_o_interpolar('rotacion_x', valor):
+            return
         self._rotacion_x = valor
         self._matriz_sucia = True
 
@@ -121,6 +152,8 @@ class Actor(object):
 
     @rotacion_y.setter
     def rotacion_y(self, valor):
+        if self._definir_o_interpolar('rotacion_y', valor):
+            return
         self._rotacion_y = valor
         self._matriz_sucia = True
 
@@ -130,6 +163,8 @@ class Actor(object):
 
     @rotacion_z.setter
     def rotacion_z(self, valor):
+        if self._definir_o_interpolar('rotacion_z', valor):
+            return
         self._rotacion_z = valor
         self._matriz_sucia = True
 
@@ -150,6 +185,8 @@ class Actor(object):
 
     @escala.setter
     def escala(self, valor):
+        if self._definir_o_interpolar('escala', valor):
+            return
         self._escala_x = self._escala_y = self._escala_z = valor
         self._matriz_sucia = True
 
@@ -159,6 +196,8 @@ class Actor(object):
 
     @escala_x.setter
     def escala_x(self, valor):
+        if self._definir_o_interpolar('escala_x', valor):
+            return
         self._escala_x = valor
         self._matriz_sucia = True
 
@@ -168,6 +207,8 @@ class Actor(object):
 
     @escala_y.setter
     def escala_y(self, valor):
+        if self._definir_o_interpolar('escala_y', valor):
+            return
         self._escala_y = valor
         self._matriz_sucia = True
 
@@ -177,6 +218,8 @@ class Actor(object):
 
     @escala_z.setter
     def escala_z(self, valor):
+        if self._definir_o_interpolar('escala_z', valor):
+            return
         self._escala_z = valor
         self._matriz_sucia = True
 
@@ -198,6 +241,8 @@ class Actor(object):
 
     @transparencia.setter
     def transparencia(self, valor):
+        if self._definir_o_interpolar('transparencia', valor):
+            return
         self._transparencia = valor
         self._reconstruir_gl()
 
@@ -284,8 +329,15 @@ class Actor(object):
         for h in list(self._habilidades):
             h.actualizar()
 
+    def _actualizar_interpolaciones(self):
+        """Avanza los tweens activos (``actor.x = [100]``, etc.)."""
+        dt = self.pilas.dt
+        self._interpolaciones = [
+            t for t in self._interpolaciones if not t.avanzar(dt)]
+
     def pre_actualizar(self):
         """Actualiza habilidades antes de ``actualizar`` (como en pilas)."""
+        self._actualizar_interpolaciones()
         self.actualizar_habilidades()
 
     # -- ciclo de vida --------------------------------------------------------
