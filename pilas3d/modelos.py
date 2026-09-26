@@ -20,6 +20,26 @@ def _resolver_indice(indice, total):
     return indice - 1 if indice > 0 else total + indice
 
 
+def _cargar_materiales(ruta_obj, nombre_mtl):
+    """Lee un .mtl y retorna dict nombre_material -> (r, g, b) del Kd."""
+    ruta = os.path.join(os.path.dirname(ruta_obj), nombre_mtl)
+    colores = {}
+    if not os.path.exists(ruta):
+        return colores
+    actual = None
+    with open(ruta, 'r', errors='replace') as f:
+        for linea in f:
+            campos = linea.split()
+            if not campos:
+                continue
+            if campos[0] == 'newmtl':
+                actual = ' '.join(campos[1:])
+            elif campos[0] == 'Kd' and actual is not None:
+                colores[actual] = tuple(
+                    float(v) for v in campos[1:4])
+    return colores
+
+
 def cargar_obj(ruta):
     """Carga un archivo .obj y retorna un dict con la geometría.
 
@@ -36,6 +56,10 @@ def cargar_obj(ruta):
     posiciones = []
     normales = []
     uvs = []
+    colores_vertices = []
+    materiales = {}
+    color_actual = (1.0, 1.0, 1.0)
+    usa_materiales = [False]
 
     def emitir(cara):
         """Triangula una cara en abanico y emite cada triángulo."""
@@ -57,6 +81,7 @@ def cargar_obj(ruta):
             posiciones.extend(v)
             pos_tri.append(v)
             uvs.extend(texcoords[ti] if ti is not None else (0.0, 0.0))
+            colores_vertices.extend(color_actual + (1.0,))
             if ni is not None:
                 normales.extend(normales_obj[ni])
                 tiene_normal = True
@@ -83,7 +108,15 @@ def cargar_obj(ruta):
                 normales_obj.append(tuple(map(float, campos[1:4])))
             elif campos[0] == 'f':
                 emitir(campos[1:])
-            # 'o', 'g', 's', 'mtllib', 'usemtl', '#': se ignoran
+            elif campos[0] == 'mtllib':
+                materiales.update(_cargar_materiales(
+                    ruta, ' '.join(campos[1:])))
+            elif campos[0] == 'usemtl':
+                nombre = ' '.join(campos[1:])
+                if nombre in materiales:
+                    color_actual = materiales[nombre]
+                    usa_materiales[0] = True
+            # 'o', 'g', 's', '#': se ignoran
 
     if not posiciones:
         raise IOError("El archivo '%s' no contiene caras (f)" % ruta)
@@ -100,6 +133,7 @@ def cargar_obj(ruta):
         'posiciones': posiciones,
         'normales': normales,
         'uvs': uvs,
+        'colores': colores_vertices if usa_materiales[0] else None,
         'radio': radio,
         'triangulos': len(posiciones) // 9,
     }

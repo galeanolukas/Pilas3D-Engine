@@ -621,6 +621,22 @@ def test_modelo_actor(tmp_path):
     m.eliminar()
 
 
+def test_cargar_obj_con_materiales(tmp_path):
+    from pilas3d import modelos
+    (tmp_path / "m.mtl").write_text(
+        "newmtl Rojo\nKd 1.0 0.0 0.0\nnewmtl Verde\nKd 0.0 1.0 0.0\n")
+    obj = tmp_path / "dos.obj"
+    obj.write_text(
+        "mtllib m.mtl\n"
+        "v 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\n"
+        "usemtl Rojo\nf 1 2 3\nusemtl Verde\nf 1 2 4\n")
+    d = modelos.cargar_obj(str(obj))
+    assert d['colores'] is not None
+    # primer triángulo rojo, segundo verde
+    assert d['colores'][:4] == [1.0, 0.0, 0.0, 1.0]
+    assert d['colores'][12:16] == [0.0, 1.0, 0.0, 1.0]
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()

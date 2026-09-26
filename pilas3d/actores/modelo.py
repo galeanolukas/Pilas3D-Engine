@@ -26,5 +26,5 @@ class Modelo(Actor):
 
     def _generar_geometria(self):
         d = self._datos
-        return d['posiciones'], d['normales'], GL_TRIANGLES, None, \
-            d['uvs']
+        return d['posiciones'], d['normales'], GL_TRIANGLES, \
+            d['colores'], d['uvs']
