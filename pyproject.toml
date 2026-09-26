@@ -11,5 +11,8 @@ requires-python = ">=3.9"
 license = { text = "LGPL-3.0-or-later" }
 dependencies = ["pyglet>=2.1,<3"]
 
+[project.scripts]
+pilas3d = "pilas3d.interactivo:main"
+
 [tool.setuptools.packages.find]
 include = ["pilas3d*"]

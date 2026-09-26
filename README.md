@@ -43,10 +43,30 @@ python3 -m venv .venv
 .venv/bin/python ejemplos/sonido.py             # efectos de audio
 ```
 
-## Modo interactivo (consola de Python)
+## Consola interactiva (con autocompletado)
 
-`pilas.ejecutar()` bloquea la terminal; para ir construyendo el juego
-paso a paso desde el REPL se usa `pilas.paso()`, que avanza un frame:
+Tras `pip install -e .` queda disponible el comando `pilas3d`, que abre
+la ventana junto con una consola IPython (autocompletado, historial,
+colores) donde `pilas` ya está iniciada. **Cada línea que ejecutás
+refresca la escena automáticamente** con `pilas.paso()`:
+
+```bash
+pilas3d                       # o: python3 -m pilas3d
+```
+
+```
+In [1]: cubo = pilas.actores.Cubo()        # aparece al instante
+In [2]: cubo.color = pilas.colores.rojo    # se vuelve rojo
+In [3]: pilas.ayuda()                      # guía de la API
+```
+
+Sin IPython instalado cae a la consola estándar de Python con
+autocompletado por tabulador (ahí hay que llamar `pilas.paso()` a mano).
+
+## Modo interactivo manual
+
+También se puede usar `paso()` desde cualquier REPL o script sin
+bloquear con `ejecutar()`:
 
 ```python
 >>> import pilas3d
