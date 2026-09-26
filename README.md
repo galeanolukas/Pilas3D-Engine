@@ -38,6 +38,7 @@ python3 -m venv .venv
 .venv/bin/python ejemplos/hola_cubo.py
 .venv/bin/python ejemplos/mover_con_teclado.py   # flechas o WASD
 .venv/bin/python ejemplos/juego_recolectar.py   # mini-juego completo
+.venv/bin/python ejemplos/camara_orbital.py     # órbita con mouse + debug
 ```
 
 ## Tests
@@ -61,6 +62,10 @@ python3 -m venv .venv
 | `actor.colisiona_con(otro)`   | igual (esfera-esfera con `radio_de_colision`) |
 | `pilas.tareas.siempre(s, f)`  | igual (`una_vez`, `siempre`, `condicional`)  |
 | `actor.aprender(pilas.habilidades.X)` | igual — `MoverseConElTeclado`, `RebotarComoPelota` (3D), `GirarConstantemente` |
+| `pilas.depurador.definir_modos` | `fps`, `ejes`, `radios_de_colision`, `puntos_de_control` |
+| `pilas.fps.ver()`             | igual                                |
+| —                             | `camara.usar_control_orbital()` (mouse: orbitar + zoom) |
+| `pilas.control.mouse_x/y`     | posición y botones del mouse         |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
 
 ## Licencia

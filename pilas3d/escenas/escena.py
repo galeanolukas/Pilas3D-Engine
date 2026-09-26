@@ -35,6 +35,8 @@ class Escena(object):
         for actor in list(self.actores):
             if not actor.es_overlay:
                 actor.dibujar()
+        if self.pilas.depurador.activo():
+            self.pilas.depurador.dibujar(self.actores)
 
     def dibujar_overlay(self):
         """Dibuja los actores de overlay 2D (texto, puntajes)."""

@@ -30,6 +30,28 @@ class Ventana(pyglet.window.Window):
         self.push_handlers(self.teclas)
         self._fps_display = None
 
+        self.mouse_x = 0
+        self.mouse_y = 0
+        self.mouse_botones = 0
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        self.mouse_x = x
+        self.mouse_y = y
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        self.mouse_x = x
+        self.mouse_y = y
+        self.mouse_botones |= button
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        self.mouse_x = x
+        self.mouse_y = y
+        self.mouse_botones &= ~button
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        self.mouse_x = x
+        self.mouse_y = y
+
     def on_draw(self):
         escena = self.pilas.escena_actual()
         fondo = colores.normalizar(escena.fondo)

@@ -21,6 +21,7 @@ from pilas3d.actores import Actores
 from pilas3d.control import Control, ControlNulo
 from pilas3d.escenas import Escenas
 from pilas3d.habilidades import Habilidades
+from pilas3d.depurador import Depurador
 
 VERSION = "0.1.0"
 
@@ -61,6 +62,7 @@ class Pilas(object):
         self.escenas = Escenas(self)
         self.colores = colores
         self.habilidades = Habilidades()
+        self.depurador = Depurador(self)
 
         if sin_ventana:
             self.ventana = None
@@ -69,7 +71,7 @@ class Pilas(object):
             from pilas3d.ventana import Ventana
 
             self.ventana = Ventana(self, ancho, alto, titulo)
-            self.control = Control(self.ventana.teclas)
+            self.control = Control(self.ventana)
 
         self.escenas.Normal()
 

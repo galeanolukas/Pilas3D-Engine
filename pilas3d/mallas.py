@@ -10,17 +10,17 @@ import math
 from pyglet.gl import GL_TRIANGLES, GL_LINES
 
 
-def cubo(lado=1.0):
-    """Cubo centrado en el origen."""
-    s = lado / 2.0
+def cuboide(ancho=1.0, alto=1.0, profundidad=1.0):
+    """Prisma rectangular centrado en el origen."""
+    ax, ay, az = ancho / 2.0, alto / 2.0, profundidad / 2.0
     # (normal, 4 vértices de la cara)
     caras = [
-        ((0, 0, 1), [(-s, -s, s), (s, -s, s), (s, s, s), (-s, s, s)]),
-        ((0, 0, -1), [(s, -s, -s), (-s, -s, -s), (-s, s, -s), (s, s, -s)]),
-        ((1, 0, 0), [(s, -s, s), (s, -s, -s), (s, s, -s), (s, s, s)]),
-        ((-1, 0, 0), [(-s, -s, -s), (-s, -s, s), (-s, s, s), (-s, s, -s)]),
-        ((0, 1, 0), [(-s, s, s), (s, s, s), (s, s, -s), (-s, s, -s)]),
-        ((0, -1, 0), [(-s, -s, -s), (s, -s, -s), (s, -s, s), (-s, -s, s)]),
+        ((0, 0, 1), [(-ax, -ay, az), (ax, -ay, az), (ax, ay, az), (-ax, ay, az)]),
+        ((0, 0, -1), [(ax, -ay, -az), (-ax, -ay, -az), (-ax, ay, -az), (ax, ay, -az)]),
+        ((1, 0, 0), [(ax, -ay, az), (ax, -ay, -az), (ax, ay, -az), (ax, ay, az)]),
+        ((-1, 0, 0), [(-ax, -ay, -az), (-ax, -ay, az), (-ax, ay, az), (-ax, ay, -az)]),
+        ((0, 1, 0), [(-ax, ay, az), (ax, ay, az), (ax, ay, -az), (-ax, ay, -az)]),
+        ((0, -1, 0), [(-ax, -ay, -az), (ax, -ay, -az), (ax, -ay, az), (-ax, -ay, az)]),
     ]
     posiciones = []
     normales = []
@@ -29,6 +29,11 @@ def cubo(lado=1.0):
             posiciones.extend(triangulo)
             normales.extend(normal)
     return posiciones, normales, GL_TRIANGLES
+
+
+def cubo(lado=1.0):
+    """Cubo centrado en el origen."""
+    return cuboide(lado, lado, lado)
 
 
 def esfera(radio=1.0, meridianos=24, paralelos=16):
@@ -58,6 +63,41 @@ def esfera(radio=1.0, meridianos=24, paralelos=16):
                 posiciones.extend(v)
                 normales.extend((v[0] / radio, v[1] / radio, v[2] / radio))
     return posiciones, normales, GL_TRIANGLES
+
+
+def esfera_alambrada(radio=1.0, meridianos=16, paralelos=10):
+    """Esfera de líneas (wireframe), rojiza, para radios de colisión."""
+    posiciones = []
+
+    # Anillos horizontales (paralelos al plano XZ)
+    for i in range(1, paralelos):
+        lat = math.pi * i / paralelos
+        y = radio * math.cos(lat)
+        r = radio * math.sin(lat)
+        for j in range(meridianos):
+            a0 = 2 * math.pi * j / meridianos
+            a1 = 2 * math.pi * (j + 1) / meridianos
+            posiciones.extend([
+                r * math.cos(a0), y, r * math.sin(a0),
+                r * math.cos(a1), y, r * math.sin(a1),
+            ])
+
+    # Círculos verticales que pasan por los polos
+    for j in range(meridianos // 2):
+        lon = math.pi * j / (meridianos // 2)
+        for i in range(meridianos):
+            t0 = 2 * math.pi * i / meridianos
+            t1 = 2 * math.pi * (i + 1) / meridianos
+            posiciones.extend([
+                radio * math.sin(t0) * math.cos(lon), radio * math.cos(t0),
+                radio * math.sin(t0) * math.sin(lon),
+                radio * math.sin(t1) * math.cos(lon), radio * math.cos(t1),
+                radio * math.sin(t1) * math.sin(lon),
+            ])
+
+    normales = [0.0] * len(posiciones)
+    colores = [1.0, 0.3, 0.3, 1.0] * (len(posiciones) // 3)
+    return posiciones, normales, GL_LINES, colores
 
 
 def rejilla(tamano=10, divisiones=10):

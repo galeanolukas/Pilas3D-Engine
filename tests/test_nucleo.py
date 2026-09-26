@@ -227,3 +227,60 @@ def test_mostrar_y_ocultar_ejes():
         type(a).__name__ != 'Ejes'
         for a in pilas.escena_actual().actores
     )
+
+
+def test_depurador_modos():
+    pilas = crear_pilas()
+    pilas.depurador.definir_modos(
+        fps=True, radios_de_colision=True, puntos_de_control=True)
+    assert pilas.depurador.activo()
+    assert pilas._fps_visible
+    pilas.depurador.definir_modos(
+        fps=False, radios_de_colision=False, puntos_de_control=False)
+    assert not pilas.depurador.activo()
+    assert not pilas._fps_visible
+
+
+def test_pared_dimensiones_y_piso():
+    pilas = crear_pilas()
+    pared = pilas.actores.Pared(ancho=4, alto=3, profundidad=0.3)
+    assert pared.y == 1.5  # se apoya sobre el piso
+    import math
+    assert abs(pared.radio_de_colision -
+               math.sqrt(16 + 9 + 0.09) / 2) < 0.01
+
+
+# -- camara orbital y mouse --------------------------------------------------
+
+def test_camara_orbital_calcula_posicion_inicial():
+    pilas = crear_pilas()
+    camara = pilas.escena_actual().camara  # (0, 5, 12), objetivo origen
+    camara.usar_control_orbital()          # sin ventana: no registra handlers
+    assert abs(camara._orbital_distancia - 13.0) < 0.01
+    assert abs(camara._orbital_pitch - 22.62) < 0.1
+    assert abs(camara._orbital_yaw) < 0.01
+
+
+def test_camara_orbital_drag_mueve_posicion():
+    from pyglet.window import mouse
+    pilas = crear_pilas()
+    camara = pilas.escena_actual().camara
+    camara.usar_control_orbital()
+    camara._on_mouse_drag(0, 0, 100, 0, mouse.LEFT, 0)
+    assert abs(camara._orbital_yaw - 40) < 0.01
+    assert camara.x != 0 or camara.z != 12
+
+
+def test_camara_orbital_scroll_acerca():
+    pilas = crear_pilas()
+    camara = pilas.escena_actual().camara
+    camara.usar_control_orbital()
+    d0 = camara._orbital_distancia
+    camara._on_mouse_scroll(0, 0, 0, 1)
+    assert camara._orbital_distancia < d0
+
+
+def test_control_nulo_mouse():
+    pilas = crear_pilas()
+    assert pilas.control.mouse_x == 0
+    assert pilas.control.boton_izquierdo is False

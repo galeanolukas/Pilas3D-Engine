@@ -11,6 +11,7 @@ from pilas3d.actores.cubo import Cubo
 from pilas3d.actores.esfera import Esfera
 from pilas3d.actores.piso import Piso
 from pilas3d.actores.ejes import Ejes
+from pilas3d.actores.pared import Pared
 from pilas3d.actores.texto import Texto, Puntaje
 
 
@@ -33,6 +34,11 @@ class Actores(object):
 
     def Ejes(self, x=0, y=0, z=0, largo=5):
         return Ejes(self._pilas, x=x, y=y, z=z, largo=largo)
+
+    def Pared(self, x=0, y=None, z=0, ancho=4.0, alto=3.0,
+              profundidad=0.3):
+        return Pared(self._pilas, x=x, y=y, z=z, ancho=ancho, alto=alto,
+                     profundidad=profundidad)
 
     def Texto(self, texto="", x=10, y=10, tamano=18):
         return Texto(self._pilas, texto=texto, x=x, y=y, tamano=tamano)
