@@ -469,3 +469,56 @@ def test_musica_cargar():
     musica.pausar()
     musica.continuar()
     musica.detener()
+
+
+# -- carteles (billboards) y animación ----------------------------------------
+
+def test_cartel_mira_a_la_camara():
+    import math
+    pilas = crear_pilas()
+    camara = pilas.escena_actual().camara
+    camara.posicion = (0, 0, 10)
+    cartel = pilas.actores.Cartel(ancho=2, alto=3)
+    m = tuple(cartel.matriz_modelo())
+    # la normal +Z debe quedar apuntando hacia la cámara (en +Z)
+    assert abs(m[8] - 0.0) < 0.01 and abs(m[10] - 1.0) < 0.01
+    # moviendo la cámara a +X el cartel rota 90°
+    camara.posicion = (10, 0, 0)
+    m = tuple(cartel.matriz_modelo())
+    assert abs(m[8] - 1.0) < 0.01 and abs(m[10] - 0.0) < 0.01
+
+
+def test_animacion_avanza_cuadros():
+    pilas = crear_pilas()
+    anim = pilas.actores.Animacion('moneda.png', columnas=8,
+                                 velocidad=10)
+    assert anim.total_cuadros == 8
+    assert anim._uv_escala == (1 / 8.0, 1.0)
+    pilas.dt = 0.2   # 2 cuadros a 10 fps
+    anim.actualizar()
+    assert anim.cuadro == 2
+    assert anim._uv_desplazamiento == (2 / 8.0, 0.0)
+
+
+def test_animacion_no_ciclica_se_elimina():
+    pilas = crear_pilas()
+    escena = pilas.escena_actual()
+    anim = pilas.actores.Animacion('explosion.png', columnas=7,
+                                 velocidad=10, ciclica=False,
+                                 eliminar_al_terminar=True)
+    pilas.dt = 1.0   # más que toda la animación
+    anim.actualizar()
+    assert anim not in escena.actores
+
+
+def test_disparo_usa_radio_de_disparo():
+    pilas = crear_pilas()
+    camara = pilas.escena_actual().camara
+    camara.posicion = (0, 0, 0)
+    camara.objetivo = (0, 0, -10)
+    # desviada 0.5 del rayo: no alcanza con radio 0.1, sí con 1.0
+    lejano = pilas.actores.Esfera(x=0.5, z=-5, radio=0.1)
+    lejano.radio_de_colision = 0.1
+    assert camara.disparar_rayo([lejano]) is None
+    lejano.radio_de_disparo = 1.0
+    assert camara.disparar_rayo([lejano]) is lejano

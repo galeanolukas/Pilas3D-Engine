@@ -10,6 +10,7 @@
 
 import pilas3d
 from pilas3d.actores.esfera import Esfera
+from pilas3d.actores.animacion import Animacion
 
 # 13 filas x 14 columnas; cada celda mide 2 unidades.
 MAPA = """
@@ -31,6 +32,8 @@ pilas = pilas3d.iniciar(ancho=800, alto=600, titulo="pilas3d - mini doom")
 
 TEX_PARED = pilas3d.obtener_ruta('data/caja.png')
 TEX_PISO = pilas3d.obtener_ruta('data/pasto.png')
+SPR_FANTASMA = pilas3d.obtener_ruta('data/fantasma.png')   # 8 cuadros
+SPR_EXPLOSION = pilas3d.obtener_ruta('data/explosion.png')  # 7 cuadros
 
 # Sonidos (se buscan en pilas3d/data/); si no hay placa de audio se
 # cargan deshabilitados y las llamadas no hacen nada.
@@ -47,18 +50,19 @@ pilas.actores.Texto("WASD moverse - mouse mirar - click disparar",
                     x=10, y=30)
 
 
-class Enemigo(Esfera):
-    """Esfera roja que persigue al jugador por el plano XZ."""
+class Enemigo(Animacion):
+    """Fantasma animado (billboard) que persigue al jugador."""
 
     def __init__(self, pilas, jugador=None, **kw):
-        # radio_de_colision más chico que el visual: hay que acercarse
-        # de verdad para que "toque".
-        super(Enemigo, self).__init__(pilas, radio=0.7,
-                                      radio_de_colision=0.45, **kw)
-        self.color = pilas.colores.rojo
+        super(Enemigo, self).__init__(pilas, SPR_FANTASMA, columnas=8,
+                                      velocidad=10, ancho=1.4, alto=1.4,
+                                      **kw)
+        self.radio_de_colision = 0.45  # toque: hay que acercarse
+        self.radio_de_disparo = 0.75   # disparo: cubre todo el sprite
         self.jugador = jugador
 
     def actualizar(self):
+        super(Enemigo, self).actualizar()  # avanza los cuadros
         j = self.jugador
         dx, dz = j.x - self.x, j.z - self.z
         d = (dx ** 2 + dz ** 2) ** 0.5
@@ -66,7 +70,6 @@ class Enemigo(Esfera):
             v = 2.5 * self.pilas.dt
             self.x += dx / d * v
             self.z += dz / d * v
-        self.rotacion_y += 60 * self.pilas.dt
 
         # Si toca al jugador: una vida menos y vuelta al inicio.
         # (en el plano XZ: el jugador y el enemigo tienen distinta y)
@@ -101,6 +104,12 @@ class Jugador(Esfera):
             blanco = self.pilas.escena_actual().camara.disparar_rayo(
                 self.enemigos, alcance=40)
             if blanco:
+                # explosión animada donde estaba el enemigo
+                pilas.actores.Animacion(
+                    SPR_EXPLOSION, columnas=7, velocidad=14,
+                    ciclica=False, eliminar_al_terminar=True,
+                    ancho=1.8, alto=1.8,
+                    x=blanco.x, y=blanco.y, z=blanco.z)
                 blanco.eliminar()
                 self.enemigos.remove(blanco)
                 sonido_explosion.reproducir()
@@ -125,7 +134,7 @@ def hacer_pared(p, x, z):
 
 
 def hacer_enemigo(p, x, z):
-    enemigo = Enemigo(p, x=x, y=0.7, z=z)
+    enemigo = Enemigo(p, x=x, y=0.9, z=z)
     enemigos.append(enemigo)
     return enemigo
 

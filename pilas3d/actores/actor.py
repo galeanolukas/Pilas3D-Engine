@@ -46,6 +46,12 @@ class Actor(object):
         self._color = colores.blanco
         self._imagen = None
         self._textura = None
+        self._uv_escala = (1.0, 1.0)
+        self._uv_desplazamiento = (0.0, 0.0)
+
+        #: Radio para ``camara.disparar_rayo``; None usa
+        #: ``radio_de_colision``. Útil en carteles altos.
+        self.radio_de_disparo = None
 
         self.radio_de_colision = 1.0
         self._habilidades = []
@@ -381,6 +387,8 @@ class Actor(object):
             self._construir_gl()
         programa = shaders.obtener_programa()
         programa["modelo"] = self.matriz_modelo()
+        programa["uv_escala"] = self._uv_escala
+        programa["uv_desplazamiento"] = self._uv_desplazamiento
         if self._imagen is not None:
             if self._textura is None:
                 self._cargar_textura()

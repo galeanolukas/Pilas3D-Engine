@@ -17,6 +17,8 @@ in vec2 texcoords;
 uniform mat4 proyeccion;
 uniform mat4 vista;
 uniform mat4 modelo;
+uniform vec2 uv_escala;
+uniform vec2 uv_desplazamiento;
 
 out vec4 v_color;
 out vec2 v_tex;
@@ -31,7 +33,7 @@ void main()
     float factor = length(normal) < 0.001 ? 1.0 : (0.35 + 0.65 * difusa);
 
     v_color = vec4(color.rgb * factor, color.a);
-    v_tex = texcoords;
+    v_tex = texcoords * uv_escala + uv_desplazamiento;
 }
 """
 
@@ -49,6 +51,9 @@ void main()
 {
     vec4 base = usar_textura ? texture(textura, v_tex) : vec4(1.0);
     fragmento = base * v_color;
+    // Descarta píxeles transparentes (sprites/billboards): evita
+    // que la parte invisible del quad oculte lo que está detrás.
+    if (fragmento.a < 0.1) discard;
 }
 """
 

@@ -14,6 +14,8 @@ from pilas3d.actores.ejes import Ejes
 from pilas3d.actores.pared import Pared
 from pilas3d.actores.plano import Plano
 from pilas3d.actores.mapa import Mapa
+from pilas3d.actores.cartel import Cartel
+from pilas3d.actores.animacion import Animacion
 from pilas3d.actores.texto import Texto, Puntaje
 
 
@@ -46,6 +48,17 @@ class Actores(object):
     def Plano(self, x=0, y=0, z=0, ancho=20, profundidad=20):
         return Plano(self._pilas, x=x, y=y, z=z, ancho=ancho,
                      profundidad=profundidad)
+
+    def Cartel(self, x=0, y=0, z=0, ancho=1.0, alto=1.0):
+        return Cartel(self._pilas, x=x, y=y, z=z, ancho=ancho, alto=alto)
+
+    def Animacion(self, imagen, columnas, filas=1, x=0, y=0, z=0,
+                  ancho=1.0, alto=1.0, velocidad=10, ciclica=True,
+                  eliminar_al_terminar=False):
+        return Animacion(
+            self._pilas, imagen, columnas, filas=filas, x=x, y=y, z=z,
+            ancho=ancho, alto=alto, velocidad=velocidad, ciclica=ciclica,
+            eliminar_al_terminar=eliminar_al_terminar)
 
     def Mapa(self, matriz, simbolos, tamano_celda=2.0, x=0, y=0, z=0):
         return Mapa(self._pilas, matriz, simbolos,

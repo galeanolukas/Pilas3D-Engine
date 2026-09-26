@@ -52,8 +52,9 @@ class Camara(object):
     def disparar_rayo(self, actores, alcance=100.0):
         """Retorna el actor más cercano alcanzado por un rayo de vista.
 
-        Intersección rayo-esfera usando ``radio_de_colision`` de cada
-        actor. Devuelve None si no alcanza a nadie.
+        Intersección rayo-esfera usando ``radio_de_disparo`` de cada
+        actor (o ``radio_de_colision`` si no lo define). Devuelve None
+        si no alcanza a nadie.
         """
         origen = Vec3(self.x, self.y, self.z)
         direccion = self.direccion()
@@ -61,13 +62,15 @@ class Camara(object):
         t_min = alcance
 
         for actor in actores:
+            radio = actor.radio_de_disparo
+            if radio is None:
+                radio = actor.radio_de_colision
             oc = Vec3(*actor.posicion) - origen
             t = oc.dot(direccion)
             if t < 0 or t > t_min:
                 continue
             punto = origen + direccion * t
-            if (Vec3(*actor.posicion) - punto).length() <= \
-                    actor.radio_de_colision:
+            if (Vec3(*actor.posicion) - punto).length() <= radio:
                 mejor = actor
                 t_min = t
         return mejor

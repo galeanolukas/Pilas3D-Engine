@@ -108,6 +108,25 @@ def plano(ancho=20.0, profundidad=20.0):
     return posiciones, normales, GL_TRIANGLES, None, uvs
 
 
+def cartel(ancho=1.0, alto=1.0):
+    """Cuadro vertical centrado en el origen, mirando hacia +Z.
+
+    Pensado para billboards (sprites que siempre miran a la cámara)
+    con textura transparente. Los UVs cubren [0, 1].
+    """
+    ax, ay = ancho / 2.0, alto / 2.0
+    v = [(-ax, -ay, 0), (ax, -ay, 0), (ax, ay, 0), (-ax, ay, 0)]
+    uv = [(0, 0), (1, 0), (1, 1), (0, 1)]
+    posiciones = []
+    normales = []
+    uvs = []
+    for i in (0, 1, 2, 0, 2, 3):
+        posiciones.extend(v[i])
+        normales.extend((0, 0, 1))
+        uvs.extend(uv[i])
+    return posiciones, normales, GL_TRIANGLES, None, uvs
+
+
 def esfera_alambrada(radio=1.0, meridianos=16, paralelos=10):
     """Esfera de líneas (wireframe), rojiza, para radios de colisión."""
     posiciones = []

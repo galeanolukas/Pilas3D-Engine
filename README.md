@@ -72,6 +72,8 @@ python3 -m venv .venv
 | `pilas.control.mouse_x/y`     | posición y botones del mouse         |
 | `pilas.sonidos.cargar()`      | igual (`reproducir`, `detener`, `pausar`, `continuar`, `volumen`) |
 | `pilas.musica.cargar()`       | igual (streaming, bucle por defecto, `detener_gradualmente`) |
+| `Grilla`/`Animacion`          | `pilas.actores.Animacion(img, columnas, filas, velocidad)` (billboard animado) |
+| —                             | `pilas.actores.Cartel()` (sprite que siempre mira a la cámara) |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
 
 ## Licencia
