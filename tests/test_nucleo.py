@@ -111,3 +111,96 @@ def test_puntaje_sin_ventana():
     puntaje.aumentar(5)
     assert puntaje.valor == 6
     assert puntaje.texto == "Puntos: 6"
+
+
+# -- tareas ------------------------------------------------------------------
+
+def test_tarea_una_vez():
+    pilas = crear_pilas()
+    llamadas = []
+    pilas.tareas.una_vez(0.5, lambda: llamadas.append(1))
+    escena = pilas.escena_actual()
+    escena.actualizar(0.3)
+    escena.actualizar(0.3)   # contador llega a 0.6 > 0.5
+    escena.actualizar(0.3)
+    assert llamadas == [1]
+    assert pilas.tareas.obtener_cantidad_de_tareas_planificadas() == 0
+
+
+def test_tarea_siempre_se_repite():
+    pilas = crear_pilas()
+    llamadas = []
+    pilas.tareas.siempre(0.5, lambda: llamadas.append(1))
+    escena = pilas.escena_actual()
+    for _ in range(6):
+        escena.actualizar(0.5)  # ejecuta a los 0.5, 1.0, 1.5...
+    assert len(llamadas) >= 3
+
+
+def test_tarea_condicional_se_detiene():
+    pilas = crear_pilas()
+    llamadas = []
+
+    def crecer():
+        llamadas.append(1)
+        return len(llamadas) < 3
+
+    pilas.tareas.condicional(0.1, crecer)
+    escena = pilas.escena_actual()
+    for _ in range(10):
+        escena.actualizar(0.1)
+    assert len(llamadas) == 3
+
+
+def test_tarea_eliminar():
+    pilas = crear_pilas()
+    llamadas = []
+    tarea = pilas.tareas.siempre(0.1, lambda: llamadas.append(1))
+    tarea.eliminar()
+    pilas.escena_actual().actualizar(1.0)
+    assert llamadas == []
+
+
+# -- habilidades --------------------------------------------------------------
+
+def test_aprender_y_tiene_habilidad():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    cubo.aprender(pilas.habilidades.GirarConstantemente, velocidad=90)
+    assert cubo.tiene_habilidad(pilas.habilidades.GirarConstantemente)
+    assert cubo.habilidades.GirarConstantemente is not None
+
+
+def test_habilidad_girar_actualiza_rotacion():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    cubo.aprender(pilas.habilidades.GirarConstantemente, velocidad=90)
+    pilas.escena_actual().actualizar(1.0)
+    assert 89 < cubo.rotacion_y < 91
+
+
+def test_habilidad_rebotar_aplica_gravedad():
+    pilas = crear_pilas()
+    bola = pilas.actores.Esfera(y=5)
+    bola.aprender(pilas.habilidades.RebotarComoPelota,
+                  velocidad_inicial=0)
+    escena = pilas.escena_actual()
+    for _ in range(360):  # 6 segundos a 60 fps: cae, rebota y se asienta
+        escena.actualizar(1 / 60.0)
+    assert abs(bola.y - bola.radio_de_colision) < 0.01
+
+
+def test_eliminar_habilidad():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    cubo.aprender(pilas.habilidades.GirarConstantemente)
+    cubo.eliminar_habilidad(pilas.habilidades.GirarConstantemente)
+    pilas.escena_actual().actualizar(1.0)
+    assert cubo.rotacion_y == 0
+
+
+def test_aprender_por_nombre():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    cubo.aprender('GirarConstantemente')
+    assert cubo.tiene_habilidad(pilas.habilidades.GirarConstantemente)

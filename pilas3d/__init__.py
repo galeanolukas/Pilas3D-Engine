@@ -20,6 +20,7 @@ from pilas3d import colores
 from pilas3d.actores import Actores
 from pilas3d.control import Control, ControlNulo
 from pilas3d.escenas import Escenas
+from pilas3d.habilidades import Habilidades
 
 VERSION = "0.1.0"
 
@@ -39,6 +40,7 @@ class Pilas(object):
         self.actores = Actores(self)
         self.escenas = Escenas(self)
         self.colores = colores
+        self.habilidades = Habilidades()
 
         if sin_ventana:
             self.ventana = None
@@ -54,11 +56,16 @@ class Pilas(object):
     def escena_actual(self):
         return self._escena_actual
 
+    @property
+    def tareas(self):
+        """El planificador de tareas de la escena actual."""
+        return self._escena_actual.tareas
+
     def _definir_escena(self, escena):
         self._escena_actual = escena
 
     def _tick(self, dt):
-        self.dt = dt
+        # escena.actualizar actualiza self.dt
         self._escena_actual.actualizar(dt)
 
     def ejecutar(self):

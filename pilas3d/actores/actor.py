@@ -10,6 +10,7 @@ import math
 from pyglet.math import Mat4, Vec3
 
 from pilas3d import colores, shaders
+from pilas3d.habilidades import ProxyHabilidades
 
 
 class Actor(object):
@@ -42,6 +43,8 @@ class Actor(object):
         self._color = colores.blanco
 
         self.radio_de_colision = 1.0
+        self._habilidades = []
+        self.habilidades = ProxyHabilidades(self._habilidades)
         self._vertex_list = None
         self._modo = None
         self._matriz = None
@@ -198,6 +201,59 @@ class Actor(object):
         radios = self.radio_de_colision + otro.radio_de_colision
         return self.distancia_con(otro) <= radios
 
+    # -- habilidades ----------------------------------------------------------
+
+    def aprender(self, clase_habilidad, *args, **kwargs):
+        """Aprende una habilidad (clase que hereda de ``Habilidad``).
+
+        >>> cubo.aprender(pilas.habilidades.MoverseConElTeclado)
+        """
+        from pilas3d.habilidades import Habilidad
+
+        if isinstance(clase_habilidad, str):
+            clase_habilidad = (
+                self.pilas.habilidades.buscar_habilidad_por_nombre(
+                    clase_habilidad))
+
+        if not issubclass(clase_habilidad, Habilidad):
+            raise TypeError(
+                "El actor solo puede aprender clases que hereden "
+                "de pilas3d.habilidades.Habilidad")
+
+        if self.tiene_habilidad(clase_habilidad):
+            self.eliminar_habilidad(clase_habilidad)
+
+        habilidad = clase_habilidad(self.pilas)
+        habilidad.iniciar(self, *args, **kwargs)
+        self._habilidades.append(habilidad)
+        return habilidad
+
+    def tiene_habilidad(self, clase_habilidad):
+        return clase_habilidad in [h.__class__ for h in self._habilidades]
+
+    def obtener_habilidad(self, clase_habilidad):
+        for h in self._habilidades:
+            if h.__class__ == clase_habilidad:
+                return h
+        return None
+
+    def eliminar_habilidad(self, clase_habilidad):
+        habilidad = self.obtener_habilidad(clase_habilidad)
+        if habilidad:
+            self._habilidades.remove(habilidad)
+
+    def eliminar_habilidades(self):
+        for h in list(self._habilidades):
+            self._habilidades.remove(h)
+
+    def actualizar_habilidades(self):
+        for h in list(self._habilidades):
+            h.actualizar()
+
+    def pre_actualizar(self):
+        """Actualiza habilidades antes de ``actualizar`` (como en pilas)."""
+        self.actualizar_habilidades()
+
     # -- ciclo de vida --------------------------------------------------------
 
     def actualizar(self):
@@ -213,6 +269,7 @@ class Actor(object):
 
     def eliminar(self):
         self.terminar()
+        self.eliminar_habilidades()
         if self._vertex_list is not None:
             self._vertex_list.delete()
             self._vertex_list = None

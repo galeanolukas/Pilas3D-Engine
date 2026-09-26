@@ -59,6 +59,8 @@ python3 -m venv .venv
 | `pilas.control.izquierda`…    | igual (flechas + WASD)               |
 | `pilas.actores.Texto/Puntaje` | `pilas.actores.Texto()` / `Puntaje()` (overlay 2D) |
 | `actor.colisiona_con(otro)`   | igual (esfera-esfera con `radio_de_colision`) |
+| `pilas.tareas.siempre(s, f)`  | igual (`una_vez`, `siempre`, `condicional`)  |
+| `actor.aprender(pilas.habilidades.X)` | igual — `MoverseConElTeclado`, `RebotarComoPelota` (3D), `GirarConstantemente` |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
 
 ## Licencia

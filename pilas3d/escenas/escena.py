@@ -3,6 +3,7 @@
 
 from pilas3d import colores
 from pilas3d.escenas.camara import Camara
+from pilas3d.tareas import Tareas
 
 
 class Escena(object):
@@ -11,6 +12,7 @@ class Escena(object):
         self.actores = []
         self.camara = Camara(self)
         self.fondo = colores.gris_oscuro
+        self.tareas = Tareas(self, pilas)
         self.pilas._definir_escena(self)
 
     def agregar_actor(self, actor):
@@ -21,8 +23,11 @@ class Escena(object):
             self.actores.remove(actor)
 
     def actualizar(self, dt):
-        """Llama a ``actualizar`` de cada actor, ~60 veces por segundo."""
+        """Ejecuta tareas, habilidades y ``actualizar`` de cada actor."""
+        self.pilas.dt = dt
+        self.tareas.actualizar(dt)
         for actor in list(self.actores):
+            actor.pre_actualizar()
             actor.actualizar()
 
     def dibujar(self):

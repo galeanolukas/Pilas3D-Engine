@@ -1,8 +1,9 @@
 # -*- encoding: utf-8 -*-
 """Mini-juego completo: recolectar monedas.
 
-Movés la esfera con flechas o WASD; al tocar una moneda suma puntos
-y reaparece en otro lugar. Usa colisiones, texto y cámara que sigue.
+Movés la esfera con flechas o WASD (habilidad MoverseConElTeclado);
+las monedas rebotan (RebotarComoPelota) y giran (GirarConstantemente),
+y aparecen nuevas cada 5 segundos con pilas.tareas.siempre.
 """
 
 import random
@@ -10,24 +11,25 @@ import random
 import pilas3d
 from pilas3d.actores.esfera import Esfera
 
-AREA = 9  # las monedas aparecen dentro de un cuadrado de 2*AREA
+AREA = 9
+MAX_MONEDAS = 12
 
 
 class Moneda(Esfera):
     def __init__(self, pilas, **kw):
         super(Moneda, self).__init__(pilas, radio=0.4, **kw)
         self.color = pilas.colores.amarillo
+        self.aprender(pilas.habilidades.GirarConstantemente, velocidad=120)
+        self.aprender(pilas.habilidades.RebotarComoPelota,
+                      velocidad_inicial=6)
         self.reposicionar()
 
     def reposicionar(self):
         self.posicion = (
             random.uniform(-AREA, AREA),
-            0.4,
+            random.uniform(0.4, 3),
             random.uniform(-AREA, AREA),
         )
-
-    def actualizar(self):
-        self.rotacion_y += 90 * self.pilas.dt
 
 
 class Jugador(Esfera):
@@ -36,19 +38,9 @@ class Jugador(Esfera):
         self.color = pilas.colores.celeste
         self.monedas = monedas
         self.puntaje = puntaje
+        self.aprender(pilas.habilidades.MoverseConElTeclado, velocidad=8)
 
     def actualizar(self):
-        v = 8 * self.pilas.dt
-        c = self.pilas.control
-        if c.izquierda:
-            self.x -= v
-        if c.derecha:
-            self.x += v
-        if c.arriba:
-            self.z -= v
-        if c.abajo:
-            self.z += v
-
         for moneda in self.monedas:
             if self.colisiona_con(moneda):
                 moneda.reposicionar()
@@ -73,4 +65,12 @@ pilas.actores.Texto(
 monedas = [Moneda(pilas) for _ in range(6)]
 Jugador(pilas, monedas, puntaje, y=0.7)
 
+
+def crear_moneda():
+    """Aparece una moneda nueva cada 5 segundos (hasta MAX_MONEDAS)."""
+    if len(monedas) < MAX_MONEDAS:
+        monedas.append(Moneda(pilas))
+
+
+pilas.tareas.siempre(5, crear_moneda)
 pilas.ejecutar()
