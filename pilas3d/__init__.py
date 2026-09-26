@@ -24,6 +24,8 @@ from pilas3d.control import Control, ControlNulo
 from pilas3d.escenas import Escenas
 from pilas3d.habilidades import Habilidades
 from pilas3d.depurador import Depurador
+from pilas3d.sonidos import Sonidos
+from pilas3d.musica import _Musica
 
 VERSION = "0.1.0"
 
@@ -65,6 +67,8 @@ class Pilas(object):
         self.colores = colores
         self.habilidades = Habilidades()
         self.depurador = Depurador(self)
+        self.sonidos = Sonidos(self)
+        self.musica = _Musica(self)
 
         if sin_ventana:
             self.ventana = None

@@ -422,3 +422,50 @@ def test_obtener_ruta():
     assert ruta.endswith('/pilas3d/data/pasto.png')
     import os
     assert os.path.exists(ruta)
+
+
+# -- sonidos y música ----------------------------------------------------------
+
+def test_sonidos_cargar():
+    pilas = crear_pilas()
+    sonido = pilas.sonidos.cargar('tick.wav')
+    assert sonido.ruta.endswith('tick.wav')
+    # reproducir/detener no fallan con o sin placa de audio
+    sonido.reproducir()
+    sonido.reproducir(repetir=True)
+    sonido.pausar()
+    sonido.continuar()
+    sonido.detener()
+
+
+def test_sonidos_deshabilitar():
+    from pilas3d.sonidos import Sonido, SonidoDeshabilitado
+    pilas = crear_pilas()
+    pilas.sonidos.deshabilitar()
+    try:
+        sonido = pilas.sonidos.cargar('tick.wav')
+        assert isinstance(sonido, SonidoDeshabilitado)
+        sonido.reproducir()
+        sonido.detener_gradualmente(0.1)
+    finally:
+        pilas.sonidos.habilitar()
+    assert Sonido.deshabilitado is False
+
+
+def test_sonidos_ruta_inexistente():
+    pilas = crear_pilas()
+    try:
+        pilas.sonidos.cargar('no_existe.wav')
+        assert False, "debió lanzar IOError"
+    except IOError:
+        pass
+
+
+def test_musica_cargar():
+    pilas = crear_pilas()
+    musica = pilas.musica.cargar('tick.wav')
+    musica.reproducir()
+    musica.volumen = 0.5
+    musica.pausar()
+    musica.continuar()
+    musica.detener()

@@ -70,6 +70,8 @@ python3 -m venv .venv
 | —                             | `camara.disparar_rayo(actores)` (rayo-esfera, para disparos) |
 | —                             | `pilas.actores.Pared()` + `escena.obstaculos` (bloquean el paso) |
 | `pilas.control.mouse_x/y`     | posición y botones del mouse         |
+| `pilas.sonidos.cargar()`      | igual (`reproducir`, `detener`, `pausar`, `continuar`, `volumen`) |
+| `pilas.musica.cargar()`       | igual (streaming, bucle por defecto, `detener_gradualmente`) |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
 
 ## Licencia

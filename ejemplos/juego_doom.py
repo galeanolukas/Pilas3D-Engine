@@ -32,6 +32,13 @@ pilas = pilas3d.iniciar(ancho=800, alto=600, titulo="pilas3d - mini doom")
 TEX_PARED = pilas3d.obtener_ruta('data/caja.png')
 TEX_PISO = pilas3d.obtener_ruta('data/pasto.png')
 
+# Sonidos (se buscan en pilas3d/data/); si no hay placa de audio se
+# cargan deshabilitados y las llamadas no hacen nada.
+sonido_disparo = pilas.sonidos.cargar('tick.wav')
+sonido_explosion = pilas.sonidos.cargar('explosion.wav')
+sonido_herido = pilas.sonidos.cargar('grito.wav')
+sonido_victoria = pilas.sonidos.cargar('smile.wav')
+
 puntaje = pilas.actores.Puntaje(x=10, y=60, prefijo="Puntos: ")
 vidas = pilas.actores.Puntaje(x=200, y=60, prefijo="Vidas: ")
 vidas.valor = 3
@@ -64,6 +71,7 @@ class Enemigo(Esfera):
         # Si toca al jugador: una vida menos y vuelta al inicio.
         # (en el plano XZ: el jugador y el enemigo tienen distinta y)
         if self.colisiona_en_plano_con(j):
+            sonido_herido.reproducir()
             j.posicion = jugador_inicio
             vidas.valor -= 1
             vidas.texto = "Vidas: %d" % vidas.valor
@@ -89,13 +97,16 @@ class Jugador(Esfera):
         if self.pilas.control.boton_izquierdo and \
                 self.espera_disparo <= 0:
             self.espera_disparo = 0.3
+            sonido_disparo.reproducir()
             blanco = self.pilas.escena_actual().camara.disparar_rayo(
                 self.enemigos, alcance=40)
             if blanco:
                 blanco.eliminar()
                 self.enemigos.remove(blanco)
+                sonido_explosion.reproducir()
                 puntaje.aumentar()
                 if not self.enemigos:
+                    sonido_victoria.reproducir()
                     pilas.actores.Texto("GANASTE!", x=340, y=200,
                                         tamano=40)
 
