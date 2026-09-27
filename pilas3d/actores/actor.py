@@ -460,6 +460,7 @@ class Actor(object):
             self._construir_gl()
         programa = shaders.obtener_programa()
         programa["modelo"] = self.matriz_modelo()
+        programa["punto_tamano"] = getattr(self, 'punto_tamano', 1.0)
         programa["uv_escala"] = self._uv_escala
         programa["uv_desplazamiento"] = self._uv_desplazamiento
         if self._imagen is not None:

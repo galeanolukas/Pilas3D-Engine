@@ -123,6 +123,14 @@ Luces y sombras
     pilas.actores.Cielo()                      # cielo estrellado
     pilas.actores.Cielo('mi_fondo.png')        # o con textura propia
 
+Partículas (efectos)
+    pilas.actores.Particulas(cantidad=100, vida=2, velocidad=3,
+        direccion=(0,1,0), dispersion=0.5, gravedad=0, tamano=4,
+        color=..., color_final=..., ciclico=True)
+    Presets: pilas.actores.Particulas.fuego(pilas) / .humo / .lluvia
+             / .explosion(pilas, x, y, z)      # explosión única
+    emisor.pausar() / emisor.reanudar()
+
 Asistente de IA (opcional, modelo local con Ollama)
     pilas.ayuda("¿cómo hago un enemigo que me persiga?")
     # la primera vez descarga el binario y el modelo (~1 GB)

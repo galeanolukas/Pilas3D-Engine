@@ -22,6 +22,7 @@ uniform mat4 vista;
 uniform mat4 modelo;
 uniform vec2 uv_escala;
 uniform vec2 uv_desplazamiento;
+uniform float punto_tamano;    // tamaño en px para GL_POINTS
 
 out vec4 v_color;
 out vec2 v_tex;
@@ -35,6 +36,7 @@ void main()
     v_normal = mat3(modelo) * normal;
     v_color = color;
     v_tex = texcoords * uv_escala + uv_desplazamiento;
+    gl_PointSize = punto_tamano;
 }
 """
 

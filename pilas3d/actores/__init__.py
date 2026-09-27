@@ -23,6 +23,7 @@ from pilas3d.actores.modelo_animado import ModeloAnimado
 from pilas3d.actores.mundo import Mundo
 from pilas3d.actores.modelo_json import ModeloJSON
 from pilas3d.actores.texto import Texto, Puntaje
+from pilas3d.actores.particulas import Particulas
 
 
 class Actores(object):
@@ -99,6 +100,19 @@ class Actores(object):
             eliminar_al_terminar=eliminar_al_terminar,
             x=x, y=y, z=z, escala=escala)
 
+    def Particulas(self, cantidad=100, vida=2.0, velocidad=3.0,
+                   direccion=(0, 1, 0), dispersion=0.5, gravedad=0.0,
+                   color=None, color_final=None, tamano=4.0,
+                   ciclico=True, x=0, y=0, z=0):
+        """Emisor de partículas. Presets: ``Particulas.fuego(pilas)``,
+        ``.humo``, ``.lluvia``, ``.explosion``."""
+        return Particulas(
+            self._pilas, cantidad=cantidad, vida=vida,
+            velocidad=velocidad, direccion=direccion,
+            dispersion=dispersion, gravedad=gravedad, color=color,
+            color_final=color_final, tamano=tamano, ciclico=ciclico,
+            x=x, y=y, z=z)
+
     def Mapa(self, matriz, simbolos, tamano_celda=2.0, x=0, y=0, z=0):
         return Mapa(self._pilas, matriz, simbolos,
                     tamano_celda=tamano_celda, x=x, y=y, z=z)
@@ -110,3 +124,10 @@ class Actores(object):
         return Puntaje(
             self._pilas, x=x, y=y, tamano=tamano, prefijo=prefijo
         )
+
+
+# Los presets del emisor quedan accesibles desde la fábrica:
+# ``pilas.actores.Particulas.fuego(pilas)``, ``.humo``, ``.lluvia``,
+# ``.explosion``.
+for _preset in ('fuego', 'humo', 'lluvia', 'explosion'):
+    setattr(Actores.Particulas, _preset, getattr(Particulas, _preset))

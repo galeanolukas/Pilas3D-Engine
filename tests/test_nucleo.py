@@ -1101,6 +1101,32 @@ def test_perseguir_sin_obstaculos_va_derecho():
     assert enemigo.distancia_con(objetivo) < 1.5
 
 
+def test_particulas_emiten_y_renacen():
+    pilas = crear_pilas()
+    p = pilas.actores.Particulas(cantidad=20, vida=0.1, velocidad=2)
+    for _ in range(30):           # ~0.5s: todas debieron re-nacer
+        p.actualizar()
+    # con ciclico todas siguen vivas (edad < ttl) y se movieron
+    assert all(p._edad[i] < p._ttl[i] for i in range(20))
+    assert any(p._px[i] != 0 or p._py[i] != 0 or p._pz[i] != 0
+               for i in range(20))
+
+
+def test_particulas_explosion_muere():
+    pilas = crear_pilas()
+    p = pilas.actores.Particulas.explosion(pilas)
+    assert not p.ciclico
+    for _ in range(120):          # ~2s > vida 0.9s
+        p.actualizar()
+    assert all(p._edad[i] >= p._ttl[i] for i in range(p.cantidad))
+
+
+def test_particulas_presets_desde_fabrica():
+    pilas = crear_pilas()
+    assert pilas.actores.Particulas.fuego(pilas).gravedad < 0
+    assert pilas.actores.Particulas.lluvia(pilas).direccion[1] == -1
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()
