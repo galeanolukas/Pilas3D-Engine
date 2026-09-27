@@ -13,6 +13,12 @@ así que se comparan directo con lo que recibe
 """
 
 from pyglet.window import key as _k
+from pyglet.window import mouse as _m
+
+# botones del mouse
+BOTON_IZQUIERDO = _m.LEFT
+BOTON_DERECHO = _m.RIGHT
+BOTON_MEDIO = _m.MIDDLE
 
 # movimiento / especiales
 IZQUIERDA = _k.LEFT

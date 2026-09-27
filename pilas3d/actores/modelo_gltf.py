@@ -33,6 +33,9 @@ class ModeloGLTF(Actor):
         self.animacion = None
         self._t = 0.0
         self._armar_malla()
+        # pose original (para reiniciar_pose / edición)
+        self._trs_orig = [(n['t'][:], n['r'][:], n['s'][:])
+                          for n in self._escena['nodos']]
         super(ModeloGLTF, self).__init__(pilas, x=x, y=y, z=z)
         self.escala = escala
         self._aplicar_textura()
@@ -132,6 +135,92 @@ class ModeloGLTF(Actor):
 
     def detener(self):
         self.animacion = None
+
+    # -- edición de pose (editor de personajes) ----------------------------
+
+    def huesos(self):
+        """Lista ``(indice_nodo, nombre)`` de las articulaciones."""
+        skin = self._escena.get('skin')
+        if not skin:
+            return []
+        nodos = self._escena['nodos']
+        return [(j, nodos[j]['nombre'] or 'hueso_%d' % j)
+                for j in skin['articulaciones']]
+
+    def rotar_hueso(self, hueso, eje, grados):
+        """Rota una articulación local ``grados`` alrededor de 'x'/'y'/'z'.
+
+        ``hueso`` es el índice de nodo (o su nombre). Tras rotar hay que
+        llamar a ``refrescar_pose()`` para ver el cambio."""
+        i = self._indice_hueso(hueso)
+        nodo = self._escena['nodos'][i]
+        nodo['r'] = list(gltf.qmul(tuple(nodo['r']),
+                                   gltf.quat_eje(eje, grados)))
+
+    def mover_hueso(self, hueso, dx=0.0, dy=0.0, dz=0.0):
+        """Desplaza localmente la articulación (stretch, offsets)."""
+        i = self._indice_hueso(hueso)
+        t = self._escena['nodos'][i]['t']
+        t[0] += dx
+        t[1] += dy
+        t[2] += dz
+
+    def posicion_hueso(self, hueso):
+        """Posición mundo de una articulación en la pose actual."""
+        i = self._indice_hueso(hueso)
+        g = gltf.matrices_globales(self._escena)[i]
+        return (self.x + g[12] * self.escala,
+                self.y + g[13] * self.escala,
+                self.z + g[14] * self.escala)
+
+    def reiniciar_pose(self):
+        """Vuelve a la pose de carga del archivo."""
+        for nodo, (t, r, s) in zip(self._escena['nodos'], self._trs_orig):
+            nodo['t'], nodo['r'], nodo['s'] = t[:], r[:], s[:]
+        self.refrescar_pose()
+
+    def refrescar_pose(self):
+        """Recomputa la piel con la pose actual (sin animación)."""
+        self._aplicar_piel()
+
+    def guardar_pose(self, ruta):
+        """Guarda la pose actual en JSON: ``{indice: rot_xyzw}``."""
+        import json
+        nodos = self._escena['nodos']
+        datos = {str(j): {'nombre': nodos[j]['nombre'], 'r': nodos[j]['r'],
+                          't': nodos[j]['t'], 's': nodos[j]['s']}
+                 for j, _ in self.huesos()}
+        with open(ruta, 'w') as f:
+            json.dump(datos, f, indent=1)
+
+    def cargar_pose(self, ruta):
+        """Aplica una pose guardada con ``guardar_pose``."""
+        import json
+        with open(ruta) as f:
+            datos = json.load(f)
+        nodos = self._escena['nodos']
+        for i, d in datos.items():
+            nodos[int(i)]['r'] = list(d['r'])
+            if 't' in d:
+                nodos[int(i)]['t'] = list(d['t'])
+            if 's' in d:
+                nodos[int(i)]['s'] = list(d['s'])
+        self.refrescar_pose()
+
+    def _indice_hueso(self, hueso):
+        """Acepta índice de nodo, índice de articulación o nombre."""
+        skin = self._escena.get('skin')
+        if skin is None:
+            raise ValueError("el modelo no tiene esqueleto")
+        nodos = self._escena['nodos']
+        if isinstance(hueso, str):
+            for j in skin['articulaciones']:
+                if nodos[j]['nombre'] == hueso:
+                    return j
+            raise ValueError("no existe el hueso '%s'" % hueso)
+        if hueso in skin['articulaciones']:
+            return hueso
+        return skin['articulaciones'][hueso]
 
     def actualizar(self):
         if self.animacion is None:

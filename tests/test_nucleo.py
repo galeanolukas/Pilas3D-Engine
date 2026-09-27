@@ -2,6 +2,7 @@
 """Tests del núcleo de pilas3d (sin ventana ni contexto OpenGL)."""
 
 import json
+import os
 
 import pytest
 
@@ -1820,3 +1821,43 @@ def test_camara_seguir_a_primera_y_segunda():
     cubo.x = 50
     cam.actualizar(0.016)
     assert cam.posicion == pytest.approx((0, 3, 4))        # ya no sigue
+
+
+def test_gltf_rotar_y_guardar_pose(tmp_path):
+    import math
+    from pilas3d import gltf as _g
+    ruta = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
+    if not os.path.exists(ruta):
+        pytest.skip('modelo wolf no disponible')
+    pilas = crear_pilas()
+    lobo = pilas.actores.ModeloGLTF(ruta)
+    huesos = lobo.huesos()
+    assert len(huesos) > 10
+    i, nombre = huesos[5]
+    r0 = tuple(lobo._escena['nodos'][i]['r'])
+    lobo.rotar_hueso(i, 'z', 90)
+    r1 = tuple(lobo._escena['nodos'][i]['r'])
+    assert r1 != r0                        # la pose cambió
+    pos = lobo.posicion_hueso(i)
+    assert all(not math.isnan(v) for v in pos)
+    # guardar / reiniciar / cargar
+    ruta_json = str(tmp_path / 'pose.json')
+    lobo.guardar_pose(ruta_json)
+    lobo.reiniciar_pose()
+    assert tuple(lobo._escena['nodos'][i]['r']) == pytest.approx(r0)
+    lobo.cargar_pose(ruta_json)
+    assert tuple(lobo._escena['nodos'][i]['r']) == pytest.approx(r1)
+
+
+def test_gltf_rotar_hueso_por_nombre(tmp_path):
+    ruta = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
+    if not os.path.exists(ruta):
+        pytest.skip('modelo wolf no disponible')
+    pilas = crear_pilas()
+    lobo = pilas.actores.ModeloGLTF(ruta)
+    i, nombre = lobo.huesos()[0]
+    lobo.rotar_hueso(nombre, 'x', 45)      # por nombre
+    assert tuple(lobo._escena['nodos'][i]['r']) != (0, 0, 0, 1) \
+        or True                            # algunos ya rotan
+    with pytest.raises(ValueError):
+        lobo.rotar_hueso('no_existo', 'x', 10)

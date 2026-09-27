@@ -244,6 +244,32 @@ def matrices_globales(escena):
     return glob
 
 
+# -- quaternions en convención glTF (x, y, z, w) ------------------------------
+
+
+def qmul(a, b):
+    """Producto a⊗b de quaternions (x,y,z,w): aplica b, luego a."""
+    ax, ay, az, aw = a
+    bx, by, bz, bw = b
+    return (
+        aw * bx + ax * bw + ay * bz - az * by,
+        aw * by - ax * bz + ay * bw + az * bx,
+        aw * bz + ax * by - ay * bx + az * bw,
+        aw * bw - ax * bx - ay * by - az * bz)
+
+
+def quat_eje(eje, grados):
+    """Quaternion de rotación de ``grados`` alrededor de 'x'|'y'|'z'."""
+    import math as _m
+    a = _m.radians(grados) / 2.0
+    s, c = _m.sin(a), _m.cos(a)
+    if eje == 'x':
+        return (s, 0.0, 0.0, c)
+    if eje == 'y':
+        return (0.0, s, 0.0, c)
+    return (0.0, 0.0, s, c)
+
+
 def _lerp(a, b, f):
     return tuple(x + (y - x) * f for x, y in zip(a, b))
 
