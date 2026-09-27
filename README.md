@@ -5,6 +5,8 @@ Motor de videojuegos 3D simple y en español, inspirado en
 Ruscitti. Mantiene su filosofía y API didáctica, pero reemplaza el
 render 2D (QPainter/PyQt4) por OpenGL 3D usando **pyglet**.
 
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-apoyar-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/lukasgaleano)
+
 ```python
 import pilas3d
 from pilas3d.actores.actor import Actor
@@ -166,6 +168,33 @@ bloquear con `ejecutar()`:
 | —                             | `pilas.actores.Sombra(actor)` (sombra falsa tipo blob) |
 | —                             | `pilas.actores.Cielo()` — cielo estrellado (o `Cielo('fondo.png')`) |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
+
+## Colaborar
+
+¡Las contribuciones son bienvenidas! Algunas formas de sumar:
+
+- **Issues y PRs**: reportá bugs, proponé habilidades o actores nuevos,
+  mejorá ejemplos o documentación.
+- **Ideas pendientes**: chunks para mundos voxel grandes, transiciones
+  con fade entre escenas, lanzador gráfico, animación esquelética
+  glTF, más habilidades de pilas (`Disparar`, `PisaPlataformas`…).
+- **Ejemplos**: un nuevo juego o demo usando la API es una gran
+  contribución — mirá `ejemplos/` para el estilo.
+
+Antes de commitear corré los tests:
+
+```bash
+.venv/bin/python -m pytest tests/
+```
+
+### Apoyar el proyecto
+
+Si el motor te resulta útil y querés darle una mano al desarrollo,
+podés invitarme un café:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-lukasgaleano-yellow?logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/lukasgaleano)
+
+**[buymeacoffee.com/lukasgaleano](https://buymeacoffee.com/lukasgaleano)**
 
 ## Licencia
 
