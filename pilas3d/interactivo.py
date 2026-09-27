@@ -30,6 +30,8 @@ ejecutes refresca la escena automáticamente (pilas.paso()).
     ...     pilas.paso()
 
 `pilas.ayuda()` muestra la guía completa de la API.
+`%ia <pregunta>` consulta al asistente local (opcional, IA).
+`%explicar` pide a la IA que explique el último error.
 """
 
 
@@ -53,6 +55,38 @@ def main():
 
     shell = TerminalInteractiveShell.instance(
         user_ns=ns, banner1=BANNER)
+
+    ultimo_error = {'texto': None}
+
+    def guardar_error(result):
+        if getattr(result, 'error_in_exec', None):
+            ultimo_error['texto'] = ''.join(
+                result.error_in_exec.__class__.__name__
+                + ': ' + str(result.error_in_exec))
+        else:
+            ultimo_error['texto'] = None
+
+    def _ia(line):
+        try:
+            from pilas3d.ia.asistente import preguntar
+            print(preguntar(line, contexto=pilas._contexto()))
+        except RuntimeError as e:
+            print("(asistente no disponible: %s)" % e)
+
+    def _explicar(line):
+        if not ultimo_error['texto']:
+            print("No hay ningún error reciente que explicar.")
+            return
+        try:
+            from pilas3d.ia.asistente import explicar_error
+            print(explicar_error(ultimo_error['texto'],
+                                 contexto=pilas._contexto()))
+        except RuntimeError as e:
+            print("(asistente no disponible: %s)" % e)
+
+    shell.register_magic_function(_ia, 'line', 'ia')
+    shell.register_magic_function(_explicar, 'line', 'explicar')
+    shell.events.register('post_run_cell', guardar_error)
     shell.events.register('post_run_cell', refrescar)
     shell.interact()
     pilas.terminar()

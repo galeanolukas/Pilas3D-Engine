@@ -111,6 +111,10 @@ Luces y sombras
     pilas.actores.Cielo()                      # cielo estrellado
     pilas.actores.Cielo('mi_fondo.png')        # o con textura propia
 
+Asistente de IA (opcional, modelo local con Ollama)
+    pilas.ayuda("¿cómo hago un enemigo que me persiga?")
+    # la primera vez descarga el binario y el modelo (~1 GB)
+
 Modo interactivo (consola de Python)
     >>> import pilas3d
     >>> pilas = pilas3d.iniciar()
@@ -259,8 +263,37 @@ class Pilas(object):
         self.ventana.dispatch_pending_events()
         self.ventana.flip()
 
-    def ayuda(self):
-        """Imprime una guía rápida de la API en la consola."""
+    def ayuda(self, consulta=None):
+        """Guía rápida de la API o asistente de IA.
+
+        Sin argumentos imprime la chuleta de siempre. Con una consulta
+        pregunta a un modelo local (Ollama); la primera vez descarga
+        el binario y el modelo a pedido::
+
+            pilas.ayuda()                          # chuleta
+            pilas.ayuda("¿cómo hago un enemigo?")  # IA local
+        """
+        if consulta is None:
+            print(AYUDA)
+            return
+        from pilas3d.ia.asistente import preguntar
+        try:
+            print(preguntar(consulta, contexto=self._contexto()))
+        except RuntimeError as e:
+            print("(asistente no disponible: %s)" % e)
+            print(AYUDA)
+
+    def _contexto(self):
+        """Resumen de la escena para darle contexto al asistente."""
+        escena = self._escena_actual
+        if escena is None:
+            return ''
+        cam = escena.camara
+        return ('escena=%s, actores=%d (%s), camara=(%.1f, %.1f, %.1f)'
+                % (escena.__class__.__name__, len(escena.actores),
+                   ', '.join(a.__class__.__name__
+                             for a in escena.actores[:8]),
+                   cam.x, cam.y, cam.z))
         print(AYUDA)
 
     def interpolar(self, actor, atributo, valores, duracion=1.0,

@@ -950,6 +950,47 @@ def test_puede_explotar_crea_animacion_y_elimina():
                for a in escena.actores)
 
 
+def test_ayuda_sin_argumentos_imprime_chuleta(capsys):
+    pilas = crear_pilas()
+    pilas.ayuda()
+    assert 'pilas3d - guía rápida' in capsys.readouterr().out
+
+
+def test_ayuda_con_consulta_usa_asistente(capsys, monkeypatch):
+    pilas = crear_pilas()
+    import pilas3d.ia.asistente as asistente
+    llamadas = {}
+    monkeypatch.setattr(
+        asistente, 'preguntar',
+        lambda c, contexto='': llamadas.update(
+            consulta=c, contexto=contexto) or 'respuesta IA')
+    pilas.ayuda('¿cómo muevo un cubo?')
+    salida = capsys.readouterr().out
+    assert 'respuesta IA' in salida
+    assert llamadas['consulta'] == '¿cómo muevo un cubo?'
+    assert 'actores=' in llamadas['contexto']
+
+
+def test_ayuda_ia_sin_servidor_cae_a_la_chuleta(capsys, monkeypatch):
+    pilas = crear_pilas()
+    import pilas3d.ia.asistente as asistente
+
+    def fallar(consulta, contexto=''):
+        raise RuntimeError("Ollama no arrancó")
+    monkeypatch.setattr(asistente, 'preguntar', fallar)
+    pilas.ayuda('¿algo?')
+    salida = capsys.readouterr().out
+    assert 'asistente no disponible' in salida
+    assert 'guía rápida' in salida
+
+
+def test_asistente_system_prompt_describe_api_real():
+    from pilas3d.ia.asistente import SYSTEM
+    for nombre in ('MoverseConElTeclado', 'CaminarEnPrimeraPersona',
+                   'Mundo', 'disparar_bloque', 'generar_terreno'):
+        assert nombre in SYSTEM
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()

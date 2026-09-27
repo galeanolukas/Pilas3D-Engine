@@ -40,6 +40,26 @@ python3 -m venv .venv
 .venv/bin/pip install -e .   # opcional: habilita el comando pilas3d
 ```
 
+### Asistente de IA (opcional)
+
+Los instaladores descargan el binario de [Ollama](https://ollama.com)
+(~200 MB) a `pilas3d/_vendor/` — si ya tenés Ollama instalado se usa
+ese. La primera vez que se consulta, se baja el modelo
+`qwen2.5-coder:1.5b` (~1 GB) y después todo corre **local y offline**:
+
+```python
+pilas.ayuda()                                   # chuleta clásica
+pilas.ayuda("¿cómo hago un enemigo que me persiga?")
+# en la consola interactiva:
+In [1]: %ia ¿cómo pongo gravedad?
+In [2]: %explicar        # explica el último error
+```
+
+Sin Ollama el motor funciona igual: `pilas.ayuda()` sigue mostrando la
+guía. Variables de entorno: `PILAS3D_IA_MODELO` (modelo alternativo,
+ej. `qwen2.5-coder:7b` con GPU) y `PILAS3D_IA_GPU=1` (usar GPU en vez
+de CPU).
+
 ## Ejemplos
 
 ```bash
@@ -140,3 +160,7 @@ bloquear con `ejecutar()`:
 ## Licencia
 
 LGPLv3, igual que el proyecto original.
+
+El binario de Ollama (licencia MIT, © Ollama) **no** se distribuye con
+este repositorio: los instaladores lo descargan aparte a
+`pilas3d/_vendor/`, que está en `.gitignore`.

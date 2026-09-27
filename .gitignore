@@ -9,6 +9,10 @@ _deb_extract/
 # Modelos 3D y archivos pesados del usuario (no van al repo)
 modelos/
 
+# Binario de Ollama descargado por los instaladores (MIT, se baja
+# aparte; nunca se commitea por peso y licencia de redistribución)
+pilas3d/_vendor/
+
 # Assets de Minecraft (copyright Mojang - no se pueden publicar)
 Texturas Minecraf/
 /*.rar
