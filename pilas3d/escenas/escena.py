@@ -64,6 +64,7 @@ class Escena(object):
         for actor in list(self.actores):
             actor.pre_actualizar()
             actor.actualizar()
+        self.camara.actualizar(dt)   # seguimiento de cámara, si hay
         self.cuando_actualiza()
 
     def dibujar(self):

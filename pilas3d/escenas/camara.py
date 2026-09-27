@@ -26,6 +26,12 @@ class Camara(object):
         self._orbital_distancia = 0.0
         self._orbital_yaw = 0.0
         self._orbital_pitch = 0.0
+        self._seguir = None
+        self.seguir_modo = 'tercera'
+        self.seguir_distancia = 6.0
+        self.seguir_altura = 3.0
+        self.seguir_ojos = 1.5
+        self.seguir_suavizado = 8.0
 
     @property
     def posicion(self):
@@ -132,6 +138,69 @@ class Camara(object):
             return None
         p = origen + direccion * t
         return (p.x, p.y, p.z)
+
+    # -- seguimiento a un actor (1a/2a/3a persona) -------------------------
+
+    def seguir_a(self, actor, modo='tercera', distancia=6.0,
+                 altura=3.0, ojos=1.5, suavizado=8.0):
+        """Pega la cámara a ``actor``, como en los juegos con tecla V.
+
+        ``modo``:
+          ``'primera'`` — desde los ojos del actor, mira a donde mira
+          él (usa ``rotacion_y``).
+          ``'segunda'`` — cámara frontal: queda delante mirándolo
+          (como lo vería otro personaje).
+          ``'tercera'`` — detrás y arriba, vista de hombro.
+
+        ``distancia``/``altura`` aplican a segunda y tercera;
+        ``ojos`` es la altura de los ojos; ``suavizado`` interpola el
+        movimiento (0 = instantáneo). ``dejar_de_seguir()`` lo suelta.
+        """
+        if modo not in ('primera', 'segunda', 'tercera'):
+            raise ValueError("modo debe ser 'primera', 'segunda' o "
+                             "'tercera'")
+        self._seguir = actor
+        self.seguir_modo = modo
+        self.seguir_distancia = distancia
+        self.seguir_altura = altura
+        self.seguir_ojos = ojos
+        self.seguir_suavizado = suavizado
+
+    def dejar_de_seguir(self):
+        """Suelta el seguimiento; la cámara queda donde está."""
+        self._seguir = None
+
+    def _frente_del_actor(self, actor):
+        """Vector al que mira el actor según su ``rotacion_y``."""
+        rad = math.radians(actor.rotacion_y)
+        return -math.sin(rad), math.cos(rad)
+
+    def actualizar(self, dt):
+        """Actualiza el seguimiento (lo llama la escena cada frame)."""
+        a = self._seguir
+        if a is None or not a.esta_en_escena():
+            return
+        fx, fz = self._frente_del_actor(a)
+        ojos = a.y + self.seguir_ojos
+
+        if self.seguir_modo == 'primera':
+            px, py, pz = a.x, ojos, a.z
+            objetivo = (a.x + fx, ojos, a.z + fz)
+        elif self.seguir_modo == 'segunda':
+            d, h = self.seguir_distancia, self.seguir_altura
+            px, py, pz = a.x + fx * d, a.y + h, a.z + fz * d
+            objetivo = (a.x, ojos, a.z)
+        else:   # tercera
+            d, h = self.seguir_distancia, self.seguir_altura
+            px, py, pz = a.x - fx * d, a.y + h, a.z - fz * d
+            objetivo = (a.x, ojos, a.z)
+
+        k = 1.0 if self.seguir_suavizado <= 0 \
+            else min(1.0, dt * self.seguir_suavizado)
+        self.x += (px - self.x) * k
+        self.y += (py - self.y) * k
+        self.z += (pz - self.z) * k
+        self.objetivo = objetivo
 
     # -- control orbital con el mouse -------------------------------------
 

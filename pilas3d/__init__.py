@@ -88,6 +88,8 @@ Escena y cámara
     camara = pilas.escena_actual().camara
     camara.x/y/z  camara.objetivo = (x, y, z)
     camara.usar_control_orbital()            # drag orbita, rueda zoom
+    camara.seguir_a(actor, modo='tercera')   # 'primera'/'segunda'
+    camara.dejar_de_seguir()                 # vista libre
     camara.disparar_rayo(actores, alcance=40)
     camara.actor_bajo_mouse()                # picking con el mouse
     camara.punto_bajo_mouse(y_plano=0)       # rayo -> punto del suelo

@@ -1786,3 +1786,37 @@ def test_temporizador_ajustar_formato_y_autoeliminar():
     pilas.dt = 0.5
     t.actualizar()
     assert t not in pilas.escena.actores  # se eliminó solo
+
+
+def test_camara_seguir_a_tercera_persona():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo(y=1)
+    cubo.rotacion_y = 0          # mira a +Z
+    cam = pilas.escena.camara
+    cam.seguir_a(cubo, modo='tercera', distancia=6, altura=3,
+                 suavizado=0)
+    cam.actualizar(0.016)
+    assert cam.posicion == pytest.approx((0, 4, -6))   # detrás y arriba
+    assert cam.objetivo == pytest.approx((0, 2.5, 0))  # a los ojos
+    cubo.rotacion_y = 180        # ahora mira a -Z
+    cam.actualizar(0.016)
+    assert cam.posicion == pytest.approx((0, 4, 6))
+
+
+def test_camara_seguir_a_primera_y_segunda():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo(y=1)
+    cam = pilas.escena.camara
+    cam.seguir_a(cubo, modo='primera', ojos=1.6, suavizado=0)
+    cam.actualizar(0.016)
+    assert cam.posicion == pytest.approx((0, 2.6, 0))      # en los ojos
+    assert cam.objetivo == pytest.approx((0, 2.6, 1))      # mirando +Z
+    cam.seguir_a(cubo, modo='segunda', distancia=4, altura=2,
+                 suavizado=0)
+    cam.actualizar(0.016)
+    assert cam.posicion == pytest.approx((0, 3, 4))        # delante
+    assert cam.objetivo == pytest.approx((0, 2.5, 0))
+    cam.dejar_de_seguir()
+    cubo.x = 50
+    cam.actualizar(0.016)
+    assert cam.posicion == pytest.approx((0, 3, 4))        # ya no sigue

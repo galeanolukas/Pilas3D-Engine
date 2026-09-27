@@ -215,6 +215,7 @@ bloquear con `ejecutar()`:
 | `pilas.depurador.definir_modos` | `fps`, `ejes`, `radios_de_colision`, `puntos_de_control` |
 | `pilas.fps.ver()`             | igual                                |
 | —                             | `camara.usar_control_orbital()` (mouse: orbitar + zoom) |
+| —                             | `camara.seguir_a(actor, modo)` — 1ra/2da/3ra persona ('primera','segunda','tercera'), `dejar_de_seguir()` |
 | —                             | `habilidades.CaminarEnPrimeraPersona` (FPS: mouse look + WASD) |
 | —                             | `camara.disparar_rayo(actores)` (rayo-esfera, para disparos) |
 | —                             | `pilas.actores.Pared()` + `escena.obstaculos` (bloquean el paso) |
