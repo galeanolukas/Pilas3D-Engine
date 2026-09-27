@@ -132,6 +132,12 @@ Partículas (efectos)
              / .explosion(pilas, x, y, z)      # explosión única
     emisor.pausar() / emisor.reanudar()
 
+Red (multijugador simple, TCP + JSON)
+    red = pilas.red.hospedar(puerto=7777)        # o .conectar(host, puerto)
+    red.enviar("posicion", x=1, y=0, z=2)        # broadcast a los demás
+    red.cuando_reciba("posicion", fn)            # fn(datos, de_id)
+    # mensajes reservados: 'hola' (tu id), 'entro', 'salio'
+
 Asistente de IA (opcional, modelo local con Ollama)
     pilas.ayuda("¿cómo hago un enemigo que me persiga?")
     # la primera vez descarga el binario y el modelo (~1 GB)
@@ -186,6 +192,8 @@ class Pilas(object):
         self.sonidos = Sonidos(self)
         self.musica = _Musica(self)
         self.interpolaciones = interpolaciones
+        from pilas3d.red import Red
+        self.red = Red(self)
 
         if sin_ventana:
             self.ventana = None
@@ -248,6 +256,7 @@ class Pilas(object):
     def _tick(self, dt):
         # escena.actualizar actualiza self.dt
         self._escena_actual.actualizar(dt)
+        self.red._actualizar()
 
     def ejecutar(self):
         """Inicia el bucle de juego (llamadas a actualizar + dibujar)."""

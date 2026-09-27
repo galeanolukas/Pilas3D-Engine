@@ -1212,3 +1212,40 @@ def test_disparo_usa_radio_de_disparo():
     assert camara.disparar_rayo([lejano]) is None
     lejano.radio_de_disparo = 1.0
     assert camara.disparar_rayo([lejano]) is lejano
+
+
+def test_red_cliente_servidor_localhost():
+    import time
+    host = crear_pilas()
+    cli = crear_pilas()
+    srv = host.red.hospedar(puerto=0)          # puerto 0 = cualquiera libre
+    cli_c = cli.red.conectar('localhost', srv.puerto)
+
+    recibidos_host, recibidos_cli = [], []
+    srv.cuando_reciba('chat',
+                      lambda d, de: recibidos_host.append((d, de)))
+    cli_c.cuando_reciba('chat',
+                        lambda d, de: recibidos_cli.append((d, de)))
+
+    for _ in range(50):                        # esperar el 'hola'
+        if cli_c.id is not None:
+            break
+        time.sleep(0.02); cli._tick(0.01)
+    assert cli_c.id == 1
+
+    cli_c.enviar('chat', texto='hola')
+    for _ in range(50):
+        if recibidos_host:
+            break
+        time.sleep(0.02); host._tick(0.01)
+    assert recibidos_host[0] == ({'texto': 'hola'}, 1)
+
+    srv.enviar('chat', texto='bienvenido')     # broadcast server→cliente
+    for _ in range(50):
+        if recibidos_cli:
+            break
+        time.sleep(0.02); cli._tick(0.01)
+    assert recibidos_cli[0] == ({'texto': 'bienvenido'}, None)
+
+    cli_c.cerrar()
+    srv.cerrar()
