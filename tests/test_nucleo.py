@@ -984,6 +984,13 @@ def test_ayuda_ia_sin_servidor_cae_a_la_chuleta(capsys, monkeypatch):
     assert 'guía rápida' in salida
 
 
+def test_ia_listar_y_borrar_sin_servidor_no_rompe():
+    import pilas3d.ia.servidor as srv
+    # con o sin servidor: devuelve lista y borrar algo inexistente → False
+    assert isinstance(srv.listar_modelos(), list)
+    assert srv.borrar_modelo('no-existe:nunca') is False
+
+
 def test_asistente_system_prompt_describe_api_real():
     from pilas3d.ia.asistente import SYSTEM
     for nombre in ('MoverseConElTeclado', 'CaminarEnPrimeraPersona',

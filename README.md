@@ -67,6 +67,8 @@ Para instalar/cambiar el modelo más tarde:
 ```bash
 .venv/bin/python -m pilas3d.ia --lista                 # catálogo
 .venv/bin/python -m pilas3d.ia qwen2.5-coder:7b        # baja otro
+.venv/bin/python -m pilas3d.ia --instalados            # los que tenés
+.venv/bin/python -m pilas3d.ia borrar qwen2.5-coder:0.5b  # libera espacio
 PILAS3D_IA_MODELO=qwen2.5-coder:7b .venv/bin/pilas3d   # usarlo
 ```
 

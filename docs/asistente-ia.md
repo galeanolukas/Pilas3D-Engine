@@ -81,10 +81,16 @@ solo ocurre la primera vez; después queda en `~/.ollama/models`.
 Elegir otro modelo, **en el instalador o después**:
 
 ```bash
-python -m pilas3d.ia --lista            # catálogo sugerido
-python -m pilas3d.ia qwen2.5-coder:7b   # descarga otro modelo
-PILAS3D_IA_MODELO=qwen2.5-coder:7b      # usarlo (env)
+python -m pilas3d.ia --lista                # catálogo sugerido
+python -m pilas3d.ia qwen2.5-coder:7b       # descarga otro modelo
+python -m pilas3d.ia --instalados           # qué tenés bajado
+python -m pilas3d.ia borrar <modelo>        # libera espacio en disco
+PILAS3D_IA_MODELO=qwen2.5-coder:7b          # usarlo (env)
 ```
+
+Para **cambiar de modelo** basta descargar el nuevo y borrar el viejo
+si querés el espacio — los modelos viven en `~/.ollama/models`, son
+independientes del motor.
 
 | Modelo | Peso | Nota |
 |---|---|---|

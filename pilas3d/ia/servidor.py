@@ -128,6 +128,29 @@ def asegurar_servidor():
     raise RuntimeError("Ollama no arrancó en 10 segundos")
 
 
+def listar_modelos():
+    """Modelos descargados en el servidor local."""
+    try:
+        tags = _get('/api/tags', timeout=5)
+    except urllib.error.URLError:
+        return []
+    return [m.get('name', '') for m in tags.get('models', [])]
+
+
+def borrar_modelo(modelo):
+    """Elimina un modelo descargado (`ollama rm`)."""
+    req = urllib.request.Request(
+        URL_API + '/api/delete',
+        data=json.dumps({'name': modelo}).encode(),
+        headers={'Content-Type': 'application/json'},
+        method='DELETE')
+    try:
+        urllib.request.urlopen(req, timeout=30)
+        return True
+    except urllib.error.URLError:
+        return False
+
+
 def asegurar_modelo(modelo=MODELO):
     """Descarga el modelo si falta (primera vez, ~1 GB)."""
     try:

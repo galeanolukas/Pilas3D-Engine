@@ -7,8 +7,10 @@ de Ollama (si no está) y el modelo (~1 GB) a pedido del usuario.
 """
 
 from pilas3d.ia.servidor import (asegurar_servidor, asegurar_modelo,
+                                 listar_modelos, borrar_modelo,
                                  disponible, MODELO, MODELOS)
 from pilas3d.ia.asistente import preguntar, explicar_error
 
 __all__ = ['preguntar', 'explicar_error', 'asegurar_servidor',
-           'asegurar_modelo', 'disponible', 'MODELO', 'MODELOS']
+           'asegurar_modelo', 'listar_modelos', 'borrar_modelo',
+           'disponible', 'MODELO', 'MODELOS']
