@@ -11,6 +11,8 @@ Carga un modelo glTF riggeado y permite posar sus huesos:
 - M: capturar keyframe   W: borrar último   P: reproducir la
   animación formada por los keyframes (interpolada)
 - J: guardar la animación en 'anim-<modelo>.json'   L: cargarla
+- A: abrir el explorador de archivos para cargar un .glb externo
+  (con caja de selección y nombre personalizado para el modelo)
 - Botón derecho + drag: orbitar la cámara
 - La esfera roja marca la articulación seleccionada
 """
@@ -61,7 +63,14 @@ def autoescala(modelo, objetivo=1.8):
 
 
 estado = {'modelo': None, 'huesos': [], 'sel': 0, 'eje': 'y',
-          'indice': 0, 'frames': []}
+          'indice': 0, 'frames': [], 'modo': 'editar'}
+nombres = {}   # ruta -> nombre amigable elegido al cargar externo
+exp = {'dir': os.path.expanduser('~'), 'sel': 0, 'entradas': []}
+nombrar = {'texto': '', 'ruta': None}
+
+
+def nombre_modelo(ruta):
+    return nombres.get(ruta) or os.path.basename(ruta)
 
 marcador = pilas.actores.Esfera(radio=0.08)
 marcador.color = pilas.colores.rojo
@@ -71,7 +80,8 @@ info = pilas.actores.Texto("", x=10, y=420, tamano=15)
 info.color = pilas.colores.amarillo
 pilas.actores.Texto(
     "N: modelo - arriba/abajo: hueso - X/Y/Z: eje - <-/->: rotar - "
-    "M: keyframe - W: borrar - P: play - J/L: anim - G/C/R: pose",
+    "M: keyframe - W: borrar - P: play - J/L: anim - G/C/R: pose "
+    "- A: cargar .glb externo",
     x=10, y=10)
 
 
@@ -96,7 +106,7 @@ def refrescar_ui():
         lista.texto = ""
         return
     i, nombre = huesos[sel]
-    base = os.path.basename(MODELOS[estado['indice']])
+    base = nombre_modelo(MODELOS[estado['indice']])
     info.texto = "%s  |  hueso: %s  eje: %s" % (base, nombre,
                                                estado['eje'])
     ini = max(0, min(sel - 7, len(huesos) - 14))
@@ -119,10 +129,125 @@ class MarcadorHueso(object):
 pilas.tareas.siempre(0, MarcadorHueso().actualizar)
 
 
+# -- explorador de archivos (cargar .glb externo) -------------------------
+
+def _listar_dir():
+    """Relee exp['dir']: primero '..', luego dirs, luego .glb/.gltf."""
+    try:
+        ent = sorted(os.listdir(exp['dir']))
+    except OSError:
+        ent = []
+    dirs = ['[%s]' % d for d in ent
+            if os.path.isdir(os.path.join(exp['dir'], d))]
+    glbs = [f for f in ent
+            if f.lower().endswith(('.glb', '.gltf'))]
+    exp['entradas'] = ['..'] + dirs + glbs
+    exp['sel'] = min(exp['sel'], len(exp['entradas']) - 1)
+
+
+def _pintar_explorador():
+    info.texto = "Elegir modelo - dir: %s" % exp['dir']
+    ini = max(0, min(exp['sel'] - 7, len(exp['entradas']) - 14))
+    lista.texto = '\n'.join(
+        ('>> ' if ini + k == exp['sel'] else '   ') + e
+        for k, e in enumerate(exp['entradas'][ini:ini + 14]))
+
+
+def abrir_explorador():
+    estado['modo'] = 'explorar'
+    exp['sel'] = 0
+    _listar_dir()
+    _pintar_explorador()
+
+
+def _tecla_explorador(t):
+    s = pilas.simbolos
+    if t == s.ESCAPE:
+        estado['modo'] = 'editar'
+    elif t == s.ARRIBA:
+        exp['sel'] = (exp['sel'] - 1) % len(exp['entradas'])
+    elif t == s.ABAJO:
+        exp['sel'] = (exp['sel'] + 1) % len(exp['entradas'])
+    elif t == s.ENTER:
+        e = exp['entradas'][exp['sel']]
+        if e == '..':
+            exp['dir'] = os.path.dirname(
+                exp['dir'].rstrip(os.sep)) or os.sep
+            exp['sel'] = 0
+            _listar_dir()
+        elif e.startswith('['):
+            exp['dir'] = os.path.join(exp['dir'], e[1:-1])
+            exp['sel'] = 0
+            _listar_dir()
+        else:
+            nombrar['ruta'] = os.path.join(exp['dir'], e)
+            nombrar['texto'] = os.path.splitext(e)[0]
+            estado['modo'] = 'nombre'
+    if estado['modo'] == 'explorar':
+        _pintar_explorador()
+    else:
+        _pintar_nombre()
+
+
+def _pintar_nombre():
+    base = os.path.basename(nombrar['ruta'])
+    info.texto = "nombre para %s (ENTER confirma, ESC cancela)" % base
+    lista.texto = '>> %s_' % nombrar['texto']
+
+
+def _tecla_nombre(t):
+    s = pilas.simbolos
+    if t == s.ESCAPE:
+        estado['modo'] = 'editar'
+        refrescar_ui()
+    elif t == s.BACKSPACE:
+        nombrar['texto'] = nombrar['texto'][:-1]
+        _pintar_nombre()
+    elif t == s.ENTER:
+        ruta = nombrar['ruta']
+        MODELOS.append(ruta)
+        if nombrar['texto'].strip():
+            nombres[ruta] = nombrar['texto'].strip()
+        estado['modo'] = 'editar'
+        estado['indice'] = len(MODELOS) - 1
+        cargar_modelo(estado['indice'])
+
+
+def _al_pulsar_overlay(simbolo, _mod):
+    """Handler sobre la ventana: en modo explorar/nombre consume la
+    tecla (incluido ESC, que cancela en vez de cerrar la ventana)."""
+    if estado['modo'] == 'editar':
+        return None
+    if estado['modo'] == 'explorar':
+        _tecla_explorador(simbolo)
+    else:
+        _tecla_nombre(simbolo)
+    return True
+
+
+def _al_texto_overlay(texto):
+    if estado['modo'] != 'nombre':
+        return None
+    if texto >= ' ' and texto != '\r':
+        nombrar['texto'] += texto
+        _pintar_nombre()
+    return True
+
+
+if pilas.ventana is not None:
+    pilas.ventana.push_handlers(on_key_press=_al_pulsar_overlay,
+                                on_text=_al_texto_overlay)
+
+
 def al_pulsar(tecla):
     s = pilas.simbolos
     modelo = estado['modelo']
     huesos = estado['huesos']
+    if estado['modo'] != 'editar':
+        return          # el overlay ya consumió la tecla
+    if tecla == s.a:
+        abrir_explorador()
+        return
     if tecla == s.n:
         estado['indice'] = (estado['indice'] + 1) % len(MODELOS)
         cargar_modelo(estado['indice'])
