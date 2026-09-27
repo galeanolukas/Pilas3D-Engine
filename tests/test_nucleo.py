@@ -1877,6 +1877,29 @@ def test_gltf_crear_animacion_desde_keyframes():
         lobo.crear_animacion('vacia', [pose_a, dict(pose_a)])
 
 
+def test_gltf_guardar_y_cargar_animacion(tmp_path):
+    ruta = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
+    if not os.path.exists(ruta):
+        pytest.skip('modelo wolf no disponible')
+    pilas = crear_pilas()
+    lobo = pilas.actores.ModeloGLTF(ruta)
+    i, _ = lobo.huesos()[3]
+    pose_a = lobo._pose_actual()
+    lobo.rotar_hueso(i, 'z', 45)
+    lobo.crear_animacion('propia', [pose_a, lobo._pose_actual()])
+    ruta_json = str(tmp_path / 'anim.json')
+    lobo.guardar_animacion(ruta_json, 'propia')
+    # otro modelo la carga y puede animarla
+    otro = pilas.actores.ModeloGLTF(ruta)
+    nombre = otro.cargar_animacion(ruta_json)
+    assert nombre == 'propia'
+    otro.animar(nombre)
+    assert otro.animacion == 'propia'
+    assert otro._escena['animaciones']['propia']['canales']
+    with pytest.raises(ValueError):
+        lobo.guardar_animacion(ruta_json, 'no_existe')
+
+
 def test_gltf_rotar_hueso_por_nombre(tmp_path):
     ruta = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
     if not os.path.exists(ruta):

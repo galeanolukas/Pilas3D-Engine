@@ -246,6 +246,31 @@ class ModeloGLTF(Actor):
             'duracion': tiempos[-1] or duracion}
         return nombre
 
+    def guardar_animacion(self, ruta, nombre=None):
+        """Exporta un clip a JSON (p. ej. uno hecho con
+        ``crear_animacion``). ``nombre`` es el clip activo por
+        defecto."""
+        import json
+        nombre = nombre or self.animacion
+        if nombre not in self._escena['animaciones']:
+            raise ValueError("no hay animación '%s' (tiene: %s)"
+                             % (nombre, self.animaciones()))
+        anim = self._escena['animaciones'][nombre]
+        with open(ruta, 'w') as f:
+            json.dump({'nombre': nombre, 'duracion': anim['duracion'],
+                       'canales': anim['canales']}, f)
+
+    def cargar_animacion(self, ruta):
+        """Importa un clip JSON guardado con ``guardar_animacion``
+        y devuelve su nombre (queda listo para ``animar``)."""
+        import json
+        with open(ruta) as f:
+            datos = json.load(f)
+        self._escena['animaciones'][datos['nombre']] = {
+            'canales': datos['canales'],
+            'duracion': datos['duracion']}
+        return datos['nombre']
+
     def _indice_hueso(self, hueso):
         """Acepta índice de nodo, índice de articulación o nombre."""
         skin = self._escena.get('skin')

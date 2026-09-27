@@ -29,3 +29,5 @@ Texturas Minecraf/
 /*.3ds
 /*.dae
 ejemplos/config-*.json
+ejemplos/pose-*.json
+ejemplos/anim-*.json

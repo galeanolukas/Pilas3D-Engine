@@ -10,6 +10,7 @@ Carga un modelo glTF riggeado y permite posar sus huesos:
 - G: guardar pose en 'pose-<modelo>.json'   C: cargarla   R: reiniciar
 - M: capturar keyframe   W: borrar último   P: reproducir la
   animación formada por los keyframes (interpolada)
+- J: guardar la animación en 'anim-<modelo>.json'   L: cargarla
 - Botón derecho + drag: orbitar la cámara
 - La esfera roja marca la articulación seleccionada
 """
@@ -43,6 +44,11 @@ def ruta_pose(ruta_modelo):
     return os.path.join(DIR_EJ, 'pose-%s.json' % base)
 
 
+def ruta_anim(ruta_modelo):
+    base = os.path.splitext(os.path.basename(ruta_modelo))[0]
+    return os.path.join(DIR_EJ, 'anim-%s.json' % base)
+
+
 def autoescala(modelo, objetivo=1.8):
     """Normaliza el modelo a ~``objetivo`` unidades de alto
     (los .glb vienen en unidades arbitrarias: el Fox está en cm)."""
@@ -65,7 +71,7 @@ info = pilas.actores.Texto("", x=10, y=420, tamano=15)
 info.color = pilas.colores.amarillo
 pilas.actores.Texto(
     "N: modelo - arriba/abajo: hueso - X/Y/Z: eje - <-/->: rotar - "
-    "M: keyframe - W: borrar - P: play - G/C/R: pose",
+    "M: keyframe - W: borrar - P: play - J/L: anim - G/C/R: pose",
     x=10, y=10)
 
 
@@ -172,6 +178,23 @@ def al_pulsar(tecla):
         modelo.animar('mi_anim', ciclica=True)
         info.texto = "reproduciendo %d keyframes" % len(frames)
         return
+    elif tecla == s.j:
+        frames = estado['frames']
+        if len(frames) >= 2:
+            modelo.crear_animacion('mi_anim', frames)
+        if 'mi_anim' not in modelo.animaciones():
+            info.texto = "necesitás >= 2 keyframes (tecla M)"
+            return
+        ruta = ruta_anim(MODELOS[estado['indice']])
+        modelo.guardar_animacion(ruta, 'mi_anim')
+        info.texto = "animación guardada: " + os.path.basename(ruta)
+        return
+    elif tecla == s.l:
+        ruta = ruta_anim(MODELOS[estado['indice']])
+        if os.path.exists(ruta):
+            modelo.animar(modelo.cargar_animacion(ruta), ciclica=True)
+            info.texto = "animación cargada: " + os.path.basename(ruta)
+            return
     refrescar_ui()
 
 
