@@ -101,6 +101,15 @@ guía. Variables de entorno: `PILAS3D_IA_MODELO` (modelo alternativo,
 ej. `qwen2.5-coder:7b` con GPU) y `PILAS3D_IA_GPU=1` (usar GPU en vez
 de CPU). Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 
+### Editor de personajes
+
+`ejemplos/editor_personaje.py` carga modelos `.glb` riggeados y deja
+**posar huesos, capturar keyframes y crear animaciones propias** que
+se guardan en JSON — sin Blender. Trae explorador de archivos para
+cargar `.glb` de cualquier carpeta, paneles laterales/inferior y
+órbita de cámara. Guía completa:
+[docs/editor-personaje.md](docs/editor-personaje.md).
+
 ## Ejemplos
 
 ```bash
@@ -118,6 +127,7 @@ de CPU). Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 .venv/bin/python ejemplos/plataformas.py        # plataformero: PisaPlataformas + salto
 .venv/bin/python ejemplos/particulas.py         # fuego, humo, lluvia, explosión
 .venv/bin/python ejemplos/personajes.py         # galería: Robot, Humanoide, Mono, Arania, Espectro
+.venv/bin/python ejemplos/editor_personaje.py   # editor: posar huesos glTF + animar por keyframes
 .venv/bin/python ejemplos/bots.py               # NPCs: patrullan, te persiguen (SerBot) y vuelven
 .venv/bin/python ejemplos/niebla.py             # escena.niebla: abierta/cerrada/noche con linterna
 ```
@@ -207,7 +217,8 @@ bloquear con `ejecutar()`:
 | `pilas.escenas.Normal()`      | igual + `escenas.vincular(Clase)`, hooks `iniciar`/`terminar`/`cuando_pulsa_tecla`, `pilas.escena`, `pilas.cambiar_escena` |
 | `escena.camara.x/y`           | `camara.x/y/z` + `camara.objetivo`   |
 | `pilas.control.izquierda`…    | igual (flechas + WASD)               |
-| `pilas.actores.Texto/Puntaje` | `pilas.actores.Texto()` / `Puntaje()` (overlay 2D) |
+| `pilas.actores.Texto/Puntaje` | `pilas.actores.Texto()` / `Puntaje()` (overlay 2D, multilínea con `\n` y `ancho=px`) |
+| —                             | `pilas.actores.Panel()` — rectángulo overlay para HUD/paneles; con `pilas.ventana.area_3d=(x,y,w,h)` dividís la ventana en vista 3D + zonas de interfaz |
 | `actor.colisiona_con(otro)`   | igual (esfera-esfera 3D con `radio_de_colision`) + `colisiona_en_plano_con` (solo XZ) |
 | `pilas.tareas.siempre(s, f)`  | igual (`una_vez`, `siempre`, `condicional`)  |
 | `actor.x = [100]`             | igual — interpolación; `actor.x = ([a,b], dur)` u `Objeto` (`pilas.interpolaciones.Lineal`, `ReboteFinal`, `ElasticoInicial`…) + `pilas.interpolar(actor, 'x', v, duracion)` |
@@ -231,7 +242,7 @@ bloquear con `ejecutar()`:
 | —                             | `pilas.actores.Cartel()` (sprite que siempre mira a la cámara) |
 | —                             | `pilas.actores.Modelo('x.obj')` (carga modelos Wavefront .obj) |
 | —                             | `pilas.actores.ModeloAnimado('run/f*.obj')` (secuencia .obj estilo MD2, `suavizar=True` interpola vértices) |
-| —                             | `pilas.actores.ModeloGLTF('x.glb')` — glTF 2.0 con animación esquelética por CPU (`.animar(nombre)`, `.animaciones()`) |
+| —                             | `pilas.actores.ModeloGLTF('x.glb')` — glTF 2.0 con animación esquelética por CPU (`.animar(nombre)`, `.animaciones()`), texturas, pose (`rotar_hueso`, `guardar_pose`) y keyframes propios (`crear_animacion`, `guardar_animacion`) |
 | —                             | `pilas.actores.Mundo()` — voxels tipo Minecraft: `generar_terreno`, `poner/sacar_bloque`, `disparar_bloque` (rayo DDA) |
 | —                             | `pilas.actores.ModeloJSON('x.json')` — modelos de bloque Minecraft (formato elements/faces) |
 | —                             | `mundo.armar_atlas([pngs])` — atlas de bloques desde texturas propias |
