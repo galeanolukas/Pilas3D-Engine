@@ -92,6 +92,7 @@ Habilidades  (actor.aprender)
     MoverseEnCirculo                        MoverseComoCoche
     Imitar                                  AumentarConRueda
     RotarConMouse                           PuedeExplotar
+    PisaPlataformas                         # gravedad que pisa bloques
 
 Tareas
     pilas.tareas.una_vez(2, f)   siempre(1, f)   condicional(0.1, f)

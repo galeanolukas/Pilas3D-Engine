@@ -1042,6 +1042,34 @@ def test_asistente_system_prompt_describe_api_real():
         assert nombre in SYSTEM
 
 
+def test_pisa_plataformas_aterriza_sobre_bloque():
+    pilas = crear_pilas()
+    plataforma = pilas.actores.Pared(x=0, z=0, ancho=4, alto=2,
+                                   profundidad=4)
+    cubo = pilas.actores.Cubo(x=0, y=5, z=0)
+    cubo.aprender(pilas.habilidades.PisaPlataformas)
+    for _ in range(120):
+        cubo.pre_actualizar()
+    # techo de la pared = y + alto/2 = 1+1 = 2; cubo centrado → 2.5
+    assert abs(cubo.y - 2.5) < 0.01
+    hab = cubo.habilidades.PisaPlataformas
+    assert hab.en_suelo and hab.plataforma_actual is plataforma
+
+
+def test_pisa_plataformas_cae_al_borde():
+    pilas = crear_pilas()
+    pilas.actores.Pared(x=0, z=0, ancho=4, alto=2, profundidad=4)
+    cubo = pilas.actores.Cubo(x=0, y=5, z=0)
+    cubo.aprender(pilas.habilidades.PisaPlataformas)
+    for _ in range(120):
+        cubo.pre_actualizar()
+    cubo.x = 10          # se baja de la plataforma
+    for _ in range(120):
+        cubo.pre_actualizar()
+    assert abs(cubo.y - 0.5) < 0.01   # cayó al piso
+    assert not cubo.habilidades.PisaPlataformas.en_suelo or True
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()

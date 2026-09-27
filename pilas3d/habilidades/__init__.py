@@ -21,6 +21,7 @@ from pilas3d.habilidades.imitar import Imitar
 from pilas3d.habilidades.aumentar_con_rueda import AumentarConRueda
 from pilas3d.habilidades.rotar_con_mouse import RotarConMouse
 from pilas3d.habilidades.puede_explotar import PuedeExplotar
+from pilas3d.habilidades.pisa_plataformas import PisaPlataformas
 
 
 class Habilidades(object):
@@ -42,6 +43,7 @@ class Habilidades(object):
     AumentarConRueda = AumentarConRueda
     RotarConMouse = RotarConMouse
     PuedeExplotar = PuedeExplotar
+    PisaPlataformas = PisaPlataformas
 
     def buscar_habilidad_por_nombre(self, nombre):
         disponibles = {
@@ -57,6 +59,7 @@ class Habilidades(object):
             'aumentarconrueda': AumentarConRueda,
             'rotarconmouse': RotarConMouse,
             'puedeexplotar': PuedeExplotar,
+            'pisaplataformas': PisaPlataformas,
         }
         try:
             return disponibles[nombre.lower()]
