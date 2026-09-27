@@ -1924,3 +1924,29 @@ def test_panel_es_overlay():
     assert p.opacidad == 200
     p.x, p.ancho = 30, 100          # reubicable (layout dinámico)
     assert (p.x, p.ancho) == (30, 100)
+
+
+def test_esqueleto_mapear_y_animar():
+    ruta = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
+    if not os.path.exists(ruta):
+        pytest.skip('modelo wolf no disponible')
+    from pilas3d.esqueleto import mapear_huesos, animacion_procedural
+    pilas = crear_pilas()
+    lobo = pilas.actores.ModeloGLTF(ruta)
+    mapa = mapear_huesos(lobo.huesos())
+    # el wolf (nombres en alemán) mapea completo
+    for parte in ('pierna_izq', 'pierna_der', 'brazo_izq',
+                  'brazo_der', 'cola', 'cabeza'):
+        assert mapa.get(parte), parte
+    # ojos/boca no entran en ningún grupo animable
+    animables = set().union(*mapa.values())
+    cara = [i for i, n in lobo.huesos() if 'aug' in n.lower()
+            or 'maul' in n.lower()]
+    assert not animables.intersection(cara)
+    # animación procedural: genera clip y anima
+    lobo.animar(animacion_procedural(lobo, 'caminar', mapa=mapa))
+    assert lobo.animacion == 'caminar'
+    assert lobo._escena['animaciones']['caminar']['canales']
+    lobo.animar(animacion_procedural(lobo, 'cola', mapa=mapa))
+    with pytest.raises(ValueError):
+        animacion_procedural(lobo, 'inexistente')

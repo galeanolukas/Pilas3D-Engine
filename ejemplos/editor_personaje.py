@@ -13,6 +13,9 @@ Carga un modelo glTF riggeado y permite posar sus huesos:
 - J: guardar la animación en 'anim-<modelo>.json'   L: cargarla
 - A: abrir el explorador de archivos para cargar un .glb externo
   (con caja de selección y nombre personalizado para el modelo)
+- T: animación procedural (caminar, correr, sentarse, cola, saludar,
+  asentir) — generada desde los nombres de los huesos, con ayuda de
+  la IA local si no los reconoce
 - Botón derecho + drag: orbitar la cámara
 - La esfera roja marca la articulación seleccionada
 """
@@ -21,6 +24,7 @@ import glob
 import os
 
 import pilas3d
+from pilas3d.esqueleto import animacion_procedural, mapear_huesos
 
 pilas = pilas3d.iniciar(titulo="pilas3d - editor de personaje")
 
@@ -63,7 +67,10 @@ def autoescala(modelo, objetivo=1.8):
 
 
 estado = {'modelo': None, 'huesos': [], 'sel': 0, 'eje': 'y',
-          'indice': 0, 'frames': [], 'modo': 'editar'}
+          'indice': 0, 'frames': [], 'modo': 'editar', 'proc': 0}
+
+TIPOS_PROC = ['caminar', 'correr', 'sentarse', 'cola', 'saludar',
+              'asentir']
 nombres = {}   # ruta -> nombre amigable elegido al cargar externo
 exp = {'dir': os.path.expanduser('~'), 'sel': 0, 'entradas': []}
 nombrar = {'texto': '', 'ruta': None}
@@ -88,7 +95,8 @@ info = pilas.actores.Texto("", tamano=15)
 info.color = pilas.colores.amarillo
 pilas.actores.Texto(
     "N: modelo - flechas: hueso - X/Y/Z+<-/->: rotar - M/W/P: keyframes\n"
-    "J/L: guardar/cargar anim - G/C/R: pose - A: cargar .glb externo",
+    "J/L: guardar/cargar anim - G/C/R: pose - A: cargar .glb externo\n"
+    "T: animación procedural (caminar, correr, sentarse, cola...)",
     x=10, y=28, tamano=12)
 
 
@@ -353,6 +361,18 @@ def al_pulsar(tecla):
             modelo.animar(modelo.cargar_animacion(ruta), ciclica=True)
             info.texto = "animación cargada: " + os.path.basename(ruta)
             return
+    elif tecla == s.t:
+        tipo = TIPOS_PROC[estado['proc'] % len(TIPOS_PROC)]
+        estado['proc'] += 1
+        mapa = mapear_huesos(huesos)
+        try:
+            nombre = animacion_procedural(modelo, tipo, mapa=mapa,
+                                          usar_ia=True)
+            modelo.animar(nombre, ciclica=True)
+            info.texto = "procedural: %s (T otra)" % nombre
+        except Exception as e:
+            info.texto = "no pude generar '%s': %s" % (tipo, e)
+        return
     refrescar_ui()
 
 
