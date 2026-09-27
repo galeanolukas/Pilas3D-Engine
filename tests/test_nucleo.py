@@ -844,6 +844,42 @@ def test_mundo_generar_terreno_y_suelo():
     assert mundo.altura_suelo(999, 999) is None
 
 
+def test_armar_atlas_compone_imagenes():
+    from pilas3d.actores.mundo import armar_atlas
+    from pyglet.image import ImageData
+    roja = ImageData(16, 16, 'RGBA', b'\xff\x00\x00\xff' * 256)
+    verde = ImageData(16, 16, 'RGBA', b'\x00\xff\x00\xff' * 256)
+    atlas = armar_atlas([roja, verde])
+    assert atlas.width == 32 and atlas.height == 16
+    datos = atlas.get_data('RGBA', 32 * 4)
+    assert datos[0] == 255 and datos[1] == 0      # rojo
+    assert datos[16 * 4 + 1] == 255               # verde
+
+
+def test_modelo_json_mc(tmp_path):
+    import json
+    from pilas3d import modelos
+    raiz = tmp_path / 'assets' / 'minecraft'
+    (raiz / 'models' / 'block').mkdir(parents=True)
+    (raiz / 'textures' / 'blocks').mkdir(parents=True)
+    modelo = {
+        'textures': {'tex': 'blocks/foo'},
+        'elements': [{'from': [0, 0, 0], 'to': [16, 16, 16],
+                      'faces': {
+                          'up': {'uv': [0, 0, 16, 16], 'texture': '#tex'},
+                          'north': {'uv': [0, 0, 8, 8],
+                                    'texture': '#tex'}}}],
+    }
+    ruta = raiz / 'models' / 'block' / 'mini.json'
+    ruta.write_text(json.dumps(modelo))
+    datos = modelos.cargar_json_mc(str(ruta))
+    assert len(datos['posiciones']) == 2 * 6 * 3  # 2 caras × 6 vértices
+    assert datos['imagen'].endswith('textures/blocks/foo.png')
+    pilas = crear_pilas()
+    actor = pilas.actores.ModeloJSON(str(ruta))
+    assert actor.imagen == datos['imagen']
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()

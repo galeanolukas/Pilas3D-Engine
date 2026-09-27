@@ -139,3 +139,112 @@ def cargar_obj(ruta):
     }
     _cache_obj[ruta] = datos
     return datos
+
+
+# -- modelos de bloque estilo Minecraft (.json) ------------------------------
+#
+# Formato "elements": cada elemento es un cuboide from..to (en unidades
+# de 1/16) con caras north/south/east/west/up/down, cada una con uv
+# [u1, v1, u2, v2] (también 0..16, v hacia abajo) y una referencia
+# "#nombre" al dict "textures" del archivo.
+
+_CARAS_MC = {
+    # nombre: (normal, vértices (bl, br, tr, tl) vistos desde afuera)
+    'north': ((0, 0, -1), lambda a, b: [
+        (b[0], a[1], a[2]), (a[0], a[1], a[2]),
+        (a[0], b[1], a[2]), (b[0], b[1], a[2])]),
+    'south': ((0, 0, 1), lambda a, b: [
+        (a[0], a[1], b[2]), (b[0], a[1], b[2]),
+        (b[0], b[1], b[2]), (a[0], b[1], b[2])]),
+    'east': ((1, 0, 0), lambda a, b: [
+        (b[0], a[1], b[2]), (b[0], a[1], a[2]),
+        (b[0], b[1], a[2]), (b[0], b[1], b[2])]),
+    'west': ((-1, 0, 0), lambda a, b: [
+        (a[0], a[1], a[2]), (a[0], a[1], b[2]),
+        (a[0], b[1], b[2]), (a[0], b[1], a[2])]),
+    'up': ((0, 1, 0), lambda a, b: [
+        (a[0], b[1], b[2]), (b[0], b[1], b[2]),
+        (b[0], b[1], a[2]), (a[0], b[1], a[2])]),
+    'down': ((0, -1, 0), lambda a, b: [
+        (a[0], a[1], a[2]), (b[0], a[1], a[2]),
+        (b[0], a[1], b[2]), (a[0], a[1], b[2])]),
+}
+
+
+def _raiz_assets(ruta):
+    """Sube directorios hasta hallar 'models' y retorna su padre
+    (el assets/minecraft donde también vive 'textures')."""
+    d = os.path.dirname(os.path.abspath(ruta))
+    while d and os.path.basename(d) != 'models':
+        nuevo = os.path.dirname(d)
+        if nuevo == d:
+            return os.path.dirname(os.path.abspath(ruta))
+        d = nuevo
+    return os.path.dirname(d)
+
+
+def cargar_json_mc(ruta):
+    """Carga un modelo de bloque estilo Minecraft (JSON con elements).
+
+    Retorna el mismo dict que ``cargar_obj`` más la ruta ``imagen``
+    de la textura principal (resuelta contra el directorio
+    ``textures`` hermano de ``models``). Si el modelo usa varias
+    texturas, se usa la primera — una sola textura por actor.
+    """
+    import json
+
+    ruta = os.path.abspath(ruta)
+    with open(ruta, 'r', errors='replace') as f:
+        data = json.load(f)
+
+    raiz = _raiz_assets(ruta)
+    texturas = data.get('textures', {})
+
+    def resolver_textura(ref):
+        nombre = texturas.get(ref.lstrip('#'), ref.lstrip('#'))
+        return os.path.join(raiz, 'textures', nombre + '.png')
+
+    posiciones, normales, uvs = [], [], []
+    textura = None
+    for elemento in data.get('elements', []):
+        a = [v / 16.0 - 0.5 for v in elemento['from']]
+        b = [v / 16.0 - 0.5 for v in elemento['to']]
+        a[1] += 0.5
+        b[1] += 0.5
+        for nombre, (normal, verts_fn) in _CARAS_MC.items():
+            cara = elemento.get('faces', {}).get(nombre)
+            if cara is None:
+                continue
+            if textura is None:
+                textura = resolver_textura(
+                    cara.get('texture', ''))
+            u1, v1, u2, v2 = [v / 16.0 for v in
+                              cara.get('uv', [0, 0, 16, 16])]
+            quad = verts_fn(a, b)
+            uv_quad = [(u1, 1 - v2), (u2, 1 - v2),
+                       (u2, 1 - v1), (u1, 1 - v1)]
+            for idx in (0, 1, 2, 0, 2, 3):
+                posiciones.extend(quad[idx])
+                normales.extend(normal)
+                uvs.extend(uv_quad[idx])
+
+    if not posiciones:
+        raise IOError("El modelo '%s' no tiene elementos con caras"
+                      % ruta)
+
+    radio = 0.0
+    for i in range(0, len(posiciones), 3):
+        d = math.sqrt(posiciones[i] ** 2 + posiciones[i + 1] ** 2 +
+                      posiciones[i + 2] ** 2)
+        if d > radio:
+            radio = d
+
+    return {
+        'posiciones': posiciones,
+        'normales': normales,
+        'uvs': uvs,
+        'colores': None,
+        'radio': radio,
+        'triangulos': len(posiciones) // 9,
+        'imagen': textura,
+    }

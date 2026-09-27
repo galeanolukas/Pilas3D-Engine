@@ -121,6 +121,8 @@ bloquear con `ejecutar()`:
 | —                             | `pilas.actores.Modelo('x.obj')` (carga modelos Wavefront .obj) |
 | —                             | `pilas.actores.ModeloAnimado('run/f*.obj')` (secuencia .obj estilo MD2, `suavizar=True` interpola vértices) |
 | —                             | `pilas.actores.Mundo()` — voxels tipo Minecraft: `generar_terreno`, `poner/sacar_bloque`, `disparar_bloque` (rayo DDA) |
+| —                             | `pilas.actores.ModeloJSON('x.json')` — modelos de bloque Minecraft (formato elements/faces) |
+| —                             | `mundo.armar_atlas([pngs])` — atlas de bloques desde texturas propias |
 | —                             | `pilas.luces` — sol + hasta 8 puntuales con atenuación |
 | —                             | `pilas.actores.Sombra(actor)` (sombra falsa tipo blob) |
 | —                             | `pilas.actores.Cielo()` — cielo estrellado (o `Cielo('fondo.png')`) |

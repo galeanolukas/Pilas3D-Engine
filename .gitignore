@@ -8,6 +8,9 @@ _deb_extract/
 
 # Modelos 3D y archivos pesados del usuario (no van al repo)
 modelos/
+
+# Assets de Minecraft (copyright Mojang - no se pueden publicar)
+Texturas Minecraf/
 /*.rar
 /*.zip
 /*.obj

@@ -21,6 +21,7 @@ from pilas3d.actores.sombra import Sombra
 from pilas3d.actores.cielo import Cielo
 from pilas3d.actores.modelo_animado import ModeloAnimado
 from pilas3d.actores.mundo import Mundo
+from pilas3d.actores.modelo_json import ModeloJSON
 from pilas3d.actores.texto import Texto, Puntaje
 
 
@@ -76,8 +77,17 @@ class Actores(object):
         return Cielo(self._pilas, imagen=imagen, radio=radio)
 
     def Mundo(self, tipos=None, atlas=None):
-        """Mundo de voxels (grilla de bloques, una sola malla)."""
+        """Mundo de voxels (grilla de bloques, una sola malla).
+
+        ``atlas`` puede ser una lista de imágenes/rutas que se
+        componen en una sola textura.
+        """
         return Mundo(self._pilas, tipos=tipos, atlas=atlas)
+
+    def ModeloJSON(self, ruta, x=0, y=0, z=0, escala=1.0):
+        """Modelo de bloque estilo Minecraft (.json con elements)."""
+        return ModeloJSON(self._pilas, ruta, x=x, y=y, z=z,
+                          escala=escala)
 
     def ModeloAnimado(self, rutas, velocidad=8, ciclica=True,
                       suavizar=False, eliminar_al_terminar=False,

@@ -47,6 +47,45 @@ TIPOS_POR_DEFECTO = {
 }
 
 
+def _redimensionar(img, lado):
+    """Ajusta una imagen a ``lado x lado`` (vecino más cercano)."""
+    if img.width == lado and img.height == lado:
+        return img
+    from pyglet.image import ImageData
+
+    origen = img.get_data("RGBA", img.width * 4)
+    datos = bytearray(lado * lado * 4)
+    for y in range(lado):
+        sy = y * img.height // lado
+        for x in range(lado):
+            sx = x * img.width // lado
+            datos[(y * lado + x) * 4:(y * lado + x) * 4 + 4] = \
+                origen[(sy * img.width + sx) * 4:
+                       (sy * img.width + sx) * 4 + 4]
+    return ImageData(lado, lado, "RGBA", bytes(datos))
+
+
+def armar_atlas(imagenes, lado=16):
+    """Compone imágenes (rutas o ImageData) en un atlas horizontal.
+
+    >>> atlas = armar_atlas(['grass_top.png', 'dirt.png'])
+    """
+    from pyglet.image import ImageData, load
+
+    ancho = lado * len(imagenes)
+    datos = bytearray(ancho * lado * 4)
+    for i, img in enumerate(imagenes):
+        if isinstance(img, str):
+            img = load(img)
+        img = _redimensionar(img, lado)
+        src = img.get_data("RGBA", lado * 4)
+        for y in range(lado):
+            base = y * ancho * 4 + i * lado * 4
+            datos[base:base + lado * 4] = \
+                src[y * lado * 4:(y + 1) * lado * 4]
+    return ImageData(ancho, lado, "RGBA", bytes(datos))
+
+
 def _atlas_basico(lado=16):
     """Genera un atlas de 5 baldosas 16x16 (cesped, tierra, piedra,
     ladrillo, arena) con ruido pixelado estilo Minecraft."""
@@ -80,10 +119,17 @@ class Mundo(Actor):
     def __init__(self, pilas, tipos=None, atlas=None, baldosas=5):
         self.bloques = {}
         self.tipos = dict(tipos or TIPOS_POR_DEFECTO)
-        self.baldosas = baldosas
         self._sucio = True
         super(Mundo, self).__init__(pilas)
-        self.imagen = atlas if atlas is not None else _atlas_basico()
+        if atlas is None:
+            self.baldosas = baldosas
+            atlas = _atlas_basico()
+        elif isinstance(atlas, (list, tuple)):
+            self.baldosas = len(atlas)
+            atlas = armar_atlas(atlas)
+        else:
+            self.baldosas = baldosas
+        self.imagen = atlas
         self.radio_de_colision = 0.0
         escena = pilas.escena_actual()
         if escena is not None:

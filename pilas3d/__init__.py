@@ -54,6 +54,7 @@ Actores  (posición x/y/z, rotacion_x/y/z, escala, color, imagen)
     mundo.generar_terreno(48, 48, altura=4)  # heightmap procedural
     mundo.poner_bloque(i, j, k, 'ladrillo')  sacar_bloque(i, j, k)
     mundo.disparar_bloque(origen, dir)       # picar/colocar (rayo DDA)
+    pilas.actores.ModeloJSON('ladder.json')  # modelo de bloque Minecraft
 
 Cada actor
     actor.x = 3      actor.rotacion_y = 45    actor.escala = 2
