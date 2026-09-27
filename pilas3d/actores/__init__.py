@@ -24,6 +24,7 @@ from pilas3d.actores.mundo import Mundo
 from pilas3d.actores.modelo_json import ModeloJSON
 from pilas3d.actores.modelo_gltf import ModeloGLTF
 from pilas3d.actores.texto import Texto, Puntaje
+from pilas3d.actores.temporizador import Temporizador
 from pilas3d.actores.particulas import Particulas
 from pilas3d.actores.proyectil import Proyectil
 from pilas3d.actores.menu import Menu
@@ -165,6 +166,24 @@ class Actores(object):
         return Puntaje(
             self._pilas, x=x, y=y, tamano=tamano, prefijo=prefijo
         )
+
+    def Temporizador(self, x=10, y=10, tamano=18, duracion=0,
+                     cuando_termina=None, ciclico=False, visible=True,
+                     autoeliminar=False, ascendente=True, formato=None,
+                     color=None):
+        """Contador de tiempo: cuenta regresiva (``duracion`` > 0) que
+        ejecuta ``cuando_termina`` al llegar a cero, o cronómetro
+        ascendente (``duracion=0``). ``visible=False`` lo hace
+        invisible; ``ciclico=True`` lo repite; ``avisar(s, fn)``
+        programa avisos intermedios."""
+        if color is None:
+            from pilas3d import colores
+            color = colores.negro
+        return Temporizador(
+            self._pilas, x=x, y=y, tamano=tamano, duracion=duracion,
+            cuando_termina=cuando_termina, ciclico=ciclico,
+            visible=visible, autoeliminar=autoeliminar,
+            ascendente=ascendente, formato=formato, color=color)
 
     # -- personajes predefinidos (como pilas.actores.Mono en pilas) --
 

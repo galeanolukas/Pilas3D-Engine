@@ -207,6 +207,7 @@ bloquear con `ejecutar()`:
 | `habilidades.Disparar`        | igual — `actor.disparar()` crea un `Proyectil` que viaja recto, choca con `objetivos` y avisa con `cuando_impacta(p, actor)`; `con_click`, `tecla`, `cadencia`, `desde_camara` |
 | —                             | `pilas.actores.Menu(opciones, titulo)` — menú overlay navegable (flechas+ENTER o mouse); acciones, `('X','check',bool,fn)` checkbox, `('X','input',ini,fn)` entrada de texto, ciclo si devuelve texto |
 | —                             | `pilas.sonidos.volumen` / `pilas.sonidos.mute` — volumen maestro y silencio global |
+| `pilas.actores.Temporizador`  | igual — `ajustar(s, fn)`, `iniciar/detener/reiniciar`, `avisar(s, fn)`; extras: `ciclico`, `visible=False`, `autoeliminar`, cronómetro (`duracion=0`), `formato` propio |
 | `pilas.sonidos.cargar()`      | igual (`reproducir`, `detener`, `pausar`, `continuar`, `volumen`) |
 | `pilas.musica.cargar()`       | igual (streaming, bucle por defecto, `detener_gradualmente`) |
 | `Grilla`/`Animacion`          | `pilas.actores.Animacion(img, columnas, filas, velocidad)` (billboard animado) |

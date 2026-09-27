@@ -1726,3 +1726,63 @@ def test_menu_persiste_config_en_json(tmp_path):
     assert menu2._opciones[0][2] is False     # check restaurado
     assert menu2._opciones[1][2] == 'jugador' # input restaurado
     assert False in aplicados and 'jugador' in aplicados  # se aplicaron
+
+
+def test_temporizador_cuenta_regresiva_ejecuta_funcion():
+    pilas = crear_pilas()
+    llamadas = []
+    t = pilas.actores.Temporizador(duracion=1.0,
+                                 cuando_termina=lambda: llamadas.append('fin'))
+    t.iniciar()
+    pilas.dt = 0.4
+    t.actualizar()
+    assert t.tiempo == pytest.approx(0.6)
+    assert t.texto == '1'
+    t.actualizar(); t.actualizar(); t.actualizar()
+    assert llamadas == ['fin']
+    assert t.activo is False              # se detiene al terminar
+    t.actualizar()
+    assert llamadas == ['fin']            # no repite solo
+
+
+def test_temporizador_ciclico_y_avisos():
+    pilas = crear_pilas()
+    eventos = []
+    t = pilas.actores.Temporizador(duracion=1.0, ciclico=True,
+                                 cuando_termina=lambda: eventos.append('ciclo'))
+    t.avisar(0.5, lambda: eventos.append('aviso'))
+    t.iniciar()
+    pilas.dt = 0.6
+    t.actualizar()                        # cruza 0.5 -> aviso
+    t.actualizar()                        # llega a 0 -> ciclo + reinicia
+    assert eventos == ['aviso', 'ciclo']
+    assert t.tiempo == pytest.approx(1.0)
+    assert t.activo is True
+    t.actualizar()                        # el aviso se rearma en el nuevo ciclo
+    assert eventos.count('aviso') == 2
+
+
+def test_temporizador_cronometro_invisible_y_reiniciar():
+    pilas = crear_pilas()
+    t = pilas.actores.Temporizador(visible=False)   # duracion=0 -> cronómetro
+    t.iniciar()
+    pilas.dt = 0.5
+    t.actualizar(); t.actualizar()
+    assert t.tiempo == pytest.approx(1.0)
+    t.detener()
+    t.actualizar()
+    assert t.tiempo == pytest.approx(1.0) # pausado no avanza
+    t.reiniciar()
+    assert t.tiempo == 0
+    assert t.activo is True
+
+
+def test_temporizador_ajustar_formato_y_autoeliminar():
+    pilas = crear_pilas()
+    t = pilas.actores.Temporizador(autoeliminar=True,
+                                 formato=lambda s: '%.1f' % s)
+    t.ajustar(0.3)
+    t.iniciar()
+    pilas.dt = 0.5
+    t.actualizar()
+    assert t not in pilas.escena.actores  # se eliminó solo

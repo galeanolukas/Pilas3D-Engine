@@ -124,6 +124,12 @@ Audio
     pilas.sonidos.cargar('x.wav')  .volumen=.4  .mute=True
     pilas.musica.cargar('x.ogg')   .reproducir()  .volumen=.5
 
+Tiempo
+    pilas.actores.Temporizador(duracion=10, cuando_termina=fn)
+    t.iniciar()  t.detener()  t.reiniciar()  t.ajustar(5, fn)
+    t.ciclico=True   t.visible=False   t.avisar(3, fn)
+    sin duracion: cronómetro ascendente (t.tiempo = transcurridos)
+
 Depuración
     pilas.fps.ver()   pilas.mostrar_ejes()
     pilas.depurador.definir_modos(fps=True, ejes=True,
