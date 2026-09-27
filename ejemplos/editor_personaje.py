@@ -21,10 +21,9 @@ MODELO = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
 POSE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                     'pose.json')
 
-pilas.actores.Cielo('dia')
-pilas.escena.fondo = pilas.colores.celeste
+pilas.escena.fondo = pilas.colores.gris_oscuro   # fondo de estudio
 piso = pilas.actores.Piso(tamano=30, divisiones=30)
-piso.color = pilas.colores.verde
+piso.color = pilas.colores.gris
 pilas.luces.direccional.ambiente = 0.6
 
 modelo = pilas.actores.ModeloGLTF(MODELO, escala=2.0)
