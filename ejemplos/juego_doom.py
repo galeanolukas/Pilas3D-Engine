@@ -152,6 +152,11 @@ mapa = pilas.actores.Mapa(MAPA, {
 piso = pilas.actores.Plano(ancho=30, profundidad=30)
 piso.imagen = TEX_PISO
 
+# Cielo estrellado (domo que sigue a la cámara) + ambiente nocturno
+pilas.actores.Cielo()
+pilas.luces.direccional.ambiente = 0.15
+pilas.luces.direccional.color = pilas.colores.gris
+
 jugador = Jugador(pilas, enemigos)
 jugador_inicio = spawn['pos']
 jugador.posicion = jugador_inicio

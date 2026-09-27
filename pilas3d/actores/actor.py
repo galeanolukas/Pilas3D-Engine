@@ -248,7 +248,7 @@ class Actor(object):
 
     @property
     def imagen(self):
-        """Ruta a una textura PNG/JPG para cubrir la superficie."""
+        """Textura del actor: una ruta PNG/JPG o una imagen de pyglet."""
         return self._imagen
 
     @imagen.setter
@@ -382,9 +382,13 @@ class Actor(object):
             self._vertex_list = None
 
     def _cargar_textura(self):
-        from pyglet.image import load
+        if hasattr(self._imagen, "get_texture"):
+            # Ya es una imagen/textura de pyglet (p. ej. generada).
+            self._textura = self._imagen.get_texture()
+        else:
+            from pyglet.image import load
 
-        self._textura = load(self._imagen).get_texture()
+            self._textura = load(self._imagen).get_texture()
         glBindTexture(GL_TEXTURE_2D, self._textura.id)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)

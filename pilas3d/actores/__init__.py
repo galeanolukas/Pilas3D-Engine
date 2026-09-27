@@ -18,6 +18,7 @@ from pilas3d.actores.cartel import Cartel
 from pilas3d.actores.animacion import Animacion
 from pilas3d.actores.modelo import Modelo
 from pilas3d.actores.sombra import Sombra
+from pilas3d.actores.cielo import Cielo
 from pilas3d.actores.texto import Texto, Puntaje
 
 
@@ -67,6 +68,10 @@ class Actores(object):
 
     def Sombra(self, dueno, radio=None, opacidad=60):
         return Sombra(self._pilas, dueno, radio=radio, opacidad=opacidad)
+
+    def Cielo(self, imagen="estrellas", radio=400):
+        """Domo de fondo: 'estrellas' genera un cielo sin archivos."""
+        return Cielo(self._pilas, imagen=imagen, radio=radio)
 
     def Mapa(self, matriz, simbolos, tamano_celda=2.0, x=0, y=0, z=0):
         return Mapa(self._pilas, matriz, simbolos,

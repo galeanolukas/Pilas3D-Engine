@@ -718,6 +718,22 @@ def test_cambio_de_escena_aisla_actores_y_luces():
     assert e2.luces.puntuales == []
 
 
+def test_cielo_sigue_a_la_camara():
+    pilas = crear_pilas()
+    cielo = pilas.actores.Cielo()
+    cam = pilas.escena_actual().camara
+    cam.posicion = (5, 2, -3)
+    cielo.actualizar()
+    assert (cielo.x, cielo.y, cielo.z) == (5, 2, -3)
+    assert cielo.radio_de_colision == 0.0
+
+
+def test_cielo_acepta_textura_generada():
+    from pilas3d.actores.cielo import _textura_estrellas
+    textura = _textura_estrellas(64, 32)
+    assert textura.width == 64
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()

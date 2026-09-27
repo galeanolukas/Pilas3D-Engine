@@ -118,6 +118,7 @@ bloquear con `ejecutar()`:
 | —                             | `pilas.actores.Modelo('x.obj')` (carga modelos Wavefront .obj) |
 | —                             | `pilas.luces` — sol + hasta 8 puntuales con atenuación |
 | —                             | `pilas.actores.Sombra(actor)` (sombra falsa tipo blob) |
+| —                             | `pilas.actores.Cielo()` — cielo estrellado (o `Cielo('fondo.png')`) |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
 
 ## Licencia

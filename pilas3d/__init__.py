@@ -98,6 +98,8 @@ Luces y sombras
         color=(1, 0.7, 0.3), alcance=10))      # hasta 8 puntuales
     pilas.luces.quitar(luz) / pilas.luces.limpiar()
     pilas.actores.Sombra(actor)                # sombra falsa en el piso
+    pilas.actores.Cielo()                      # cielo estrellado
+    pilas.actores.Cielo('mi_fondo.png')        # o con textura propia
 
 Modo interactivo (consola de Python)
     >>> import pilas3d
