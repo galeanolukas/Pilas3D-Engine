@@ -1,9 +1,11 @@
 # -*- encoding: utf-8 -*-
-"""Mundo de voxels: una grilla de bloques que dibuja UNA sola malla.
+"""Mundo de voxels: grilla de bloques renderizada por chunks.
 
-En lugar de un actor por cubo (miles de draw calls), se fusiona todo
-en una sola geometría emitiendo solo las caras que tocan aire — es
-lo que hace Minecraft por cada chunk.
+En lugar de un actor por cubo (miles de draw calls), los bloques se
+fusionan en una malla por cada chunk de ``tamano_chunk`` columnas,
+emitiendo solo las caras que tocan aire — es lo que hace Minecraft.
+Editar un bloque solo reconstruye su chunk (y el vecino si está en
+el borde).
 
 >>> mundo = pilas.actores.Mundo()
 >>> mundo.generar_terreno(48, 48, altura=4)
@@ -114,12 +116,16 @@ def _atlas_basico(lado=16):
 
 
 class Mundo(Actor):
-    """Grilla de bloques renderizada como una sola malla."""
+    """Grilla de bloques renderizada en chunks de malla."""
 
-    def __init__(self, pilas, tipos=None, atlas=None, baldosas=5):
+    def __init__(self, pilas, tipos=None, atlas=None, baldosas=5,
+                 tamano_chunk=16):
         self.bloques = {}
         self.tipos = dict(tipos or TIPOS_POR_DEFECTO)
-        self._sucio = True
+        self.tamano_chunk = tamano_chunk
+        self._chunks = {}          # (ci, ck) -> vertex_list
+        self._sucios = set()       # chunks a reconstruir
+        self._sucio = True         # reconstruir todo (atlas, etc.)
         super(Mundo, self).__init__(pilas)
         if atlas is None:
             self.baldosas = baldosas
@@ -137,14 +143,28 @@ class Mundo(Actor):
 
     # -- bloques ------------------------------------------------------------
 
+    def _marcar_sucio(self, i, k):
+        """Marca el chunk del bloque (y vecinos si toca el borde)."""
+        c = self.tamano_chunk
+        ci, ck = i // c, k // c
+        self._sucios.add((ci, ck))
+        if i % c == 0:
+            self._sucios.add((ci - 1, ck))
+        if i % c == c - 1:
+            self._sucios.add((ci + 1, ck))
+        if k % c == 0:
+            self._sucios.add((ci, ck - 1))
+        if k % c == c - 1:
+            self._sucios.add((ci, ck + 1))
+
     def poner_bloque(self, i, j, k, tipo='ladrillo'):
         self.bloques[(i, j, k)] = tipo
-        self._sucio = True
+        self._marcar_sucio(i, k)
 
     def sacar_bloque(self, i, j, k):
         if (i, j, k) in self.bloques:
             del self.bloques[(i, j, k)]
-            self._sucio = True
+            self._marcar_sucio(i, k)
 
     def hay_bloque(self, i, j, k):
         return (i, j, k) in self.bloques
@@ -173,7 +193,7 @@ class Mundo(Actor):
                     else:
                         tipo = 'piedra'
                     self.bloques[(i - cx, j, k - cz)] = tipo
-        self._sucio = True
+        self._sucio = True   # terreno nuevo: reconstruir todo
 
     def altura_suelo(self, x, z):
         """Altura del techo del bloque más alto de la columna (x, z),
@@ -245,18 +265,18 @@ class Mundo(Actor):
                         cajas.append((i, i + 1, k, k + 1))
         return colisiones.resolver_circulo_en_cajas(x, z, radio, cajas)
 
-    # -- render: una malla con solo caras visibles --------------------------
+    # -- render: una malla por chunk, solo caras visibles -------------------
 
-    def dibujar(self):
-        if self._sucio:
-            self._reconstruir_gl()
-            self._sucio = False
-        super(Mundo, self).dibujar()
-
-    def _generar_geometria(self):
+    def _geometria_chunk(self, ci, ck):
+        """Vértices del chunk (ci, ck): solo caras que tocan aire."""
+        c = self.tamano_chunk
+        i0, i1 = ci * c, ci * c + c
+        k0, k1 = ck * c, ck * c + c
         posiciones, normales, uvs = [], [], []
         n_baldosas = float(self.baldosas)
         for (i, j, k), tipo in self.bloques.items():
+            if not (i0 <= i < i1 and k0 <= k < k1):
+                continue
             baldosas = self.tipos.get(tipo)
             if baldosas is None:
                 baldosas = (0, 0, 0)
@@ -273,4 +293,62 @@ class Mundo(Actor):
                     normales.extend(normal)
                     uc, vc = _UV_CARA[idx]
                     uvs.extend((u0 + uc * (u1 - u0), vc))
-        return posiciones, normales, GL_TRIANGLES, None, uvs
+        return posiciones, normales, uvs
+
+    def _construir_chunk(self, clave):
+        from pilas3d import shaders
+
+        posiciones, normales, uvs = self._geometria_chunk(*clave)
+        viejo = self._chunks.pop(clave, None)
+        if viejo is not None:
+            viejo.delete()
+        if not posiciones:
+            return
+        cantidad = len(posiciones) // 3
+        self._chunks[clave] = shaders.obtener_programa().vertex_list(
+            cantidad,
+            GL_TRIANGLES,
+            position=("f", posiciones),
+            normal=("f", normales),
+            color=("f", self._colores_planos(cantidad)),
+            texcoords=("f", uvs),
+        )
+
+    def dibujar(self):
+        from pilas3d import shaders
+        from pyglet.gl import glBindTexture, GL_TEXTURE_2D
+
+        if self._sucio:
+            for vl in self._chunks.values():
+                vl.delete()
+            self._chunks = {}
+            c = self.tamano_chunk
+            self._sucios = {(i // c, k // c)
+                            for (i, j, k) in self.bloques}
+            self._sucio = False
+        for clave in list(self._sucios):
+            self._construir_chunk(clave)
+            self._sucios.discard(clave)
+
+        programa = shaders.obtener_programa()
+        programa["modelo"] = self.matriz_modelo()
+        programa["punto_tamano"] = 1.0
+        programa["uv_escala"] = self._uv_escala
+        programa["uv_desplazamiento"] = self._uv_desplazamiento
+        if self._textura is None and self._imagen is not None:
+            self._cargar_textura()
+        if self._textura is not None:
+            glBindTexture(GL_TEXTURE_2D, self._textura.id)
+            programa["textura"] = 0
+            programa["usar_textura"] = True
+        else:
+            programa["usar_textura"] = False
+        for vl in self._chunks.values():
+            vl.draw(GL_TRIANGLES)
+
+    def terminar(self):
+        """Libera los vertex lists de todos los chunks."""
+        for vl in self._chunks.values():
+            vl.delete()
+        self._chunks = {}
+        self._sucios = set()

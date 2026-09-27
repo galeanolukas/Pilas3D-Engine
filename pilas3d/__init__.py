@@ -60,7 +60,7 @@ Actores  (posición x/y/z, rotacion_x/y/z, escala, color, imagen)
     pilas.actores.Texto('hola')  Puntaje(prefijo='Puntos: ')
     pilas.actores.Modelo('modelos/arbol.obj', escala=0.1)  # archivo .obj
     pilas.actores.ModeloAnimado('run/f*.obj', velocidad=10)  # secuencia .obj
-    pilas.actores.Mundo()                    # voxels estilo Minecraft
+    pilas.actores.Mundo(tamano_chunk=16)     # voxels estilo Minecraft
     mundo.generar_terreno(48, 48, altura=4)  # heightmap procedural
     mundo.poner_bloque(i, j, k, 'ladrillo')  sacar_bloque(i, j, k)
     mundo.disparar_bloque(origen, dir)       # picar/colocar (rayo DDA)

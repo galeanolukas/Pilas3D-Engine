@@ -77,13 +77,14 @@ class Actores(object):
         """Domo de fondo: 'estrellas' genera un cielo sin archivos."""
         return Cielo(self._pilas, imagen=imagen, radio=radio)
 
-    def Mundo(self, tipos=None, atlas=None):
-        """Mundo de voxels (grilla de bloques, una sola malla).
+    def Mundo(self, tipos=None, atlas=None, tamano_chunk=16):
+        """Mundo de voxels (grilla de bloques, malla por chunk).
 
         ``atlas`` puede ser una lista de imágenes/rutas que se
         componen en una sola textura.
         """
-        return Mundo(self._pilas, tipos=tipos, atlas=atlas)
+        return Mundo(self._pilas, tipos=tipos, atlas=atlas,
+                     tamano_chunk=tamano_chunk)
 
     def ModeloJSON(self, ruta, x=0, y=0, z=0, escala=1.0):
         """Modelo de bloque estilo Minecraft (.json con elements)."""

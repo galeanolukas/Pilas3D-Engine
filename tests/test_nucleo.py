@@ -802,7 +802,7 @@ def test_mundo_cara_compartida_no_se_dibuja():
     mundo = pilas.actores.Mundo()
     mundo.poner_bloque(0, 0, 0)
     mundo.poner_bloque(1, 0, 0)
-    pos, _, _, _, _ = mundo._generar_geometria()
+    pos, _, _ = mundo._geometria_chunk(0, 0)
     # 2 bloques separados = 12 caras = 72 vértices; pegados = 10 caras
     assert len(pos) // 3 == 10 * 2 * 3
 
@@ -1099,6 +1099,23 @@ def test_perseguir_sin_obstaculos_va_derecho():
     for _ in range(120):
         enemigo.pre_actualizar()
     assert enemigo.distancia_con(objetivo) < 1.5
+
+
+def test_mundo_chunks_marcan_bordes():
+    pilas = crear_pilas()
+    m = pilas.actores.Mundo(tamano_chunk=16)
+    m._sucio = False
+    m._sucios = set()
+    m.poner_bloque(0, 1, 0)            # esquina del chunk (0,0)
+    assert (0, 0) in m._sucios
+    assert (-1, 0) in m._sucios        # vecino por borde i=0
+    assert (0, -1) in m._sucios        # vecino por borde k=0
+    m._sucios = set()
+    m.poner_bloque(5, 1, 5)            # interior: solo su chunk
+    assert m._sucios == {(0, 0)}
+    m._sucios = set()
+    m.sacar_bloque(5, 1, 5)
+    assert m._sucios == {(0, 0)}
 
 
 def test_particulas_emiten_y_renacen():
