@@ -119,13 +119,23 @@ class Mundo(Actor):
     """Grilla de bloques renderizada en chunks de malla."""
 
     def __init__(self, pilas, tipos=None, atlas=None, baldosas=5,
-                 tamano_chunk=16):
+                 tamano_chunk=16, infinito=False, semilla=0, altura=4,
+                 distancia_vista=3):
         self.bloques = {}
         self.tipos = dict(tipos or TIPOS_POR_DEFECTO)
         self.tamano_chunk = tamano_chunk
         self._chunks = {}          # (ci, ck) -> vertex_list
         self._sucios = set()       # chunks a reconstruir
         self._sucio = True         # reconstruir todo (atlas, etc.)
+        self._columnas = {}        # (i, k) -> techo más alto
+        # modo infinito: genera chunks alrededor de la cámara
+        self.infinito = infinito
+        self.semilla = semilla
+        self.altura_terreno = altura
+        self.distancia_vista = distancia_vista
+        self._generados = set()    # chunks con bloques ya creados
+        rng = random.Random(semilla)
+        self._fases = (rng.uniform(0, 9), rng.uniform(0, 9))
         super(Mundo, self).__init__(pilas)
         if atlas is None:
             self.baldosas = baldosas
@@ -157,13 +167,28 @@ class Mundo(Actor):
         if k % c == c - 1:
             self._sucios.add((ci, ck + 1))
 
+    def _subir_columna(self, i, j, k):
+        """Anota el techo de la columna (i, k) tras poner un bloque."""
+        col = (i, k)
+        self._columnas[col] = max(self._columnas.get(col, 0), j + 1)
+
     def poner_bloque(self, i, j, k, tipo='ladrillo'):
         self.bloques[(i, j, k)] = tipo
+        self._subir_columna(i, j, k)
         self._marcar_sucio(i, k)
 
     def sacar_bloque(self, i, j, k):
         if (i, j, k) in self.bloques:
             del self.bloques[(i, j, k)]
+            if self._columnas.get((i, k)) == j + 1:
+                # era el más alto: buscar el nuevo techo bajando
+                j -= 1
+                while j >= 0 and (i, j, k) not in self.bloques:
+                    j -= 1
+                if j >= 0:
+                    self._columnas[(i, k)] = j + 1
+                else:
+                    del self._columnas[(i, k)]
             self._marcar_sucio(i, k)
 
     def hay_bloque(self, i, j, k):
@@ -193,17 +218,66 @@ class Mundo(Actor):
                     else:
                         tipo = 'piedra'
                     self.bloques[(i - cx, j, k - cz)] = tipo
+                    self._subir_columna(i - cx, j, k - cz)
         self._sucio = True   # terreno nuevo: reconstruir todo
+
+    # -- mundo infinito: generación por demanda ------------------------------
+
+    def altura_terreno_en(self, i, k):
+        """Altura procedural de la columna (i, k) — determinista por
+        ``semilla``. Igual al heightmap de ``generar_terreno``."""
+        a, b = self._fases
+        return 1 + int(self.altura_terreno * (
+            0.5 + 0.5 * math.sin(i * 0.35 + a) * math.cos(k * 0.3 + b)))
+
+    def _generar_chunk_bloques(self, ci, ck):
+        """Crea los bloques procedurales de un chunk (una sola vez)."""
+        c = self.tamano_chunk
+        for i in range(ci * c, ci * c + c):
+            for k in range(ck * c, ck * c + c):
+                h = self.altura_terreno_en(i, k)
+                for j in range(h):
+                    if (i, j, k) not in self.bloques:
+                        if j == h - 1:
+                            tipo = 'cesped'
+                        elif j >= h - 3:
+                            tipo = 'tierra'
+                        else:
+                            tipo = 'piedra'
+                        self.bloques[(i, j, k)] = tipo
+                        self._subir_columna(i, j, k)
+        self._generados.add((ci, ck))
+
+    def actualizar(self):
+        """En modo infinito: genera chunks cerca de la cámara y
+        descarga (de la malla, no de la memoria) los lejanos."""
+        if not self.infinito:
+            return
+        escena = self.pilas.escena_actual()
+        if escena is None:
+            return
+        cam = escena.camara
+        c = self.tamano_chunk
+        ci0 = int(math.floor(cam.posicion[0] / c))
+        ck0 = int(math.floor(cam.posicion[2] / c))
+        d = self.distancia_vista
+        for di in range(-d, d + 1):
+            for dk in range(-d, d + 1):
+                clave = (ci0 + di, ck0 + dk)
+                if clave not in self._generados:
+                    self._generar_chunk_bloques(*clave)
+                if clave not in self._chunks:
+                    self._sucios.add(clave)
+        # descargar la malla de chunks lejanos (los bloques quedan)
+        for clave in list(self._chunks):
+            if abs(clave[0] - ci0) > d + 1 or abs(clave[1] - ck0) > d + 1:
+                self._chunks.pop(clave).delete()
 
     def altura_suelo(self, x, z):
         """Altura del techo del bloque más alto de la columna (x, z),
-        o None si la columna está vacía."""
+        o None si la columna está vacía. O(1) con índice de columnas."""
         i, k = math.floor(x), math.floor(z)
-        techo = None
-        for (bi, bj, bk) in self.bloques:
-            if bi == i and bk == k and (techo is None or bj >= techo):
-                techo = bj + 1
-        return techo
+        return self._columnas.get((i, k))
 
     # -- rayo contra la grilla (para picar / construir) ---------------------
 

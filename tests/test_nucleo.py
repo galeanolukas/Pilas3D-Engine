@@ -1118,6 +1118,45 @@ def test_mundo_chunks_marcan_bordes():
     assert m._sucios == {(0, 0)}
 
 
+def test_mundo_infinito_genera_alrededor_de_camara():
+    pilas = crear_pilas()
+    m = pilas.actores.Mundo(infinito=True, tamano_chunk=8,
+                          distancia_vista=1)
+    m.actualizar()                     # cámara en (0,5,12) → chunk (0,0)
+    assert len(m._generados) == 9      # 3x3 chunks
+    assert len(m.bloques) > 0
+    assert m.altura_suelo(0, 0) is not None
+    # mover la cámara lejos genera chunks nuevos
+    cam = pilas.escena_actual().camara
+    cam.posicion = (200, 5, 0)
+    m.actualizar()
+    assert len(m._generados) == 18
+    assert m.altura_suelo(200, 0) is not None
+
+
+def test_mundo_infinito_determinista_por_semilla():
+    pilas = crear_pilas()
+    a = pilas.actores.Mundo(infinito=True, semilla=42)
+    b = pilas.actores.Mundo(infinito=True, semilla=42)
+    assert a.altura_terreno_en(5, 7) == b.altura_terreno_en(5, 7)
+    c = pilas.actores.Mundo(infinito=True, semilla=43)
+    assert any(a.altura_terreno_en(i, k) != c.altura_terreno_en(i, k)
+               for i in range(10) for k in range(10))
+
+
+def test_mundo_altura_suelo_respeta_ediciones():
+    pilas = crear_pilas()
+    m = pilas.actores.Mundo(infinito=True, tamano_chunk=8,
+                          distancia_vista=1)
+    m.actualizar()                     # cubre la columna (0, 12)
+    suelo = m.altura_suelo(0, 12)
+    assert suelo is not None
+    m.poner_bloque(0, suelo, 12, 'ladrillo')
+    assert m.altura_suelo(0, 12) == suelo + 1
+    m.sacar_bloque(0, suelo, 12)
+    assert m.altura_suelo(0, 12) == suelo
+
+
 def test_particulas_emiten_y_renacen():
     pilas = crear_pilas()
     p = pilas.actores.Particulas(cantidad=20, vida=0.1, velocidad=2)
