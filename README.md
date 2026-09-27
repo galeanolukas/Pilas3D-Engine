@@ -98,6 +98,7 @@ de CPU). Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 .venv/bin/python ejemplos/escenas.py            # menu -> juego (escenas)
 .venv/bin/python ejemplos/minecraft.py          # mini-Minecraft: picar/colocar bloques
 .venv/bin/python ejemplos/juego_modelos.py      # recolectar gemas con modelos .obj
+.venv/bin/python ejemplos/plataformas.py        # plataformero: PisaPlataformas + salto
 ```
 
 ## Consola interactiva (con autocompletado)

@@ -365,6 +365,11 @@ class Actor(object):
         """Se ejecuta justo antes de eliminar el actor de la escena."""
         pass
 
+    def esta_en_escena(self):
+        """True si el actor sigue vivo en la escena actual."""
+        escena = self.pilas.escena_actual()
+        return escena is not None and self in escena.actores
+
     def eliminar(self):
         self.terminar()
         self.eliminar_habilidades()
