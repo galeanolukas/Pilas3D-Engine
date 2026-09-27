@@ -184,7 +184,7 @@ bloquear con `ejecutar()`:
 | `actor.colisiona_con(otro)`   | igual (esfera-esfera 3D con `radio_de_colision`) + `colisiona_en_plano_con` (solo XZ) |
 | `pilas.tareas.siempre(s, f)`  | igual (`una_vez`, `siempre`, `condicional`)  |
 | `actor.x = [100]`             | igual — interpolación; `actor.x = ([a,b], dur)` u `Objeto` (`pilas.interpolaciones.Lineal`, `ReboteFinal`, `ElasticoInicial`…) + `pilas.interpolar(actor, 'x', v, duracion)` |
-| `actor.aprender(pilas.habilidades.X)` | igual — `MoverseConElTeclado`, `RebotarComoPelota` (3D), `GirarConstantemente`, `SeguirAlActor`, `MirarAlActor`, `MoverseEnCirculo`, `MoverseComoCoche`, `Imitar`, `AumentarConRueda`, `RotarConMouse`, `PuedeExplotar`, `PisaPlataformas` |
+| `actor.aprender(pilas.habilidades.X)` | igual — `MoverseConElTeclado`, `RebotarComoPelota` (3D), `GirarConstantemente`, `SeguirAlActor`, `MirarAlActor`, `MoverseEnCirculo`, `MoverseComoCoche`, `Imitar`, `AumentarConRueda`, `RotarConMouse`, `PuedeExplotar`, `PisaPlataformas`, `PerseguirAOtroActor` (A* esquivando obstáculos) |
 | `pilas.depurador.definir_modos` | `fps`, `ejes`, `radios_de_colision`, `puntos_de_control` |
 | `pilas.fps.ver()`             | igual                                |
 | —                             | `camara.usar_control_orbital()` (mouse: orbitar + zoom) |

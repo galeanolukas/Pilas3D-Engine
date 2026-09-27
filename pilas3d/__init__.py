@@ -93,6 +93,7 @@ Habilidades  (actor.aprender)
     Imitar                                  AumentarConRueda
     RotarConMouse                           PuedeExplotar
     PisaPlataformas                         # gravedad que pisa bloques
+    PerseguirAOtroActor                     # persigue esquivando (A*)
 
 Tareas
     pilas.tareas.una_vez(2, f)   siempre(1, f)   condicional(0.1, f)

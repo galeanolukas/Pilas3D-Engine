@@ -1070,6 +1070,37 @@ def test_pisa_plataformas_cae_al_borde():
     assert not cubo.habilidades.PisaPlataformas.en_suelo or True
 
 
+def test_perseguir_esquiva_una_pared():
+    pilas = crear_pilas()
+    pilas.dt = 1 / 60.0
+    # pared entre el enemigo (0,0) y el objetivo (7,0)
+    pilas.actores.Pared(x=3, z=0, ancho=1, alto=3, profundidad=8)
+    objetivo = pilas.actores.Cubo(x=7, z=0)
+    enemigo = pilas.actores.Esfera()
+    enemigo.aprender(pilas.habilidades.PerseguirAOtroActor,
+                     actor=objetivo, velocidad=4, cada=0.2)
+    zigzagueo = False
+    for _ in range(600):
+        enemigo.pre_actualizar()
+        if abs(enemigo.z) > 3:        # tuvo que bordear la pared
+            zigzagueo = True
+        if enemigo.distancia_con(objetivo) < 1.5:
+            break
+    assert zigzagueo
+    assert enemigo.distancia_con(objetivo) < 1.5
+
+
+def test_perseguir_sin_obstaculos_va_derecho():
+    pilas = crear_pilas()
+    objetivo = pilas.actores.Cubo(x=5, z=0)
+    enemigo = pilas.actores.Esfera()
+    enemigo.aprender(pilas.habilidades.PerseguirAOtroActor,
+                     actor=objetivo, velocidad=4, cada=0.1)
+    for _ in range(120):
+        enemigo.pre_actualizar()
+    assert enemigo.distancia_con(objetivo) < 1.5
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()
