@@ -8,7 +8,6 @@ Teclas 1-5 cambian la animación; ESPACIO pausa/continúa.
 """
 
 import pilas3d
-from pyglet.window import key
 
 pilas = pilas3d.iniciar(titulo="pilas3d - glTF esqueletico")
 
@@ -41,11 +40,11 @@ def mostrar_nombre():
 
 
 def al_pulsar(tecla):
-    if key._1 <= tecla <= key._5:
-        i = tecla - key._1
+    if pilas.simbolos._1 <= tecla <= pilas.simbolos._5:
+        i = tecla - pilas.simbolos._1
         if i < len(nombres):
             lobo.animar(nombres[i], ciclica=True)
-    elif tecla == key.SPACE:
+    elif tecla == pilas.simbolos.ESPACIO:
         lobo.velocidad = 0.0 if lobo.velocidad else 1.0
     mostrar_nombre()
 

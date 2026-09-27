@@ -83,8 +83,7 @@ def reiniciar():
 
 
 def al_pulsar(tecla):
-    from pyglet.window import key
-    if tecla == key.T:
+    if tecla == pilas.simbolos.t:
         reiniciar()
 
 pilas.escena.cuando_pulsa_tecla = al_pulsar

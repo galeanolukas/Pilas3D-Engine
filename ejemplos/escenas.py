@@ -9,7 +9,6 @@ ENTER: jugar - M: volver al menú - ESC: salir
 
 import pilas3d
 from pilas3d.escenas import Escena
-from pyglet.window import key
 
 pilas = pilas3d.iniciar(titulo="pilas3d - escenas")
 
@@ -24,7 +23,7 @@ class Menu(Escena):
                             x=230, y=250, tamano=16)
 
     def cuando_pulsa_tecla(self, simbolo):
-        if simbolo == key.ENTER:
+        if simbolo == pilas.simbolos.ENTER:
             pilas.escenas.Juego()
 
 
@@ -44,7 +43,7 @@ class Juego(Escena):
         self.camara.objetivo = (0, 0, 0)
 
     def cuando_pulsa_tecla(self, simbolo):
-        if simbolo == key.M:
+        if simbolo == pilas.simbolos.m:
             pilas.escenas.Menu()
 
 

@@ -14,7 +14,6 @@ WASD moverse - mouse mirar - ESC salir.
 import pilas3d
 from pilas3d.actores.esfera import Esfera
 from pilas3d.luces import LuzPuntual
-from pyglet.window import key
 
 pilas = pilas3d.iniciar(titulo="pilas3d - niebla")
 
@@ -59,12 +58,12 @@ class Jugador(Esfera):
         cam = self.pilas.escena.camara
         linterna.x, linterna.y, linterna.z = cam.x, cam.y, cam.z
         c = self.pilas.control
-        if c.simbolo(key.N) and not self._n:
+        if c.simbolo(pilas.simbolos.n) and not self._n:
             modo[0] = (modo[0] + 1) % len(MODOS)
             nombre, niebla = MODOS[modo[0]]
             self.pilas.escena.niebla = niebla
             cartel.texto = nombre
-        self._n = c.simbolo(key.N)
+        self._n = c.simbolo(pilas.simbolos.n)
 
 
 jugador = Jugador(pilas)

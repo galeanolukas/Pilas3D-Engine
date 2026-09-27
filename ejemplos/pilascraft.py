@@ -20,7 +20,6 @@ import random
 
 import pilas3d
 from pilas3d.actores.esfera import Esfera
-from pyglet.window import key
 
 pilas = pilas3d.iniciar(titulo="pilas3d - PilasCraft")
 
@@ -84,7 +83,7 @@ cielo_idx = [0]
 
 
 def al_pulsar_tecla(simbolo):
-    if simbolo == key.C:
+    if simbolo == pilas.simbolos.c:
         cielo_idx[0] = (cielo_idx[0] + 1) % len(CIELOS)
         tipo, fondo = CIELOS[cielo_idx[0]]
         cielo.tipo = tipo

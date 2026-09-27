@@ -10,7 +10,6 @@ reproduce en streaming y en bucle por defecto. Nota: pyglet decodifica
 .wav y .ogg nativamente; .mp3 necesita ffmpeg instalado.
 """
 
-from pyglet.window import key
 
 import pilas3d
 
@@ -30,7 +29,7 @@ tick = pilas.sonidos.cargar('tick.wav')
 
 
 def al_pulsar_tecla(simbolo, modificadores):
-    if simbolo == key.SPACE:
+    if simbolo == pilas.simbolos.ESPACIO:
         salto.reproducir()
         cubo.rotacion_y = 0  # marca visual
         cubo.y = 1.5

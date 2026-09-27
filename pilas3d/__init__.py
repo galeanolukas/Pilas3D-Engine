@@ -19,6 +19,7 @@ import os
 import pyglet
 
 from pilas3d import colores
+from pilas3d import simbolos
 from pilas3d.actores import Actores
 from pilas3d.control import Control, ControlNulo
 from pilas3d.escenas import Escenas
@@ -109,6 +110,8 @@ Tareas
 
 Entrada
     pilas.control.arriba/abajo/izquierda/derecha   (flechas + WASD)
+    pilas.simbolos.t  .ESPACIO  .ENTER  .a-.z  ._1-._9  .F1-F12
+    escena.cuando_pulsa_tecla = fn   # recibe el simbolo pulsado
     pilas.control.mouse_x/y  boton_izquierdo/derecho/medio
     pilas.cuando_hace_click(f)    # f(actor, punto) al hacer click
     pilas.cuando_suelta_click(f)  cuando_mueve_mouse(f)
@@ -230,6 +233,7 @@ class Pilas(object):
         self.actores = Actores(self)
         self.escenas = Escenas(self)
         self.colores = colores
+        self.simbolos = simbolos
         self.habilidades = Habilidades()
         self.depurador = Depurador(self)
         self.sonidos = Sonidos(self)
