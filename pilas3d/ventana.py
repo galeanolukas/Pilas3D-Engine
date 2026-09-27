@@ -7,6 +7,7 @@ from pyglet.gl import (
     glDisable,
     glClearColor,
     glBlendFunc,
+    glViewport,
     GL_DEPTH_TEST,
     GL_BLEND,
     GL_SRC_ALPHA,
@@ -39,6 +40,12 @@ class Ventana(pyglet.window.Window):
         self.mouse_x = 0
         self.mouse_y = 0
         self.mouse_botones = 0
+
+        #: Área de la ventana donde se dibuja la escena 3D, en
+        #: píxeles ``(x, y, ancho, alto)``. ``None`` = toda la
+        #: ventana. Sirve para dejar zonas libres para paneles de
+        #: interfaz (ver ``actores.Panel``).
+        self.area_3d = None
 
     def on_key_press(self, simbolo, modificadores):
         """Atajos globales de la ventana.
@@ -95,7 +102,12 @@ class Ventana(pyglet.window.Window):
         self.clear()
 
         programa = shaders.obtener_programa()
-        aspecto = self.width / float(self.height)
+        if self.area_3d:
+            vx, vy, vw, vh = self.area_3d
+            glViewport(int(vx), int(vy), int(vw), int(vh))
+            aspecto = vw / float(vh)
+        else:
+            aspecto = self.width / float(self.height)
 
         with programa:
             programa["proyeccion"] = Mat4.perspective_projection(
@@ -113,6 +125,9 @@ class Ventana(pyglet.window.Window):
                 programa["niebla_inicio"] = float(inicio)
                 programa["niebla_fin"] = float(fin)
             escena.dibujar()
+
+        if self.area_3d:
+            glViewport(0, 0, self.width, self.height)
 
         if escena.tiene_overlays() or self.pilas._fps_visible:
             glDisable(GL_DEPTH_TEST)

@@ -24,6 +24,7 @@ from pilas3d.actores.mundo import Mundo
 from pilas3d.actores.modelo_json import ModeloJSON
 from pilas3d.actores.modelo_gltf import ModeloGLTF
 from pilas3d.actores.texto import Texto, Puntaje
+from pilas3d.actores.panel import Panel
 from pilas3d.actores.temporizador import Temporizador
 from pilas3d.actores.particulas import Particulas
 from pilas3d.actores.proyectil import Proyectil
@@ -161,6 +162,15 @@ class Actores(object):
 
     def Texto(self, texto="", x=10, y=10, tamano=18):
         return Texto(self._pilas, texto=texto, x=x, y=y, tamano=tamano)
+
+    def Panel(self, x=0, y=0, ancho=200, alto=200, color=None,
+              opacidad=255):
+        """Rectángulo 2D relleno (overlay) para paneles de interfaz:
+        fondos oscuros detrás de textos, HUD, barras. Combínalo con
+        ``pilas.ventana.area_3d`` para dividir la ventana en vista 3D
+        + zona de interfaz."""
+        return Panel(self._pilas, x=x, y=y, ancho=ancho, alto=alto,
+                     color=color, opacidad=opacidad)
 
     def Puntaje(self, x=10, y=10, tamano=22, prefijo=""):
         return Puntaje(

@@ -1912,3 +1912,15 @@ def test_gltf_rotar_hueso_por_nombre(tmp_path):
         or True                            # algunos ya rotan
     with pytest.raises(ValueError):
         lobo.rotar_hueso('no_existo', 'x', 10)
+
+
+def test_panel_es_overlay():
+    pilas = crear_pilas()
+    p = pilas.actores.Panel(x=5, y=10, ancho=200, alto=90,
+                            opacidad=200)
+    assert p.es_overlay
+    assert (p.x, p.y) == (5, 10)
+    assert (p.ancho, p.alto) == (200, 90)
+    assert p.opacidad == 200
+    p.x, p.ancho = 30, 100          # reubicable (layout dinámico)
+    assert (p.x, p.ancho) == (30, 100)

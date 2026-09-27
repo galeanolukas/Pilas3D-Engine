@@ -75,14 +75,44 @@ def nombre_modelo(ruta):
 marcador = pilas.actores.Esfera(radio=0.08)
 marcador.color = pilas.colores.rojo
 
-lista = pilas.actores.Texto("", x=10, y=170, tamano=13)
-info = pilas.actores.Texto("", x=10, y=420, tamano=15)
+# Layout de dos áreas: la escena 3D se dibuja solo en `area_3d`;
+# los paneles negros llevan los textos (lateral y abajo).
+panel_der = pilas.actores.Panel(color=pilas.colores.negro)
+panel_inf = pilas.actores.Panel(color=pilas.colores.negro)
+
+lista = pilas.actores.Texto("", tamano=13)
+info = pilas.actores.Texto("", tamano=15)
 info.color = pilas.colores.amarillo
 pilas.actores.Texto(
-    "N: modelo - arriba/abajo: hueso - X/Y/Z: eje - <-/->: rotar - "
-    "M: keyframe - W: borrar - P: play - J/L: anim - G/C/R: pose "
-    "- A: cargar .glb externo",
-    x=10, y=10)
+    "N: modelo - flechas: hueso - X/Y/Z+<-/->: rotar - M/W/P: anim "
+    "- J/L/G/C/R - A: cargar .glb",
+    x=10, y=12, tamano=12)
+
+PANEL = 250   # ancho del panel lateral en px
+PIE = 90      # alto del panel inferior
+
+
+def organizar_layout():
+    """Reparte la ventana: vista 3D arriba-izquierda, panel lateral
+    para la lista de huesos y panel inferior para la info."""
+    if pilas.ventana is None:
+        return
+    w, h = pilas.ventana.width, pilas.ventana.height
+    pilas.ventana.area_3d = (0, PIE, w - PANEL, h - PIE)
+    panel_der.x = w - PANEL
+    panel_der.y = PIE
+    panel_der.ancho = PANEL
+    panel_der.alto = h - PIE
+    panel_inf.ancho = w
+    panel_inf.alto = PIE
+    lista.x = w - PANEL + 8
+    lista.y = h - 20
+    info.x = 10
+    info.y = 58
+
+
+organizar_layout()
+pilas.tareas.siempre(0.5, organizar_layout)   # sigue el resize
 
 
 def cargar_modelo(i):
@@ -113,7 +143,7 @@ def refrescar_ui():
     lineas = []
     for k, (j, n) in enumerate(huesos[ini:ini + 14]):
         marca = '>> ' if ini + k == sel else '   '
-        lineas.append('%s%s' % (marca, n))
+        lineas.append(('%s%s' % (marca, n))[:30])   # que entre en el panel
     lista.texto = '\n'.join(lineas)
 
 
@@ -185,8 +215,10 @@ def _tecla_explorador(t):
             estado['modo'] = 'nombre'
     if estado['modo'] == 'explorar':
         _pintar_explorador()
-    else:
+    elif estado['modo'] == 'nombre':
         _pintar_nombre()
+    else:
+        refrescar_ui()
 
 
 def _pintar_nombre():
