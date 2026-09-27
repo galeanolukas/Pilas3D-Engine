@@ -880,6 +880,76 @@ def test_modelo_json_mc(tmp_path):
     assert actor.imagen == datos['imagen']
 
 
+def test_seguir_al_actor_persigue_y_frena():
+    pilas = crear_pilas()
+    jugador = pilas.actores.Cubo(x=10, z=0)
+    enemigo = pilas.actores.Esfera()
+    enemigo.aprender(pilas.habilidades.SeguirAlActor,
+                     actor=jugador, velocidad=5)
+    d0 = enemigo.distancia_con(jugador)
+    for _ in range(30):
+        enemigo.pre_actualizar()
+    assert enemigo.distancia_con(jugador) < d0
+    jugador.eliminar()
+    x0 = enemigo.x
+    enemigo.pre_actualizar()   # objetivo muerto: no se mueve
+    assert enemigo.x == x0
+
+
+def test_mirar_al_actor_orienta_hacia_objetivo():
+    import math
+    pilas = crear_pilas()
+    objetivo = pilas.actores.Cubo(z=-10)
+    torreta = pilas.actores.Cubo()
+    torreta.aprender(pilas.habilidades.MirarAlActor, actor=objetivo)
+    torreta.pre_actualizar()
+    assert abs(torreta.rotacion_y - 0) < 0.01   # mira hacia -z
+    objetivo.x = 10
+    objetivo.z = 0
+    torreta.pre_actualizar()
+    assert abs(torreta.rotacion_y + 90) < 0.01   # mira hacia +x
+
+
+def test_moverse_en_circulo_orbita():
+    import math
+    pilas = crear_pilas()
+    luna = pilas.actores.Esfera()
+    luna.aprender(pilas.habilidades.MoverseEnCirculo,
+                  centro=(0, 0), radio=5, velocidad=90)
+    pilas.dt = 1 / 60.0
+    luna.pre_actualizar()
+    a1 = math.degrees(math.atan2(luna.z, luna.x))
+    for _ in range(30):
+        luna.pre_actualizar()
+    d = math.sqrt(luna.x ** 2 + luna.z ** 2)
+    assert abs(d - 5) < 0.01
+    a2 = math.degrees(math.atan2(luna.z, luna.x))
+    assert a2 != a1  # avanzó en la órbita
+
+
+def test_imitar_copia_posicion_y_rotacion():
+    pilas = crear_pilas()
+    lider = pilas.actores.Cubo(x=3, z=-2)
+    lider.rotacion_y = 45
+    gorro = pilas.actores.Esfera()
+    gorro.aprender(pilas.habilidades.Imitar, actor=lider,
+                   desplazar=(0, 1, 0))
+    gorro.pre_actualizar()
+    assert (gorro.x, gorro.y, gorro.z) == (3, 1, -2)
+    assert gorro.rotacion_y == 45
+
+
+def test_puede_explotar_crea_animacion_y_elimina():
+    pilas = crear_pilas()
+    bomba = pilas.actores.Cubo()
+    bomba.aprender(pilas.habilidades.PuedeExplotar)
+    bomba.habilidades.PuedeExplotar.explotar()
+    escena = pilas.escena_actual()
+    assert bomba not in escena.actores
+    assert any(a.__class__.__name__ == 'Animacion'
+               for a in escena.actores)
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()

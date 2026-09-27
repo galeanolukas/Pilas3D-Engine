@@ -78,6 +78,10 @@ Escena y cámara
 Habilidades  (actor.aprender)
     pilas.habilidades.MoverseConElTeclado   RebotarComoPelota
     GirarConstantemente                     CaminarEnPrimeraPersona
+    SeguirAlActor                           MirarAlActor
+    MoverseEnCirculo                        MoverseComoCoche
+    Imitar                                  AumentarConRueda
+    RotarConMouse                           PuedeExplotar
 
 Tareas
     pilas.tareas.una_vez(2, f)   siempre(1, f)   condicional(0.1, f)
