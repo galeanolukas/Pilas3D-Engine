@@ -1327,3 +1327,86 @@ def test_serbot_se_aprende_en_cualquier_actor():
     p.objetivo = cerca
     p.pre_actualizar()
     assert p.estado == 'perseguir'
+
+
+def _gltf_esqueletico():
+    """Genera un .gltf mínimo con skin de 2 articulaciones y una
+    animación que rota la articulación hija 90° en Z."""
+    import base64, io, json, struct, tempfile
+
+    buf = io.BytesIO()
+    vistas, accesores = [], []
+
+    def acc(fmt, vals):
+        """fmt struct + lista -> accessor nuevo."""
+        datos = struct.pack('<' + fmt * len(vals), *vals)
+        vistas.append({'buffer': 0, 'byteOffset': buf.tell(),
+                       'byteLength': len(datos)})
+        buf.write(datos)
+        accesores.append({})
+        return len(accesores) - 1
+
+    def acc_tipo(i, comp, tipo, count):
+        accesores[i] = {'bufferView': i, 'componentType': comp,
+                        'count': count, 'type': tipo}
+        return i
+
+    i_pos = acc_tipo(acc('f', [0, 0, 0, 1, 0, 0, 2, 0, 0]),
+                     5126, 'VEC3', 3)
+    i_nor = acc_tipo(acc('f', [0, 0, 1] * 3), 5126, 'VEC3', 3)
+    i_jts = acc_tipo(acc('B', [0, 1, 0, 0] * 3), 5121, 'VEC4', 3)
+    i_wgt = acc_tipo(acc('f', [0.5, 0.5, 0, 0] * 3), 5126, 'VEC4', 3)
+    i_idx = acc_tipo(acc('H', [0, 1, 2]), 5123, 'SCALAR', 3)
+    ident = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+    ibm1 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 1]
+    i_ibm = acc_tipo(acc('f', ident + ibm1), 5126, 'MAT4', 2)
+    i_t = acc_tipo(acc('f', [0, 1]), 5126, 'SCALAR', 2)
+    s2 = 0.7071067811865476
+    i_rot = acc_tipo(acc('f', [0, 0, 0, 1, 0, 0, s2, s2]),
+                     5126, 'VEC4', 2)
+
+    doc = {
+        'asset': {'version': '2.0'},
+        'scene': 0, 'scenes': [{'nodes': [0, 2]}],
+        'nodes': [
+            {'name': 'raiz', 'children': [1]},
+            {'name': 'hueso', 'translation': [1, 0, 0]},
+            {'name': 'malla', 'mesh': 0, 'skin': 0},
+        ],
+        'skins': [{'joints': [0, 1], 'inverseBindMatrices': i_ibm}],
+        'meshes': [{'primitives': [{
+            'attributes': {'POSITION': i_pos, 'NORMAL': i_nor,
+                           'JOINTS_0': i_jts, 'WEIGHTS_0': i_wgt},
+            'indices': i_idx}]}],
+        'animations': [{'name': 'giro', 'channels': [{
+            'target': {'node': 1, 'path': 'rotation'}, 'sampler': 0}],
+            'samplers': [{'input': i_t, 'output': i_rot}]}],
+        'buffers': [{'uri': 'data:application/octet-stream;base64,' +
+                     base64.b64encode(buf.getvalue()).decode()}],
+        'bufferViews': vistas, 'accessors': accesores,
+    }
+    f = tempfile.NamedTemporaryFile(suffix='.gltf', delete=False,
+                                    mode='w')
+    json.dump(doc, f)
+    f.close()
+    return f.name
+
+
+def test_gltf_esqueletico_carga_y_anima():
+    pilas = crear_pilas()
+    ruta = _gltf_esqueletico()
+    m = pilas.actores.ModeloGLTF(ruta)
+    assert m.animaciones() == ['giro']
+    m.animar('giro')
+    m._construir_gl()          # vertex list para escribir el skinning
+    pilas.dt = 0.5
+    m.actualizar()             # t=0.5: rotación intermedia (~45°)
+    m.actualizar()             # t=1.0: 90° completa
+
+    # vértice (2,0,0): 50% bind + 50% rotado 90° sobre (1,0)
+    # -> (2*0.5 + 1*0.5, 0 + 0.5, 0) = (1.5, 0.5, 0)
+    p = m._vertex_list.position
+    vx, vy, vz = p[6], p[7], p[8]
+    assert abs(vx - 1.5) < 0.01
+    assert abs(vy - 0.5) < 0.01
+    assert abs(vz) < 0.01

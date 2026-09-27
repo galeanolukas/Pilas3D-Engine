@@ -60,6 +60,8 @@ Actores  (posición x/y/z, rotacion_x/y/z, escala, color, imagen)
     pilas.actores.Texto('hola')  Puntaje(prefijo='Puntos: ')
     pilas.actores.Modelo('modelos/arbol.obj', escala=0.1)  # archivo .obj
     pilas.actores.ModeloAnimado('run/f*.obj', velocidad=10)  # secuencia .obj
+    pilas.actores.ModeloGLTF('p.glb')        # glTF 2.0 con esqueleto
+    modelo.animar('caminar'); modelo.animaciones()
     pilas.actores.Mundo(tamano_chunk=16)     # voxels estilo Minecraft
     pilas.actores.Mundo(infinito=True)       # terreno procedural sin fin
     mundo.generar_terreno(48, 48, altura=4)  # heightmap procedural

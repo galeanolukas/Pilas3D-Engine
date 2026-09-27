@@ -203,6 +203,7 @@ bloquear con `ejecutar()`:
 | —                             | `pilas.actores.Cartel()` (sprite que siempre mira a la cámara) |
 | —                             | `pilas.actores.Modelo('x.obj')` (carga modelos Wavefront .obj) |
 | —                             | `pilas.actores.ModeloAnimado('run/f*.obj')` (secuencia .obj estilo MD2, `suavizar=True` interpola vértices) |
+| —                             | `pilas.actores.ModeloGLTF('x.glb')` — glTF 2.0 con animación esquelética por CPU (`.animar(nombre)`, `.animaciones()`) |
 | —                             | `pilas.actores.Mundo()` — voxels tipo Minecraft: `generar_terreno`, `poner/sacar_bloque`, `disparar_bloque` (rayo DDA) |
 | —                             | `pilas.actores.ModeloJSON('x.json')` — modelos de bloque Minecraft (formato elements/faces) |
 | —                             | `mundo.armar_atlas([pngs])` — atlas de bloques desde texturas propias |

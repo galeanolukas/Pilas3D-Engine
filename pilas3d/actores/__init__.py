@@ -22,6 +22,7 @@ from pilas3d.actores.cielo import Cielo
 from pilas3d.actores.modelo_animado import ModeloAnimado
 from pilas3d.actores.mundo import Mundo
 from pilas3d.actores.modelo_json import ModeloJSON
+from pilas3d.actores.modelo_gltf import ModeloGLTF
 from pilas3d.actores.texto import Texto, Puntaje
 from pilas3d.actores.particulas import Particulas
 from pilas3d.actores.personajes import (Personaje, Robot, Humanoide,
@@ -97,6 +98,14 @@ class Actores(object):
         """Modelo de bloque estilo Minecraft (.json con elements)."""
         return ModeloJSON(self._pilas, ruta, x=x, y=y, z=z,
                           escala=escala)
+
+    def ModeloGLTF(self, ruta, x=0, y=0, z=0, escala=1.0,
+                   animacion=None, velocidad=1.0, ciclica=True):
+        """Modelo glTF 2.0 (.gltf/.glb) con animación esquelética
+        por CPU. ``.animar('nombre')`` / ``.animaciones()``."""
+        return ModeloGLTF(self._pilas, ruta, x=x, y=y, z=z,
+                          escala=escala, animacion=animacion,
+                          velocidad=velocidad, ciclica=ciclica)
 
     def ModeloAnimado(self, rutas, velocidad=8, ciclica=True,
                       suavizar=False, eliminar_al_terminar=False,
