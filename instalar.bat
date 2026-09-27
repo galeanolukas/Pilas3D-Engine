@@ -18,15 +18,49 @@ call .venv\Scripts\pip.exe install -r requirements.txt
 call .venv\Scripts\pip.exe install -e .
 
 REM Asistente de IA opcional (Ollama local): descarga el binario una
-REM sola vez; el modelo (~1 GB) se baja la primera vez que se usa
-REM pilas.ayuda("..."). Si falla, el motor funciona igual sin IA.
-where ollama >nul 2>nul
-if errorlevel 1 (
-    if not exist pilas3d\_vendor\ollama mkdir pilas3d\_vendor\ollama
+REM sola vez. Si falla, el motor funciona igual sin IA.
+set OLLAMA_BIN=
+where ollama >nul 2>nul && set OLLAMA_BIN=ollama
+if not defined OLLAMA_BIN (
+    if exist pilas3d\_vendor\ollama\ollama.exe (
+        set OLLAMA_BIN=pilas3d\_vendor\ollama\ollama.exe
+    ) else (
+        if not exist pilas3d\_vendor\ollama mkdir pilas3d\_vendor\ollama
+        echo.
+        echo Descargando Ollama (asistente de IA)...
+        powershell -NoProfile -Command ^
+          "try { Invoke-WebRequest 'https://ollama.com/download/ollama-windows-amd64.zip' -OutFile 'pilas3d\_vendor\ollama\ollama.zip'; Expand-Archive 'pilas3d\_vendor\ollama\ollama.zip' 'pilas3d\_vendor\ollama' -Force; Remove-Item 'pilas3d\_vendor\ollama\ollama.zip' } catch { Write-Host 'Aviso: no se pudo descargar Ollama' }"
+        if exist pilas3d\_vendor\ollama\ollama.exe set OLLAMA_BIN=pilas3d\_vendor\ollama\ollama.exe
+    )
+)
+
+REM Modelo del asistente: elegible ahora o despues con
+REM `python -m pilas3d.ia <modelo>` / PILAS3D_IA_MODELO.
+if defined OLLAMA_BIN (
     echo.
-    echo Descargando Ollama (asistente de IA)...
-    powershell -NoProfile -Command ^
-      "try { Invoke-WebRequest 'https://ollama.com/download/ollama-windows-amd64.zip' -OutFile 'pilas3d\_vendor\ollama\ollama.zip'; Expand-Archive 'pilas3d\_vendor\ollama\ollama.zip' 'pilas3d\_vendor\ollama' -Force; Remove-Item 'pilas3d\_vendor\ollama\ollama.zip' } catch { Write-Host 'Aviso: no se pudo descargar Ollama' }"
+    echo Modelo del asistente de IA (tambien se baja solo al usarlo):
+    echo   1) qwen2.5-coder:0.5b  (~500 MB, recomendado, CPU)
+    echo   2) qwen2.5-coder:1.5b  (~1 GB, CPU)
+    echo   3) qwen2.5-coder:7b    (~4.7 GB, con GPU)
+    echo   4) ninguno ahora
+    set /p IA_OP="Elegi [1]: "
+    if "%IA_OP%"=="" set IA_OP=1
+    set IA_MODELO=qwen2.5-coder:0.5b
+    if "%IA_OP%"=="2" set IA_MODELO=qwen2.5-coder:1.5b
+    if "%IA_OP%"=="3" set IA_MODELO=qwen2.5-coder:7b
+    if "%IA_OP%"=="4" set IA_MODELO=
+    if defined IA_MODELO (
+        powershell -NoProfile -Command ^
+          "try { Invoke-RestMethod 'http://localhost:11434/api/tags' | Out-Null; exit 0 } catch { exit 1 }"
+        if errorlevel 1 (
+            start /b "" %OLLAMA_BIN% serve
+            timeout /t 3 /nobreak >nul
+            %OLLAMA_BIN% pull %IA_MODELO% || echo Aviso: no se pudo bajar el modelo.
+            taskkill /f /im ollama.exe >nul 2>nul
+        ) else (
+            %OLLAMA_BIN% pull %IA_MODELO% || echo Aviso: no se pudo bajar el modelo.
+        )
+    )
 )
 
 echo.

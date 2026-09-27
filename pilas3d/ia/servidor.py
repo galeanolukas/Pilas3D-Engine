@@ -24,7 +24,15 @@ import urllib.error
 import urllib.request
 
 URL_API = "http://localhost:11434"
-MODELO = os.environ.get('PILAS3D_IA_MODELO', 'qwen2.5-coder:1.5b')
+MODELO = os.environ.get('PILAS3D_IA_MODELO', 'qwen2.5-coder:0.5b')
+
+# Catálogo sugerido: todos Qwen code, de más chico a más grande.
+MODELOS = {
+    'qwen2.5-coder:0.5b': '~500 MB - recomendado, rápido en CPU',
+    'qwen2.5-coder:1.5b': '~1 GB - mejor código, sigue en CPU',
+    'qwen2.5-coder:3b':   '~2 GB - con GPU o paciencia',
+    'qwen2.5-coder:7b':   '~4.7 GB - con GPU, el mejor',
+}
 
 _proc = None
 

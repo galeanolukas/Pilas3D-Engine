@@ -18,7 +18,7 @@ pilas3d/ia/servidor.py      ¿hay un servidor Ollama corriendo?
         │                         `ollama serve` (subproceso)
         ▼
 pilas3d/ia/servidor.py      ¿está descargado el modelo?
-        │                   └─ no → `ollama pull` (~1 GB, una vez)
+        │                   └─ no → `ollama pull` (~500 MB, una vez)
         ▼
 pilas3d/ia/asistente.py     POST /api/chat con:
                             · system prompt (la API real del motor)
@@ -70,19 +70,31 @@ se termina solo al salir (`atexit`). Si ya hay un Ollama corriendo
 
 ## 4. El modelo
 
-Por defecto: **`qwen2.5-coder:1.5b`** (~1 GB) — chico, corre en CPU,
-bueno generando código Python de una API acotada.
+Por defecto: **`qwen2.5-coder:0.5b`** (~500 MB) — el Qwen
+especializado en código más chico, corre en CPU, suficiente para una
+API acotada como la de pilas3d.
 
 `asegurar_modelo()` consulta `GET /api/tags`; si el modelo no está,
 hace `POST /api/pull` mostrando el progreso en consola. La descarga
 solo ocurre la primera vez; después queda en `~/.ollama/models`.
 
-Alternativas (más calidad, más peso):
+Elegir otro modelo, **en el instalador o después**:
 
 ```bash
-PILAS3D_IA_MODELO=qwen2.5-coder:7b   # ~4.7 GB, mejor con GPU
-PILAS3D_IA_MODELO=starcoder2:3b      # ~1.7 GB
+python -m pilas3d.ia --lista            # catálogo sugerido
+python -m pilas3d.ia qwen2.5-coder:7b   # descarga otro modelo
+PILAS3D_IA_MODELO=qwen2.5-coder:7b      # usarlo (env)
 ```
+
+| Modelo | Peso | Nota |
+|---|---|---|
+| `qwen2.5-coder:0.5b` | ~500 MB | default, rápido en CPU |
+| `qwen2.5-coder:1.5b` | ~1 GB | mejor código, sigue en CPU |
+| `qwen2.5-coder:3b` | ~2 GB | GPU o paciencia |
+| `qwen2.5-coder:7b` | ~4.7 GB | el mejor, con GPU |
+
+Los instaladores muestran el mismo menú al final de la instalación
+(si se corren en una terminal interactiva).
 
 ---
 
@@ -133,7 +145,7 @@ de IPython y se la manda al modelo junto con el contexto de la escena.
 
 | Variable | Default | Qué hace |
 |---|---|---|
-| `PILAS3D_IA_MODELO` | `qwen2.5-coder:1.5b` | Modelo a usar/descargar |
+| `PILAS3D_IA_MODELO` | `qwen2.5-coder:0.5b` | Modelo a usar/descargar |
 | `PILAS3D_IA_GPU` | *(vacío = CPU)* | `=1` deja que Ollama use la GPU |
 
 Por defecto se fuerza `num_gpu=0` (CPU): funciona en cualquier equipo,

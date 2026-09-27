@@ -44,8 +44,18 @@ python3 -m venv .venv
 
 Los instaladores descargan el binario de [Ollama](https://ollama.com)
 (~200 MB) a `pilas3d/_vendor/` — si ya tenés Ollama instalado se usa
-ese. La primera vez que se consulta, se baja el modelo
-`qwen2.5-coder:1.5b` (~1 GB) y después todo corre **local y offline**:
+ese — y ofrecen elegir el modelo del asistente (default:
+`qwen2.5-coder:0.5b`, ~500 MB, corre en CPU). Si lo salteás, el modelo
+se baja solo la primera vez que consultás, y después todo corre
+**local y offline**.
+
+Para instalar/cambiar el modelo más tarde:
+
+```bash
+.venv/bin/python -m pilas3d.ia --lista                 # catálogo
+.venv/bin/python -m pilas3d.ia qwen2.5-coder:7b        # baja otro
+PILAS3D_IA_MODELO=qwen2.5-coder:7b .venv/bin/pilas3d   # usarlo
+```
 
 ```python
 pilas.ayuda()                                   # chuleta clásica
