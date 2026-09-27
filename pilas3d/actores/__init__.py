@@ -25,7 +25,8 @@ from pilas3d.actores.modelo_json import ModeloJSON
 from pilas3d.actores.texto import Texto, Puntaje
 from pilas3d.actores.particulas import Particulas
 from pilas3d.actores.personajes import (Personaje, Robot, Humanoide,
-                                      Mono, Arania, Espectro)
+                                      Mono, Arania, Espectro,
+                                      ComportamientoBot)
 
 
 class Actores(object):
@@ -149,6 +150,26 @@ class Actores(object):
 
     def Espectro(self, x=0, y=0, z=0):
         return Espectro(self._pilas, x=x, y=y, z=z)
+
+    def Bot(self, personaje='Robot', x=0, y=0, z=0, casa=None,
+            radio_patron=8, velocidad=2.0, radio_vision=8,
+            mundo=None, objetivo=None):
+        """NPC con comportamiento: patrulla cerca de ``casa``, persigue
+        a ``objetivo`` si entra en ``radio_vision`` y vuelve después.
+
+        ``personaje`` elige el cuerpo: 'Robot', 'Humanoide', 'Mono',
+        'Arania' o 'Espectro' (o la clase directamente)."""
+        clases = {'Robot': Robot, 'Humanoide': Humanoide, 'Mono': Mono,
+                  'Arania': Arania, 'Espectro': Espectro}
+        base = clases[personaje] if isinstance(personaje, str) \
+            else personaje
+        clase = type('Bot%s' % base.__name__,
+                     (ComportamientoBot, base), {})
+        bot = clase(self._pilas, x=x, y=y, z=z)
+        bot.iniciar_bot(casa=casa, radio_patron=radio_patron,
+                        velocidad=velocidad, radio_vision=radio_vision,
+                        mundo=mundo, objetivo=objetivo)
+        return bot
 
 
 # Los presets del emisor quedan accesibles desde la fábrica:

@@ -132,6 +132,8 @@ de dibujo distinto)
     pilas.actores.Arania()     # araña de primitivas (sin recursos)
     pilas.actores.Espectro()   # alambrado (GL_LINES, sin superficie)
     mallas.combinar([(geo, (dx,dy,dz), color), ...])  # arma los tuyos
+    pilas.actores.Bot(personaje='Robot', mundo=mundo)  # NPC: patrulla,
+        # persigue al .objetivo dentro de .radio_vision y vuelve a casa
 
 Partículas (efectos)
     pilas.actores.Particulas(cantidad=100, vida=2, velocidad=3,

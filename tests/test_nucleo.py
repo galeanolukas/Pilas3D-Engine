@@ -1272,3 +1272,39 @@ def test_mallas_combinar_con_colores():
     assert len(cols) == n * 4                    # rgba por vértice
     assert cols[:4] == [1, 0, 0, 1]              # primera parte roja
     assert cols[-4:] == [1, 1, 1, 1]             # última parte blanca
+
+
+def test_bot_patrulla_persigue_y_vuelve():
+    pilas = crear_pilas()
+    bot = pilas.actores.Bot(x=0, z=0, radio_vision=5, velocidad=10)
+    objetivo = pilas.actores.Cubo(x=30, z=30)
+
+    bot.objetivo = objetivo
+    for _ in range(10):
+        bot.actualizar()        # dt = 1/60
+    assert bot.estado == 'patrullar'
+
+    objetivo.posicion = (2, 0, 2)          # entra en radio_vision
+    bot.actualizar()
+    assert bot.estado == 'perseguir'
+    for _ in range(120):
+        bot.actualizar()
+    d = ((bot.x - 2) ** 2 + (bot.z - 2) ** 2) ** 0.5
+    assert d < 1.0                          # lo alcanzó
+
+    objetivo.posicion = (50, 0, 50)         # se escapa lejos
+    bot.actualizar()
+    assert bot.estado == 'volver'
+    for _ in range(400):
+        bot.actualizar()
+    assert bot.estado == 'patrullar'        # llegó a casa y retomó
+    d_casa = ((bot.x - bot.casa[0]) ** 2 + (bot.z - bot.casa[1]) ** 2)
+    assert d_casa < bot.radio_patron ** 2   # patrulla dentro del radio
+
+
+def test_bot_cuerpo_elegible():
+    pilas = crear_pilas()
+    bot = pilas.actores.Bot(personaje='Mono')
+    assert type(bot).__name__ == 'BotMono'
+    from pilas3d.actores.personajes import Mono
+    assert isinstance(bot, Mono)
