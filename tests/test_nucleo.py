@@ -1281,22 +1281,22 @@ def test_bot_patrulla_persigue_y_vuelve():
 
     bot.objetivo = objetivo
     for _ in range(10):
-        bot.actualizar()        # dt = 1/60
+        bot.pre_actualizar()    # corre las habilidades (dt = 1/60)
     assert bot.estado == 'patrullar'
 
     objetivo.posicion = (2, 0, 2)          # entra en radio_vision
-    bot.actualizar()
+    bot.pre_actualizar()
     assert bot.estado == 'perseguir'
     for _ in range(120):
-        bot.actualizar()
+        bot.pre_actualizar()
     d = ((bot.x - 2) ** 2 + (bot.z - 2) ** 2) ** 0.5
     assert d < 1.0                          # lo alcanzó
 
     objetivo.posicion = (50, 0, 50)         # se escapa lejos
-    bot.actualizar()
+    bot.pre_actualizar()
     assert bot.estado == 'volver'
     for _ in range(400):
-        bot.actualizar()
+        bot.pre_actualizar()
     assert bot.estado == 'patrullar'        # llegó a casa y retomó
     d_casa = ((bot.x - bot.casa[0]) ** 2 + (bot.z - bot.casa[1]) ** 2)
     assert d_casa < bot.radio_patron ** 2   # patrulla dentro del radio
@@ -1305,6 +1305,25 @@ def test_bot_patrulla_persigue_y_vuelve():
 def test_bot_cuerpo_elegible():
     pilas = crear_pilas()
     bot = pilas.actores.Bot(personaje='Mono')
-    assert type(bot).__name__ == 'BotMono'
     from pilas3d.actores.personajes import Mono
     assert isinstance(bot, Mono)
+    assert bot.tiene_habilidad(bot.pilas.habilidades.SerBot)
+
+
+def test_serbot_se_aprende_en_cualquier_actor():
+    pilas = crear_pilas()
+
+    from pilas3d.actores.actor import Actor
+
+    class MiPersonaje(Actor):
+        def _generar_geometria(self):
+            from pilas3d import mallas
+            return mallas.cubo(1.0)
+
+    p = MiPersonaje(pilas, x=3, z=3)
+    p.aprender(pilas.habilidades.SerBot, radio_vision=4)
+    assert p.estado == 'patrullar'
+    cerca = pilas.actores.Cubo(x=4, z=3)
+    p.objetivo = cerca
+    p.pre_actualizar()
+    assert p.estado == 'perseguir'

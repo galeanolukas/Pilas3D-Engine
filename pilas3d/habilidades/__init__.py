@@ -24,6 +24,7 @@ from pilas3d.habilidades.puede_explotar import PuedeExplotar
 from pilas3d.habilidades.pisa_plataformas import PisaPlataformas
 from pilas3d.habilidades.perseguir_a_otro_actor import (
     PerseguirAOtroActor)
+from pilas3d.habilidades.ser_bot import SerBot
 
 
 class Habilidades(object):
@@ -47,6 +48,7 @@ class Habilidades(object):
     PuedeExplotar = PuedeExplotar
     PisaPlataformas = PisaPlataformas
     PerseguirAOtroActor = PerseguirAOtroActor
+    SerBot = SerBot
 
     def buscar_habilidad_por_nombre(self, nombre):
         disponibles = {
@@ -64,6 +66,7 @@ class Habilidades(object):
             'puedeexplotar': PuedeExplotar,
             'pisaplataformas': PisaPlataformas,
             'perseguiraotroactor': PerseguirAOtroActor,
+            'serbot': SerBot,
         }
         try:
             return disponibles[nombre.lower()]

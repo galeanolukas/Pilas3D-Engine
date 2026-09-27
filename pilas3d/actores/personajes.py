@@ -10,104 +10,15 @@ distinto — sirven de juego y de ejemplo de cómo construir actores:
 El origen de cada personaje está a la altura del torso (~cintura):
 los pies quedan cerca de ``y - 0.8``.
 
-``ComportamientoBot`` es un mixin de NPC: combinado con cualquier
-personaje de este módulo (o con ``pilas.actores.Bot``) da un actor
-que patrulla alrededor de su casa, persigue al objetivo si lo ve
-y vuelve cuando se aleja demasiado.
+Para darles comportamiento de NPC a cualquiera de estos (o a un
+actor propio heredado de ``Actor``) está la habilidad
+``pilas.habilidades.SerBot`` — ver ``pilas.actores.Bot``.
 """
-
-import math
-import random
 
 from pyglet.gl import GL_TRIANGLES, GL_LINES
 
 from pilas3d import colores, mallas
 from pilas3d.actores.actor import Actor
-
-
-class ComportamientoBot(object):
-    """Mixin NPC: patrulla, persigue al ``objetivo`` si lo ve, vuelve.
-
-    Configurable con atributos (antes o después de crear el bot)::
-
-        bot = pilas.actores.Bot(x=5, z=5)
-        bot.objetivo = jugador        # a quién perseguir
-        bot.radio_vision = 10         # a qué distancia lo ve
-        bot.radio_patron = 8          # qué tan lejos de casa camina
-        bot.velocidad = 2.5
-
-    ``estado`` vale 'patrullar', 'perseguir' o 'volver'. Si se le pasa
-    ``mundo`` (un Mundo voxel) camina sobre el terreno.
-    """
-
-    def iniciar_bot(self, casa=None, radio_patron=8, velocidad=2.0,
-                    radio_vision=8, mundo=None, objetivo=None):
-        self.casa = casa or (self.x, self.z)
-        self.radio_patron = radio_patron
-        self.velocidad = velocidad
-        self.radio_vision = radio_vision
-        self.mundo = mundo
-        self.objetivo = objetivo
-        self.estado = 'patrullar'
-        self._destino = None
-        self._espera = 0.0
-
-    def _elegir_destino(self):
-        a = random.uniform(0, math.pi * 2)
-        r = random.uniform(1, self.radio_patron)
-        self._destino = (self.casa[0] + math.cos(a) * r,
-                         self.casa[1] + math.sin(a) * r)
-        self._espera = random.uniform(0.5, 2.0)
-
-    def _caminar_hacia(self, tx, tz, dt, rapido=False):
-        dx, dz = tx - self.x, tz - self.z
-        dist = math.hypot(dx, dz)
-        if dist < 0.15:
-            return True
-        v = self.velocidad * (1.6 if rapido else 1.0)
-        paso = min(v * dt, dist)
-        self.x += dx / dist * paso
-        self.z += dz / dist * paso
-        self.rotacion_y = -math.degrees(math.atan2(dx, dz))
-        if self.mundo is not None:
-            suelo = self.mundo.altura_suelo(self.x, self.z)
-            if suelo is not None:
-                self.y = suelo + 0.8
-        return False
-
-    def _distancia_a_objetivo(self):
-        if self.objetivo is None or not self.objetivo.esta_en_escena():
-            return None
-        return math.hypot(self.objetivo.x - self.x,
-                          self.objetivo.z - self.z)
-
-    def actualizar(self):
-        dt = self.pilas.dt
-        d = self._distancia_a_objetivo()
-
-        if d is not None and d <= self.radio_vision:
-            self.estado = 'perseguir'
-        elif self.estado == 'perseguir':
-            self.estado = 'volver'
-            self._destino = self.casa
-        elif self.estado == 'volver' and \
-                math.hypot(self.casa[0] - self.x,
-                           self.casa[1] - self.z) < 1:
-            self.estado = 'patrullar'
-
-        if self.estado == 'perseguir':
-            self._caminar_hacia(self.objetivo.x, self.objetivo.z,
-                                dt, rapido=True)
-        elif self.estado == 'volver':
-            if self._caminar_hacia(*self.casa, dt):
-                self.estado = 'patrullar'
-        else:   # patrullar
-            if self._destino is None:
-                self._elegir_destino()
-            if self._espera > 0:
-                self._espera -= dt
-            elif self._caminar_hacia(*self._destino, dt):
-                self._destino = None
 
 
 class Personaje(Actor):
