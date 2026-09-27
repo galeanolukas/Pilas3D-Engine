@@ -204,6 +204,7 @@ bloquear con `ejecutar()`:
 | —                             | `pilas.actores.Pared()` + `escena.obstaculos` (bloquean el paso) |
 | `pilas.control.mouse_x/y`     | posición y botones del mouse + `pilas.cuando_hace_click(f)` → `f(actor, punto)`, `cuando_suelta_click(f)`, `cuando_mueve_mouse(f)` |
 | `habilidades.Arrastrable`…    | `Arrastrable` (drag en 3D) y `SeguirAlMouse` (camina al puntero) — usan `camara.rayo_desde_mouse` / `actor_bajo_mouse` / `punto_bajo_mouse` |
+| `habilidades.Disparar`        | igual — `actor.disparar()` crea un `Proyectil` que viaja recto, choca con `objetivos` y avisa con `cuando_impacta(p, actor)`; `con_click`, `tecla`, `cadencia`, `desde_camara` |
 | `pilas.sonidos.cargar()`      | igual (`reproducir`, `detener`, `pausar`, `continuar`, `volumen`) |
 | `pilas.musica.cargar()`       | igual (streaming, bucle por defecto, `detener_gradualmente`) |
 | `Grilla`/`Animacion`          | `pilas.actores.Animacion(img, columnas, filas, velocidad)` (billboard animado) |

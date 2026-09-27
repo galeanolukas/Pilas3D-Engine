@@ -27,6 +27,7 @@ from pilas3d.habilidades.perseguir_a_otro_actor import (
 from pilas3d.habilidades.ser_bot import SerBot
 from pilas3d.habilidades.arrastrable import Arrastrable
 from pilas3d.habilidades.seguir_al_mouse import SeguirAlMouse
+from pilas3d.habilidades.disparar import Disparar
 
 
 class Habilidades(object):
@@ -53,6 +54,7 @@ class Habilidades(object):
     SerBot = SerBot
     Arrastrable = Arrastrable
     SeguirAlMouse = SeguirAlMouse
+    Disparar = Disparar
 
     def buscar_habilidad_por_nombre(self, nombre):
         disponibles = {
@@ -73,6 +75,7 @@ class Habilidades(object):
             'serbot': SerBot,
             'arrastrable': Arrastrable,
             'seguiralmouse': SeguirAlMouse,
+            'disparar': Disparar,
         }
         try:
             return disponibles[nombre.lower()]

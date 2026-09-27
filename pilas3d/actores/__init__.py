@@ -25,6 +25,7 @@ from pilas3d.actores.modelo_json import ModeloJSON
 from pilas3d.actores.modelo_gltf import ModeloGLTF
 from pilas3d.actores.texto import Texto, Puntaje
 from pilas3d.actores.particulas import Particulas
+from pilas3d.actores.proyectil import Proyectil
 from pilas3d.actores.personajes import (Personaje, Robot, Humanoide,
                                       Mono, Arania, Espectro)
 
@@ -129,6 +130,17 @@ class Actores(object):
             dispersion=dispersion, gravedad=gravedad, color=color,
             color_final=color_final, tamano=tamano, ciclico=ciclico,
             x=x, y=y, z=z)
+
+    def Proyectil(self, direccion=(0, 0, 1), velocidad=20.0,
+                  alcance=40.0, objetivos=None, cuando_impacta=None,
+                  ignorar=None, radio=0.15, color=None,
+                  x=0, y=0, z=0):
+        """Disparo en línea recta; ver ``habilidades.Disparar``."""
+        return Proyectil(
+            self._pilas, direccion=direccion, velocidad=velocidad,
+            alcance=alcance, objetivos=objetivos,
+            cuando_impacta=cuando_impacta, ignorar=ignorar,
+            radio=radio, color=color, x=x, y=y, z=z)
 
     def Mapa(self, matriz, simbolos, tamano_celda=2.0, x=0, y=0, z=0):
         return Mapa(self._pilas, matriz, simbolos,

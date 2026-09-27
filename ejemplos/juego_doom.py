@@ -98,6 +98,29 @@ def restaurar_niebla():
     pilas.escena.niebla = (NEGRO, 4, 20)
 
 
+def al_impactar(proyectil, enemigo):
+    """El proyectil pegó: explosión animada + partículas."""
+    pilas.actores.Animacion(
+        SPR_EXPLOSION, columnas=7, velocidad=14,
+        ciclica=False, eliminar_al_terminar=True,
+        ancho=1.8, alto=1.8,
+        x=enemigo.x, y=enemigo.y, z=enemigo.z)
+    pilas.actores.Particulas.explosion(
+        pilas, x=enemigo.x, y=enemigo.y, z=enemigo.z,
+        color=pilas.colores.naranja)
+    enemigo.eliminar()
+    enemigos.remove(enemigo)
+    sonido_explosion.reproducir()
+    puntaje.aumentar()
+    if not enemigos:
+        sonido_victoria.reproducir()
+        pilas.actores.Texto("GANASTE!", x=340, y=200, tamano=40)
+
+
+def al_disparar():
+    sonido_disparo.reproducir()
+
+
 class Jugador(Esfera):
     """El cuerpo del jugador (se ve al mirar hacia abajo)."""
 
@@ -106,39 +129,19 @@ class Jugador(Esfera):
                                       radio_de_colision=0.35, **kw)
         self.color = pilas.colores.celeste
         self.enemigos = enemigos
-        self.espera_disparo = 0.0
         self.aprender(pilas.habilidades.CaminarEnPrimeraPersona,
                       velocidad=6, altura=1.6)
+        # dispara proyectiles reales que salen de la cámara con click
+        self.aprender(pilas.habilidades.Disparar,
+                      desde_camara=True, con_click=True,
+                      cadencia=0.3, velocidad=30, alcance=40,
+                      objetivos=enemigos, cuando_impacta=al_impactar,
+                      cuando_dispara=al_disparar)
 
     def actualizar(self):
         # la linterna sigue a la cámara
         cam = self.pilas.escena_actual().camara
         linterna.x, linterna.y, linterna.z = cam.posicion
-
-        self.espera_disparo -= self.pilas.dt
-        if self.pilas.control.boton_izquierdo and \
-                self.espera_disparo <= 0:
-            self.espera_disparo = 0.3
-            sonido_disparo.reproducir()
-            blanco = cam.disparar_rayo(self.enemigos, alcance=40)
-            if blanco:
-                # explosión animada + partículas donde estaba
-                pilas.actores.Animacion(
-                    SPR_EXPLOSION, columnas=7, velocidad=14,
-                    ciclica=False, eliminar_al_terminar=True,
-                    ancho=1.8, alto=1.8,
-                    x=blanco.x, y=blanco.y, z=blanco.z)
-                pilas.actores.Particulas.explosion(
-                    pilas, x=blanco.x, y=blanco.y, z=blanco.z,
-                    color=pilas.colores.naranja)
-                blanco.eliminar()
-                self.enemigos.remove(blanco)
-                sonido_explosion.reproducir()
-                puntaje.aumentar()
-                if not self.enemigos:
-                    sonido_victoria.reproducir()
-                    pilas.actores.Texto("GANASTE!", x=340, y=200,
-                                        tamano=40)
 
 
 # -- construcción del mapa desde texto ---------------------------------------

@@ -1503,3 +1503,73 @@ def test_arrastrable_arrastra_solo_al_actor_clickeado():
     x_quieto = cubo.x
     cubo.pre_actualizar()
     assert cubo.x == pytest.approx(x_quieto)
+
+
+# -- disparo / proyectiles ---------------------------------------------------
+
+
+def test_disparar_crea_proyectil_hacia_adelante():
+    pilas = crear_pilas()
+    nave = pilas.actores.Cubo()               # rotacion_y=0 -> mira +Z
+    nave.aprender(pilas.habilidades.Disparar, cadencia=0.1)
+    p = nave.disparar()
+
+    assert p is not None
+    assert p.direccion == (0.0, 0.0, 1.0)     # adelante del actor
+    assert p.y == pytest.approx(0.5)          # offset por defecto
+    assert p.ignorar is nave                  # no se pega a sí mismo
+    assert len(pilas.escena.actores) == 2
+
+    # avanza y se elimina al agotar el alcance
+    p.alcance = 2.0
+    for _ in range(30):
+        p.actualizar()
+    assert not p.esta_en_escena()
+
+
+def test_disparar_respeta_cadencia():
+    pilas = crear_pilas()
+    nave = pilas.actores.Cubo()
+    nave.aprender(pilas.habilidades.Disparar, cadencia=0.5)
+
+    assert nave.disparar() is not None
+    assert nave.disparar() is None           # en cooldown
+    nave._espera_disparo = -1                # forzar recarga
+    assert nave.puede_disparar()
+    assert nave.disparar() is not None
+
+
+def test_proyectil_impacta_y_avisa():
+    pilas = crear_pilas()
+    blanco = pilas.actores.Cubo(x=0, z=5)    # radio de colision 1
+    pegados = []
+    nave = pilas.actores.Cubo()
+    nave.aprender(pilas.habilidades.Disparar,
+                  objetivos=[blanco],
+                  cuando_impacta=lambda p, a: pegados.append(a),
+                  cadencia=0)
+    nave.disparar()
+
+    bala = [a for a in pilas.escena.actores
+            if a.__class__.__name__ == 'Proyectil'][0]
+    for _ in range(40):
+        if not bala.esta_en_escena():
+            break
+        bala.actualizar()
+
+    assert pegados == [blanco]
+    assert not bala.esta_en_escena()
+
+
+def test_disparar_desde_camara_sigue_la_mira():
+    pilas = crear_pilas()
+    jugador = pilas.actores.Cubo(x=9, z=9)
+    jugador.aprender(pilas.habilidades.Disparar,
+                     desde_camara=True, cadencia=0)
+    p = jugador.disparar()
+    cam = pilas.escena.camara
+    frente = cam.direccion()
+    assert p.posicion == pytest.approx(cam.posicion)
+    for a, b in zip(p.direccion,
+                    (frente.x, frente.y, frente.z)):
+        assert a == pytest.approx(b)

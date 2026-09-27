@@ -102,6 +102,7 @@ Habilidades  (actor.aprender)
     PerseguirAOtroActor                     # persigue esquivando (A*)
     Arrastrable                             # arrastrar con el mouse
     SeguirAlMouse                           # caminar hacia el puntero
+    Disparar                                # actor.disparar() -> Proyectil
 
 Tareas
     pilas.tareas.una_vez(2, f)   siempre(1, f)   condicional(0.1, f)
