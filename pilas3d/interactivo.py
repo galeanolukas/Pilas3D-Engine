@@ -30,6 +30,7 @@ ejecutes refresca la escena automáticamente (pilas.paso()).
     ...     pilas.paso()
 
 `pilas.ayuda()` muestra la guía completa de la API.
+`%ejemplo <nombre>` corre un ejemplo en esta ventana (ej: %ejemplo hola_cubo).
 `%ia <pregunta>` consulta al asistente local (opcional, IA).
 `%explicar` pide a la IA que explique el último error.
 """
@@ -84,8 +85,44 @@ def main():
         except RuntimeError as e:
             print("(asistente no disponible: %s)" % e)
 
+    def _ejemplo(line):
+        """Corre un archivo de ejemplos/ dentro de esta misma ventana.
+
+        Parchea pilas3d.iniciar (devuelve la pilas ya abierta) y
+        Pilas.ejecutar (no-op: el auto-refresco con paso() la anima).
+        """
+        import pathlib
+        nombre = line.strip().replace('ejemplos/', '')
+        if nombre.endswith('.py'):
+            nombre = nombre[:-3]
+        ruta = pathlib.Path('ejemplos') / (nombre + '.py')
+        if not ruta.exists():
+            disponibles = sorted(p.stem
+                                 for p in pathlib.Path('ejemplos')
+                                 .glob('*.py'))
+            print("No existe ese ejemplo. Disponibles:")
+            for e in disponibles:
+                print('  ', e)
+            return
+        codigo = compile(ruta.read_text(encoding='utf-8'),
+                         str(ruta), 'exec')
+        iniciar_orig, ejecutar_orig = (pilas3d.iniciar,
+                                       pilas3d.Pilas.ejecutar)
+        try:
+            pilas3d.iniciar = lambda *a, **k: pilas
+            pilas3d.Pilas.ejecutar = lambda self: None
+            ns = shell.user_ns
+            archivo_previo = ns.get('__file__')
+            ns['__file__'] = str(ruta.resolve())
+            exec(codigo, ns)
+            ns['__file__'] = archivo_previo
+        finally:
+            pilas3d.iniciar = iniciar_orig
+            pilas3d.Pilas.ejecutar = ejecutar_orig
+
     shell.register_magic_function(_ia, 'line', 'ia')
     shell.register_magic_function(_explicar, 'line', 'explicar')
+    shell.register_magic_function(_ejemplo, 'line', 'ejemplo')
     shell.events.register('post_run_cell', guardar_error)
     shell.events.register('post_run_cell', refrescar)
     shell.interact()

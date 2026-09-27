@@ -102,7 +102,16 @@ pilas3d                       # o: python3 -m pilas3d
 In [1]: cubo = pilas.actores.Cubo()        # aparece al instante
 In [2]: cubo.color = pilas.colores.rojo    # se vuelve rojo
 In [3]: pilas.ayuda()                      # guía de la API
+In [4]: %ejemplo juego_recolectar          # corre un ejemplo acá mismo
+In [5]: %ia ¿cómo pongo gravedad?          # asistente (opcional)
+In [6]: %explicar                          # explica el último error
 ```
+
+`%ejemplo <nombre>` ejecuta un archivo de `ejemplos/` dentro de la
+ventana ya abierta: el `iniciar()` del ejemplo devuelve la `pilas`
+viva y su `ejecutar()` se omite — el auto-refresco la sigue animando
+y podés seguir tocando los actores que creó. `%ejemplo` sin nombre
+lista los disponibles.
 
 Sin IPython instalado cae a la consola estándar de Python con
 autocompletado por tabulador (ahí hay que llamar `pilas.paso()` a mano).
