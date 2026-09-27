@@ -24,7 +24,14 @@ Tipos de opción:
 - ``(texto, 'input', inicial, fn)``: entrada de texto — ENTER abre la
   edición, se escribe directo, BACKSPACE borra, ENTER confirma y
   llama ``fn(texto)``, ESC cancela.
+
+Persistencia: con ``guardar_en='config-game.json'`` el menú carga los
+valores guardados al iniciar (y los aplica llamando a cada ``fn``) y
+vuelve a escribir el JSON en cada cambio.
 """
+
+import json
+import os
 
 from pyglet.window import key, mouse
 
@@ -39,7 +46,8 @@ class Menu(Actor):
     es_overlay = True
 
     def __init__(self, pilas, opciones, x=200, y=300, separacion=38,
-                 tamano=22, color=None, seleccionado=None, titulo=None):
+                 tamano=22, color=None, seleccionado=None, titulo=None,
+                 guardar_en=None):
         super(Menu, self).__init__(pilas)
         self.radio_de_colision = 0.0
         self.color_base = color or colores.blanco
@@ -50,6 +58,7 @@ class Menu(Actor):
         self._sel = 0
         self._editando = None        # índice de la opción 'input' activa
         self._editando_valor = ''
+        self._ruta = guardar_en
 
         y0 = y
         if titulo:
@@ -67,6 +76,8 @@ class Menu(Actor):
                          y=y0 - i * separacion, tamano=tamano)
             self._textos.append(item)
         self._pintar()
+        if self._ruta:
+            self.cargar()
 
         if pilas.ventana is not None:
             pilas.ventana.push_handlers(
@@ -142,6 +153,7 @@ class Menu(Actor):
             if fn:
                 fn(valor)
             self._pintar()
+            self.guardar()
             return valor
         if tipo == 'input':
             self._editando = self._sel
@@ -154,7 +166,61 @@ class Menu(Actor):
         if isinstance(nuevo, str):
             self._opciones[self._sel] = (nuevo, tipo, valor, fn)
             self._pintar()
+            self.guardar()
         return nuevo
+
+    # -- persistencia -----------------------------------------------------
+
+    def guardar(self, ruta=None):
+        """Escribe los valores del menú en un JSON (check e input).
+
+        Las acciones no se persisten (no tienen valor); su etiqueta
+        cíclica sí queda guardada bajo el texto original si la opción
+        es de tipo valor.
+        """
+        ruta = ruta or self._ruta
+        if not ruta:
+            return
+        datos = {}
+        for texto, tipo, valor, _fn in self._opciones:
+            if tipo in ('check', 'input'):
+                datos[texto] = valor
+            else:
+                # acción cíclica: guarda la etiqueta actual bajo la
+                # clave base ("Calidad" -> "Calidad: media")
+                datos[texto.split(':')[0].strip()] = texto
+        with open(ruta, 'w', encoding='utf-8') as f:
+            json.dump(datos, f, ensure_ascii=False, indent=2)
+
+    def cargar(self, ruta=None):
+        """Lee el JSON y aplica los valores (llama a cada ``fn``)."""
+        ruta = ruta or self._ruta
+        if not ruta or not os.path.exists(ruta):
+            return
+        try:
+            with open(ruta, encoding='utf-8') as f:
+                datos = json.load(f)
+        except (ValueError, OSError):
+            return
+        for i, (texto, tipo, valor, fn) in enumerate(self._opciones):
+            base = texto.split(':')[0].strip()
+            clave = texto if texto in datos else base
+            if clave not in datos:
+                continue
+            valor = datos[clave]
+            if tipo == 'check':
+                valor = bool(valor)
+                if fn:
+                    fn(valor)
+            elif tipo == 'input':
+                valor = str(valor)
+                if fn:
+                    fn(valor)
+            else:
+                valor = datos[clave]          # etiqueta cíclica
+                texto = valor
+            self._opciones[i] = (texto, tipo, valor, fn)
+        self._pintar()
 
     def fijar_texto(self, i, texto):
         """Cambia la etiqueta de la opción ``i`` (o por nombre)."""

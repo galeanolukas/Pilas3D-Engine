@@ -8,7 +8,12 @@ opción:
 - check:    ("Sonido", 'check', True, fn)   -> [x]/[ ]
 - cíclica:  fn() devuelve texto nuevo        -> actualiza la etiqueta
 - input:    ("Nombre", 'input', 'yo', fn)   -> ENTER edita, ENTER ok
+
+Con ``guardar_en`` los valores quedan en un JSON y se restauran la
+próxima vez que corre el juego.
 """
+
+import os
 
 import pilas3d
 
@@ -73,8 +78,13 @@ def al_nombrar(nombre):
                         tamano=20)
 
 
+# el menú persiste la config en un JSON al lado de este archivo
+CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                      'config-menu.json')
+
 pilas.actores.Menu(
     titulo="PILAS3D",
+    guardar_en=CONFIG,
     opciones=[
         ("Jugar", empezar),
         ("Resolución: 640x480", ciclar_resolucion),

@@ -1,6 +1,8 @@
 # -*- encoding: utf-8 -*-
 """Tests del núcleo de pilas3d (sin ventana ni contexto OpenGL)."""
 
+import json
+
 import pytest
 
 import pilas3d
@@ -1694,3 +1696,33 @@ def test_sonidos_volumen_maestro_y_mute():
     assert s._jugador_bucle.volume == 0.0
     pilas.sonidos.desilenciar()
     assert s._jugador_bucle.volume == pytest.approx(0.4)
+
+
+def test_menu_persiste_config_en_json(tmp_path):
+    ruta = str(tmp_path / 'config-game.json')
+    aplicados = []
+    pilas = crear_pilas()
+    menu = pilas.actores.Menu(
+        guardar_en=ruta,
+        opciones=[
+            ("Sonido", 'check', True, lambda v: aplicados.append(v)),
+            ("Nombre", 'input', 'jugador', lambda v: aplicados.append(v)),
+            ("Volumen: 100%", lambda: "Volumen: 75%"),
+        ])
+
+    menu.elegir()                       # apaga sonido -> guarda
+    datos = json.loads(open(ruta).read())
+    assert datos == {'Sonido': False, 'Nombre': 'jugador',
+                     'Volumen': 'Volumen: 100%'}
+
+    # un menú nuevo con la misma ruta restaura y aplica los valores
+    pilas.limpiar()
+    menu2 = pilas.actores.Menu(
+        guardar_en=ruta,
+        opciones=[
+            ("Sonido", 'check', True, lambda v: aplicados.append(v)),
+            ("Nombre", 'input', 'jugador', lambda v: aplicados.append(v)),
+        ])
+    assert menu2._opciones[0][2] is False     # check restaurado
+    assert menu2._opciones[1][2] == 'jugador' # input restaurado
+    assert False in aplicados and 'jugador' in aplicados  # se aplicaron

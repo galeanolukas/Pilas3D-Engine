@@ -144,12 +144,15 @@ class Actores(object):
             radio=radio, color=color, x=x, y=y, z=z)
 
     def Menu(self, opciones, x=200, y=300, separacion=38, tamano=22,
-             color=None, seleccionado=None, titulo=None):
+             color=None, seleccionado=None, titulo=None,
+             guardar_en=None):
         """Menú navegable (flechas/ENTER o mouse) con opciones
-        ``[(texto, funcion), ...]``."""
+        ``[(texto, funcion), ...]``. Con ``guardar_en`` persiste los
+        valores en un JSON."""
         return Menu(self._pilas, opciones, x=x, y=y,
                     separacion=separacion, tamano=tamano, color=color,
-                    seleccionado=seleccionado, titulo=titulo)
+                    seleccionado=seleccionado, titulo=titulo,
+                    guardar_en=guardar_en)
 
     def Mapa(self, matriz, simbolos, tamano_celda=2.0, x=0, y=0, z=0):
         return Mapa(self._pilas, matriz, simbolos,
