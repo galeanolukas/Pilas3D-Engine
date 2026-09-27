@@ -146,6 +146,12 @@ viva y su `ejecutar()` se omite — el auto-refresco la sigue animando
 y podés seguir tocando los actores que creó. `%ejemplo` sin nombre
 lista los disponibles.
 
+La consola activa el *inputhook* de pyglet de IPython
+(`shell.enable_gui('pyglet')`): la ventana sigue procesando eventos
+mientras la consola espera input, así que **se redimensiona, se
+repinta y responde al mouse** como si corriera un script. Si usás
+`ipython` a mano (no `pilas3d`), hacé lo mismo con `%gui pyglet`.
+
 Sin IPython instalado cae a la consola estándar de Python con
 autocompletado por tabulador (ahí hay que llamar `pilas.paso()` a mano).
 

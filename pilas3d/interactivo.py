@@ -59,6 +59,15 @@ def main():
     shell = TerminalInteractiveShell.instance(
         user_ns=ns, banner1=BANNER)
 
+    # Sin esto la ventana de pyglet solo procesa eventos cuando se
+    # ejecuta una celda (paso()); con el inputhook la ventana queda
+    # viva mientras la consola espera input: se redimensiona, se
+    # repinta y responde al mouse como si corriera un script.
+    try:
+        shell.enable_gui('pyglet')
+    except Exception:
+        pass
+
     ultimo_error = {'texto': None}
 
     def guardar_error(result):
