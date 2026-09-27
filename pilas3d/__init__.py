@@ -116,7 +116,13 @@ Entrada
 Menu (overlay 2D, teclado+mouse)
     pilas.actores.Menu(opciones=[("Jugar", fn), ("Salir", fn)],
                        titulo="MI JUEGO", x=230, y=300)
+    opciones extra: ("Sonido", 'check', True, fn)   [x]/[ ]
+                    ("Nombre", 'input', 'yo', fn)   ENTER edita
     menu.mover('abajo')  menu.elegir()  menu.opcion
+
+Audio
+    pilas.sonidos.cargar('x.wav')  .volumen=.4  .mute=True
+    pilas.musica.cargar('x.ogg')   .reproducir()  .volumen=.5
 
 Depuración
     pilas.fps.ver()   pilas.mostrar_ejes()

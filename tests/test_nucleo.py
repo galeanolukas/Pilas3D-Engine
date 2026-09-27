@@ -1636,3 +1636,61 @@ def test_menu_limpia_sus_textos():
     assert len(pilas.escena.actores) == 4    # menu + titulo + 2 items
     pilas.limpiar()
     assert len(pilas.escena.actores) == 0
+
+
+def test_menu_checkbox_alterna_y_avisa():
+    pilas = crear_pilas()
+    cambios = []
+    menu = pilas.actores.Menu(opciones=[
+        ("Sonido", 'check', True, lambda v: cambios.append(v)),
+    ])
+    menu.elegir()                       # apaga
+    assert cambios == [False]
+    assert '[ ] Sonido' in menu._textos[0].texto
+    menu.elegir()                       # prende
+    assert cambios == [False, True]
+    assert '[x] Sonido' in menu._textos[0].texto
+
+
+def test_menu_input_edita_y_confirma():
+    pilas = crear_pilas()
+    nombres = []
+    menu = pilas.actores.Menu(opciones=[
+        ("Nombre", 'input', 'jugador', lambda v: nombres.append(v)),
+    ])
+    menu.elegir()                       # entra en edicion
+    assert menu._editando == 0
+    menu.mover('abajo')                 # bloqueado editando
+    assert menu.opcion == 0
+    for c in 'ana':                     # borra y tipea
+        pass
+    for _ in range(7):
+        menu.escribir('\b')             # borra "jugador"
+    for c in 'ana':
+        menu.escribir(c)
+    menu.confirmar_edicion()
+    assert nombres == ['ana']
+    assert 'Nombre: ana' in menu._textos[0].texto
+
+
+def test_sonidos_volumen_maestro_y_mute():
+    pilas = crear_pilas()
+    class _JugadorFalso:
+        def __init__(self): self.volume = 1.0
+    class _S(pilas3d.sonidos.Sonido):
+        def __init__(self, master):
+            self._volumen = 1.0
+            self._master = master
+            self._jugador_bucle = _JugadorFalso()
+            self._jugadores = []
+
+    s = _S(pilas.sonidos)
+    pilas.sonidos._cargados.append(s)
+    pilas.sonidos.volumen = 0.5
+    assert s._jugador_bucle.volume == pytest.approx(0.5)
+    pilas.sonidos.mute = True
+    assert s._jugador_bucle.volume == 0.0
+    s.volumen = 0.8                     # propio x master, mute sigue
+    assert s._jugador_bucle.volume == 0.0
+    pilas.sonidos.desilenciar()
+    assert s._jugador_bucle.volume == pytest.approx(0.4)

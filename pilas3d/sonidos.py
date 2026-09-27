@@ -42,8 +42,9 @@ class Sonido(object):
 
     deshabilitado = False
 
-    def __init__(self, pilas, ruta):
+    def __init__(self, pilas, ruta, master=None):
         self._pilas = pilas
+        self._master = master
         self.ruta = ruta
         self._volumen = 1.0
         self._fuente = media.load(ruta, streaming=False)
@@ -57,9 +58,20 @@ class Sonido(object):
     @volumen.setter
     def volumen(self, valor):
         self._volumen = valor
+        self._refrescar_volumen()
+
+    @property
+    def volumen_efectivo(self):
+        """Volumen real = propio x master (0 si hay mute global)."""
+        m = self._master
+        if m is None:
+            return self._volumen
+        return 0.0 if m.mute else self._volumen * m.volumen
+
+    def _refrescar_volumen(self):
         for jugador in [self._jugador_bucle] + self._jugadores:
             if jugador is not None:
-                jugador.volume = valor
+                jugador.volume = self.volumen_efectivo
 
     def reproducir(self, repetir=False):
         """Reproduce el sonido; con ``repetir=True`` queda en bucle."""
@@ -67,7 +79,7 @@ class Sonido(object):
             return
         jugador = media.Player()
         jugador.queue(self._fuente)
-        jugador.volume = self._volumen
+        jugador.volume = self.volumen_efectivo
         if repetir:
             self.detener()
             jugador.loop = True
@@ -103,7 +115,8 @@ class Sonido(object):
 
         def bajar():
             estado['restantes'] -= 1
-            jugador.volume = self._volumen * estado['restantes'] / pasos
+            jugador.volume = (self.volumen_efectivo
+                              * estado['restantes'] / pasos)
             if estado['restantes'] <= 0:
                 jugador.delete()
                 if self._jugador_bucle is jugador:
@@ -158,17 +171,56 @@ class SonidoDeshabilitado(object):
 
 
 class Sonidos(object):
-    """Punto de acceso a los sonidos: ``pilas.sonidos.cargar(...)``."""
+    """Punto de acceso a los sonidos: ``pilas.sonidos.cargar(...)``.
+
+    Además expone el volumen maestro y el mute global::
+
+        pilas.sonidos.volumen = 0.4    # afecta a todos los sonidos
+        pilas.sonidos.mute = True      # silencia todo al instante
+    """
 
     def __init__(self, pilas):
         self._pilas = pilas
+        self._volumen = 1.0
+        self._mute = False
+        self._cargados = []
+
+    @property
+    def volumen(self):
+        """Volumen maestro (0.0 a 1.0) aplicado a todos los sonidos."""
+        return self._volumen
+
+    @volumen.setter
+    def volumen(self, valor):
+        self._volumen = max(0.0, min(1.0, valor))
+        for s in self._cargados:
+            s._refrescar_volumen()
+
+    @property
+    def mute(self):
+        """True silencia todos los sonidos (el volumen se conserva)."""
+        return self._mute
+
+    @mute.setter
+    def mute(self, valor):
+        self._mute = bool(valor)
+        for s in self._cargados:
+            s._refrescar_volumen()
+
+    def silenciar(self):
+        self.mute = True
+
+    def desilenciar(self):
+        self.mute = False
 
     def cargar(self, ruta):
         """Carga un sonido. Ver ``pilas3d.sonidos`` para ejemplos."""
         ruta = _resolver_ruta(ruta)
         if Sonido.deshabilitado or not _hay_audio():
             return SonidoDeshabilitado(ruta)
-        return Sonido(self._pilas, ruta)
+        sonido = Sonido(self._pilas, ruta, master=self)
+        self._cargados.append(sonido)
+        return sonido
 
     def habilitar(self):
         Sonido.deshabilitado = False

@@ -1,9 +1,13 @@
 # -*- encoding: utf-8 -*-
 """Menú de opciones con pilas.actores.Menu (overlay 2D).
 
-Flechas/WS + ENTER para navegar, o click con el mouse. Las opciones
-pueden devolver un texto nuevo para ciclar valores (como los menús
-de gráficos de los juegos).
+Flechas/WS + ENTER para navegar, o click con el mouse. Tipos de
+opción:
+
+- acción:   ("Jugar", funcion)
+- check:    ("Sonido", 'check', True, fn)   -> [x]/[ ]
+- cíclica:  fn() devuelve texto nuevo        -> actualiza la etiqueta
+- input:    ("Nombre", 'input', 'yo', fn)   -> ENTER edita, ENTER ok
 """
 
 import pilas3d
@@ -25,6 +29,9 @@ res_idx = [0]
 CALIDADES = ['baja', 'media', 'alta']
 cal_idx = [2]
 
+VOLUMENES = [0.0, 0.25, 0.5, 0.75, 1.0]
+vol_idx = [4]
+
 
 def empezar():
     pilas.actores.Texto("JUGANDO!", x=300, y=440, tamano=30)
@@ -41,7 +48,6 @@ def ciclar_resolucion():
 def ciclar_calidad():
     cal_idx[0] = (cal_idx[0] + 1) % len(CALIDADES)
     calidad = CALIDADES[cal_idx[0]]
-    # algo visible de verdad: la niebla se cierra en 'baja'
     if calidad == 'baja':
         pilas.escena.niebla = ((0.5, 0.55, 0.6), 8, 30)
     elif calidad == 'media':
@@ -51,19 +57,38 @@ def ciclar_calidad():
     return "Calidad: %s" % calidad
 
 
+def al_sonar(activo):
+    pilas.sonidos.mute = not activo          # mute/sonido global
+
+
+def ciclar_volumen():
+    vol_idx[0] = (vol_idx[0] + 1) % len(VOLUMENES)
+    v = VOLUMENES[vol_idx[0]]
+    pilas.sonidos.volumen = v                # volumen maestro
+    return "Volumen: %d%%" % int(v * 100)
+
+
+def al_nombrar(nombre):
+    pilas.actores.Texto("Hola, %s!" % nombre, x=260, y=40,
+                        tamano=20)
+
+
 pilas.actores.Menu(
     titulo="PILAS3D",
     opciones=[
         ("Jugar", empezar),
         ("Resolución: 640x480", ciclar_resolucion),
         ("Calidad: alta", ciclar_calidad),
+        ("Sonido", 'check', True, al_sonar),
+        ("Volumen: 100%", ciclar_volumen),
+        ("Nombre", 'input', 'jugador', al_nombrar),
         ("Salir", pilas.terminar),
     ],
-    x=230, y=340, tamano=22,
+    x=230, y=360, tamano=20,
     color=pilas.colores.blanco,
     seleccionado=pilas.colores.amarillo)
 
-pilas.actores.Texto("flechas + ENTER o click con el mouse",
-                    x=10, y=10)
+pilas.actores.Texto("flechas + ENTER o click - input: ENTER edita, "
+                    "ENTER confirma, ESC cancela", x=10, y=10)
 
 pilas.ejecutar()
