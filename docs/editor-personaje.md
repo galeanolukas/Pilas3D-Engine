@@ -30,9 +30,22 @@ la ventana los paneles se reacomodan solos.
 
 ## 2. Modelos
 
-El editor busca automáticamente todos los `.glb` en `modelos/`
-(recursivo) al arrancar. Ese directorio **está ignorado por git** a
+El editor busca automáticamente todos los `.glb` y `.gltf` en
+`modelos/` (recursivo) al arrancar — si un modelo existe en ambos
+formatos gana el `.glb`. Ese directorio **está ignorado por git** a
 propósito: los modelos son locales tuyos.
+
+### Formatos compatibles
+
+| Formato | ¿Sirve? | Comentario |
+|---|---|---|
+| `.glb` (glTF 2.0 binario) | ✔ | **recomendado** — malla+skin+texturas+animaciones en un archivo |
+| `.gltf` (+`.bin`, texturas externas) | ✔ | igual, pero multiarchivo |
+| `.obj` | ✖ en el editor | sin esqueleto: `actores.Modelo` lo carga como prop estático, y `ModeloAnimado` lo anima **por secuencia de frames** (interpolación de vértices estilo MD2), no por huesos |
+| `.fbx`/`.dae`/`.blend`/`.c4d`/`.ma`/`.max` | ✖ | formatos de autoría — abrí el archivo en Blender y exportá a `.glb` |
+
+Las poses y animaciones se guardan **junto al modelo**:
+`modelos/personajes/fox/Fox.pose.json` y `Fox.anim.json`.
 
 - **N**: pasa al siguiente modelo de la lista (cicla).
 - Cada modelo se **auto-escala** a ~1.8 unidades de alto (el Fox de
@@ -67,7 +80,7 @@ Mixamo/Quaternius exportados a `.glb`.
 | `X` / `Y` / `Z` | elegir eje de rotación |
 | `←` / `→` | rotar el hueso ±10° |
 | `R` | reiniciar a la pose original |
-| `G` / `C` | guardar / cargar `pose-<modelo>.json` |
+| `G` / `C` | guardar / cargar `<modelo>.pose.json` (junto al .glb) |
 | Botón derecho + drag | orbitar la cámara |
 
 ## 4. Animar por keyframes
@@ -82,8 +95,8 @@ quaternions, el mismo que usa para las animaciones del archivo).
 | `W` | borrar el último keyframe |
 | `B` | vaciar todos los keyframes capturados |
 | `P` | compilar los keyframes en la animación `mi_anim` y reproducirla en loop |
-| `J` | guardar la animación en `anim-<modelo>.json` |
-| `L` | cargar `anim-<modelo>.json` y reproducirla |
+| `J` | guardar la animación en `<modelo>.anim.json` (junto al .glb) |
+| `L` | cargar `<modelo>.anim.json` y reproducirla |
 
 Mínimo 2 keyframes. Cada keyframe son ~0.5 s de animación.
 

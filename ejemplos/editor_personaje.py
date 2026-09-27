@@ -7,10 +7,11 @@ Carga un modelo glTF riggeado y permite posar sus huesos:
 - X / Y / Z: elegir eje de rotación
 - IZQUIERDA/DERECHA: rotar el hueso ±10°
 - N: siguiente modelo (recorre los .glb de modelos/)
-- G: guardar pose en 'pose-<modelo>.json'   C: cargarla   R: reiniciar
+- G: guardar pose en '<modelo>.pose.json' (junto al .glb)   C: cargarla
+  R: reiniciar
 - M: capturar keyframe   W: borrar último   B: vaciar todos
   P: reproducir la animación formada por los keyframes (interpolada)
-- J: guardar la animación en 'anim-<modelo>.json'   L: cargarla
+- J: guardar la animación en '<modelo>.anim.json'   L: cargarla
 - A: abrir el explorador de archivos para cargar un .glb externo
   (con caja de selección y nombre personalizado para el modelo)
 - T: animación procedural (caminar, correr, sentarse, cola, saludar,
@@ -36,23 +37,30 @@ pilas.luces.direccional.ambiente = 0.6
 # modelos .glb disponibles en el directorio modelos/ (local, no se
 # publica): wolf, fox, cesium-man... los que hayas bajado.
 DIR_EJ = os.path.dirname(os.path.abspath(__file__))
-MODELOS = sorted(
-    glob.glob(os.path.join(DIR_EJ, '..', 'modelos', '**', '*.glb'),
-              recursive=True) +
-    glob.glob(os.path.join(DIR_EJ, '..', 'modelos', '*.glb')))
+# .glb + .gltf; si un modelo existe en ambos formatos gana el .glb
+_vistos = {}
+for _r in sorted(glob.glob(os.path.join(DIR_EJ, '..', 'modelos', '**',
+                                        '*.gl*'), recursive=True)):
+    if not _r.lower().endswith(('.glb', '.gltf')):
+        continue
+    _base = os.path.splitext(_r)[0]
+    if _base not in _vistos or _r.endswith('.glb'):
+        _vistos[_base] = _r
+MODELOS = sorted(_vistos.values())
 if not MODELOS:
-    raise SystemExit("no hay .glb en modelos/ - bajá alguno de "
+    raise SystemExit("no hay .glb/.gltf en modelos/ - bajá alguno de "
                      "KhronosGroup/glTF-Sample-Assets")
 
 
 def ruta_pose(ruta_modelo):
-    base = os.path.splitext(os.path.basename(ruta_modelo))[0]
-    return os.path.join(DIR_EJ, 'pose-%s.json' % base)
+    """El JSON de pose vive JUNTO al modelo (modelos/.../pose-N.json)."""
+    base = os.path.splitext(ruta_modelo)[0]
+    return base + '.pose.json'
 
 
 def ruta_anim(ruta_modelo):
-    base = os.path.splitext(os.path.basename(ruta_modelo))[0]
-    return os.path.join(DIR_EJ, 'anim-%s.json' % base)
+    base = os.path.splitext(ruta_modelo)[0]
+    return base + '.anim.json'
 
 
 def autoescala(modelo, objetivo=1.8):
