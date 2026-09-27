@@ -249,9 +249,11 @@ bloquear con `ejecutar()`:
 
 - **Issues y PRs**: reportá bugs, proponé habilidades o actores nuevos,
   mejorá ejemplos o documentación.
-- **Ideas pendientes**: chunks para mundos voxel grandes, transiciones
-  con fade entre escenas, lanzador gráfico, animación esquelética
-  glTF, más habilidades de pilas (`Disparar`, `PisaPlataformas`…).
+- **Ideas pendientes**: transiciones con fade entre escenas, lanzador
+  gráfico de ejemplos, shadow mapping real (hoy `Sombra` es un blob),
+  texturas y materiales glTF (hoy solo `baseColorFactor`), skinning
+  en GPU, más habilidades de pilas (`PuedeExplotar` con radio,
+  `SeMantieneEnEscena`…).
 - **Ejemplos**: un nuevo juego o demo usando la API es una gran
   contribución — mirá `ejemplos/` para el estilo.
 
