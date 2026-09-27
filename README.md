@@ -28,8 +28,16 @@ pilas.ejecutar()
 ## Instalación
 
 ```bash
+./instalar.sh          # Linux / macOS
+instalar.bat           # Windows (doble click o desde cmd)
+```
+
+o a mano:
+
+```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -e .   # opcional: habilita el comando pilas3d
 ```
 
 ## Ejemplos
@@ -44,6 +52,7 @@ python3 -m venv .venv
 .venv/bin/python ejemplos/modelo_animado.py     # modelos .obj animados
 .venv/bin/python ejemplos/escenas.py            # menu -> juego (escenas)
 .venv/bin/python ejemplos/minecraft.py          # mini-Minecraft: picar/colocar bloques
+.venv/bin/python ejemplos/juego_modelos.py      # recolectar gemas con modelos .obj
 ```
 
 ## Consola interactiva (con autocompletado)
