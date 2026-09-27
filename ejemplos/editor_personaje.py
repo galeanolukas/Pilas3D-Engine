@@ -6,54 +6,94 @@ Carga un modelo glTF riggeado y permite posar sus huesos:
 - Flechas ARRIBA/ABAJO: elegir hueso
 - X / Y / Z: elegir eje de rotación
 - IZQUIERDA/DERECHA: rotar el hueso ±10°
-- G: guardar pose en 'pose.json'   C: cargarla   R: reiniciar
+- N: siguiente modelo (recorre los .glb de modelos/)
+- G: guardar pose en 'pose-<modelo>.json'   C: cargarla   R: reiniciar
 - Botón derecho + drag: orbitar la cámara
 - La esfera roja marca la articulación seleccionada
 """
 
+import glob
 import os
 
 import pilas3d
 
 pilas = pilas3d.iniciar(titulo="pilas3d - editor de personaje")
 
-MODELO = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
-POSE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                    'pose.json')
-
 pilas.escena.fondo = pilas.colores.gris_oscuro   # fondo de estudio
 piso = pilas.actores.Piso(tamano=30, divisiones=30)
 piso.color = pilas.colores.gris
 pilas.luces.direccional.ambiente = 0.6
 
-modelo = pilas.actores.ModeloGLTF(MODELO, escala=2.0)
-huesos = modelo.huesos()
-if not huesos:
-    raise SystemExit("el modelo no tiene esqueleto (skin)")
+# modelos .glb disponibles en el directorio modelos/ (local, no se
+# publica): wolf, fox, cesium-man... los que hayas bajado.
+DIR_EJ = os.path.dirname(os.path.abspath(__file__))
+MODELOS = sorted(
+    glob.glob(os.path.join(DIR_EJ, '..', 'modelos', '**', '*.glb'),
+              recursive=True) +
+    glob.glob(os.path.join(DIR_EJ, '..', 'modelos', '*.glb')))
+if not MODELOS:
+    raise SystemExit("no hay .glb en modelos/ - bajá alguno de "
+                     "KhronosGroup/glTF-Sample-Assets")
+
+
+def ruta_pose(ruta_modelo):
+    base = os.path.splitext(os.path.basename(ruta_modelo))[0]
+    return os.path.join(DIR_EJ, 'pose-%s.json' % base)
+
+
+def autoescala(modelo, objetivo=1.8):
+    """Normaliza el modelo a ~``objetivo`` unidades de alto
+    (los .glb vienen en unidades arbitrarias: el Fox está en cm)."""
+    pos = modelo._pos
+    if not pos:
+        return 1.0
+    ys = pos[1::3]
+    alto = max(ys) - min(ys) or 1.0
+    return objetivo / alto
+
+
+estado = {'modelo': None, 'huesos': [], 'sel': 0, 'eje': 'y',
+          'indice': 0}
 
 marcador = pilas.actores.Esfera(radio=0.08)
 marcador.color = pilas.colores.rojo
-
-sel = [0]            # índice dentro de la lista huesos
-eje = ['y']
 
 lista = pilas.actores.Texto("", x=10, y=170, tamano=13)
 info = pilas.actores.Texto("", x=10, y=420, tamano=15)
 info.color = pilas.colores.amarillo
 pilas.actores.Texto(
-    "arriba/abajo: hueso - X/Y/Z: eje - <-/->: rotar - "
+    "N: modelo - arriba/abajo: hueso - X/Y/Z: eje - <-/->: rotar - "
     "G guardar - C cargar - R reset",
     x=10, y=10)
 
 
+def cargar_modelo(i):
+    """Instancia el modelo i de MODELOS, recrea lista de huesos."""
+    if estado['modelo'] is not None:
+        estado['modelo'].eliminar()
+    ruta = MODELOS[i]
+    modelo = pilas.actores.ModeloGLTF(ruta)
+    modelo.escala = autoescala(modelo)
+    estado['modelo'] = modelo
+    estado['huesos'] = modelo.huesos()
+    estado['sel'] = 0
+    refrescar_ui()
+
+
 def refrescar_ui():
-    i, nombre = huesos[sel[0]]
-    info.texto = "hueso: %s  eje: %s" % (nombre, eje[0])
-    # ventana de 14 huesos alrededor del seleccionado
-    ini = max(0, min(sel[0] - 7, len(huesos) - 14))
+    huesos, sel = estado['huesos'], estado['sel']
+    if not huesos:
+        info.texto = "este modelo no tiene esqueleto"
+        lista.texto = ""
+        return
+    i, nombre = huesos[sel]
+    base = os.path.basename(MODELOS[estado['indice']])
+    info.texto = "%s  |  hueso: %s  eje: %s" % (base, nombre,
+                                               estado['eje'])
+    ini = max(0, min(sel - 7, len(huesos) - 14))
     lineas = []
     for k, (j, n) in enumerate(huesos[ini:ini + 14]):
-        marca = '>> ' if ini + k == sel[0] else '   '
+        marca = '>> ' if ini + k == sel else '   '
         lineas.append('%s%s' % (marca, n))
     lista.texto = '\n'.join(lineas)
 
@@ -62,48 +102,61 @@ class MarcadorHueso(object):
     """Actualiza la esfera a la posición del hueso elegido."""
 
     def actualizar(self):
-        marcador.posicion = modelo.posicion_hueso(huesos[sel[0]][0])
+        if estado['huesos']:
+            marcador.posicion = estado['modelo'].posicion_hueso(
+                estado['huesos'][estado['sel']][0])
 
 
-marco = MarcadorHueso()
-pilas.tareas.siempre(0, marco.actualizar)
+pilas.tareas.siempre(0, MarcadorHueso().actualizar)
 
 
 def al_pulsar(tecla):
     s = pilas.simbolos
+    modelo = estado['modelo']
+    huesos = estado['huesos']
+    if tecla == s.n:
+        estado['indice'] = (estado['indice'] + 1) % len(MODELOS)
+        cargar_modelo(estado['indice'])
+        return
+    if not huesos:
+        refrescar_ui()
+        return
     if tecla == s.ARRIBA:
-        sel[0] = (sel[0] - 1) % len(huesos)
+        estado['sel'] = (estado['sel'] - 1) % len(huesos)
     elif tecla == s.ABAJO:
-        sel[0] = (sel[0] + 1) % len(huesos)
+        estado['sel'] = (estado['sel'] + 1) % len(huesos)
     elif tecla == s.x:
-        eje[0] = 'x'
+        estado['eje'] = 'x'
     elif tecla == s.y:
-        eje[0] = 'y'
+        estado['eje'] = 'y'
     elif tecla == s.z:
-        eje[0] = 'z'
+        estado['eje'] = 'z'
     elif tecla in (s.IZQUIERDA, s.DERECHA):
         grados = -10 if tecla == s.IZQUIERDA else 10
         modelo.detener()
-        modelo.rotar_hueso(huesos[sel[0]][0], eje[0], grados)
+        modelo.rotar_hueso(huesos[estado['sel']][0], estado['eje'],
+                           grados)
         modelo.refrescar_pose()
     elif tecla == s.g:
-        modelo.guardar_pose(POSE)
-        info.texto = "pose guardada en pose.json"
+        pose = ruta_pose(MODELOS[estado['indice']])
+        modelo.guardar_pose(pose)
+        info.texto = "pose guardada: " + os.path.basename(pose)
         return
     elif tecla == s.c:
-        if os.path.exists(POSE):
+        pose = ruta_pose(MODELOS[estado['indice']])
+        if os.path.exists(pose):
             modelo.detener()
-            modelo.cargar_pose(POSE)
+            modelo.cargar_pose(pose)
     elif tecla == s.r:
         modelo.reiniciar_pose()
     refrescar_ui()
 
 
 pilas.escena.cuando_pulsa_tecla = al_pulsar
-refrescar_ui()
+cargar_modelo(0)
 
 camara = pilas.escena.camara
-camara.posicion = (0, 2.5, 6)
+camara.posicion = (0, 2.2, 4.5)
 camara.objetivo = (0, 1, 0)
 camara.usar_control_orbital(boton=pilas.simbolos.BOTON_DERECHO)
 
