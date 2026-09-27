@@ -39,8 +39,21 @@ class ModeloGLTF(Actor):
         super(ModeloGLTF, self).__init__(pilas, x=x, y=y, z=z)
         self.escala = escala
         self._aplicar_textura()
+        self._cargar_anims_junto_al_modelo()
         if animacion:
             self.animar(animacion)
+
+    def _cargar_anims_junto_al_modelo(self):
+        """Si existe ``<modelo>.anim.json`` junto al .glb, registra el
+        clip automáticamente (salvo si el archivo trae una lista de
+        clips — ``cargar_animacion`` acepta ambos formatos)."""
+        import os
+        base = os.path.splitext(self.ruta)[0] + '.anim.json'
+        if os.path.exists(base):
+            try:
+                self.cargar_animacion(base)
+            except Exception:
+                pass          # json roto o incompatible: no molesta
 
     def _aplicar_textura(self):
         """Toma la primera ``baseColorTexture`` encontrada y la asigna
@@ -261,15 +274,23 @@ class ModeloGLTF(Actor):
                        'canales': anim['canales']}, f)
 
     def cargar_animacion(self, ruta):
-        """Importa un clip JSON guardado con ``guardar_animacion``
-        y devuelve su nombre (queda listo para ``animar``)."""
+        """Importa clips JSON guardados con ``guardar_animacion``.
+
+        Acepta un solo clip ``{'nombre', 'duracion', 'canales'}`` o
+        una lista de ellos. Devuelve el nombre (o la lista de
+        nombres) registrado — listo para ``animar``."""
         import json
         with open(ruta) as f:
             datos = json.load(f)
-        self._escena['animaciones'][datos['nombre']] = {
-            'canales': datos['canales'],
-            'duracion': datos['duracion']}
-        return datos['nombre']
+        if isinstance(datos, dict):
+            datos = [datos]
+        nombres = []
+        for clip in datos:
+            self._escena['animaciones'][clip['nombre']] = {
+                'canales': clip['canales'],
+                'duracion': clip['duracion']}
+            nombres.append(clip['nombre'])
+        return nombres[0] if len(nombres) == 1 else nombres
 
     def _indice_hueso(self, hueso):
         """Acepta índice de nodo, índice de articulación o nombre."""

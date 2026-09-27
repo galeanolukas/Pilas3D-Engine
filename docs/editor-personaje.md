@@ -124,6 +124,13 @@ lobo.guardar_animacion('a.json');  otro.cargar_animacion('a.json')
 Los JSON de animación son portables entre instancias **del mismo
 modelo** (los índices de hueso tienen que coincidir).
 
+### Carga automática
+
+Si un `.anim.json` está **junto al .glb** (`Fox.anim.json` al lado de
+`Fox.glb`), `ModeloGLTF` lo registra solo al instanciarse — podés
+hacer `animar('mi_anim')` sin `cargar_animacion`. El archivo también
+acepta una **lista de clips** para guardar varias animaciones juntas.
+
 ## 6. Límites honestos
 
 - Una skin por modelo, triángulos, animación de nodos TRS. Morph

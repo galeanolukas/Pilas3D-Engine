@@ -1950,3 +1950,26 @@ def test_esqueleto_mapear_y_animar():
     lobo.animar(animacion_procedural(lobo, 'cola', mapa=mapa))
     with pytest.raises(ValueError):
         animacion_procedural(lobo, 'inexistente')
+
+
+def test_gltf_anim_json_junto_al_modelo(tmp_path):
+    import shutil
+    ruta = 'modelos/personajes/wolf/Wolf-Blender-2.82a.glb'
+    if not os.path.exists(ruta):
+        pytest.skip('modelo wolf no disponible')
+    # copia el glb a tmp y deja un clip .anim.json al lado
+    copia = tmp_path / 'w.glb'
+    shutil.copy(ruta, copia)
+    pilas = crear_pilas()
+    lobo = pilas.actores.ModeloGLTF(ruta)
+    i, _ = lobo.huesos()[3]
+    pose_a = lobo._pose_actual()
+    lobo.rotar_hueso(i, 'z', 45)
+    lobo.crear_animacion('propia', [pose_a, lobo._pose_actual()])
+    lobo.guardar_animacion(str(copia).replace('.glb', '.anim.json'),
+                           'propia')
+    # al cargar el glb el clip ya viene registrado solo
+    otro = pilas.actores.ModeloGLTF(str(copia))
+    assert 'propia' in otro.animaciones()
+    otro.animar('propia')
+    assert otro.animacion == 'propia'
