@@ -991,6 +991,50 @@ def test_ia_listar_y_borrar_sin_servidor_no_rompe():
     assert srv.borrar_modelo('no-existe:nunca') is False
 
 
+def test_make_game_slugify_y_validacion():
+    from pilas3d.ia.make_game import (slugify, validar_codigo,
+                                      extraer_codigo)
+    assert slugify('juego de náves espaciales!') == \
+        'juego_de_naves_espaciales'
+    ok, _ = validar_codigo('x = 1\nprint(x)')
+    assert ok
+    ok, razon = validar_codigo('x = {{SIN_RELLENAR}}')
+    assert not ok and 'placeholder' in razon
+    ok, _ = validar_codigo('input("x")')
+    assert not ok
+    codigo = extraer_codigo('```python\na = 1\n```')
+    assert codigo.strip() == 'a = 1'
+
+
+def test_make_game_ejecutar_headless():
+    from pilas3d.ia.make_game import ejecutar_headless
+    exito, out, err = ejecutar_headless(
+        "import pilas3d\npilas = pilas3d.iniciar()\n"
+        "pilas.actores.Cubo()\npilas.ejecutar()\n")
+    assert exito, err
+    exito, _, err = ejecutar_headless("1/0\n")
+    assert not exito and 'ZeroDivisionError' in err
+
+
+def test_actor_hook_iniciar():
+    from pilas3d.actores.actor import Actor
+    from pilas3d import mallas
+    pilas = crear_pilas()
+
+    llamado = []
+
+    class Nave(Actor):
+        def _generar_geometria(self):
+            return mallas.cubo(1)
+        def iniciar(self):
+            llamado.append(True)
+            self.aprender(pilas.habilidades.GirarConstantemente)
+
+    nave = Nave(pilas)
+    assert llamado == [True]
+    assert len(nave._habilidades) == 1
+
+
 def test_asistente_system_prompt_describe_api_real():
     from pilas3d.ia.asistente import SYSTEM
     for nombre in ('MoverseConElTeclado', 'CaminarEnPrimeraPersona',

@@ -145,6 +145,28 @@ In [3]: %explicar            # la IA explica el último error
 `%explicar` guarda la última excepción vía el evento `post_run_cell`
 de IPython y se la manda al modelo junto con el contexto de la escena.
 
+### Subcomandos de `%ia`: generar juegos
+
+```
+%ia make_game <descripción>     # crea juegos/<slug>.py
+%ia run <archivo.py>            # lo corre en la ventana abierta
+%ia edit <archivo.py> <cambio>  # le pide un cambio al modelo
+%ia list                        # lista juegos guardados
+```
+
+El generador (`pilas3d/ia/make_game.py`) usa el patrón
+**template-first**: el modelo no escribe el juego desde cero sino que
+rellena los `{{placeholders}}` de `ia/templates/juego_base.py`, que ya
+es válido. Después el código se valida dos veces — parseo AST (sin
+placeholders sueltos, sin `input()`/`open()`) y ejecución **headless**
+en un subproceso con `PILAS3D_HEADLESS=1` — y si falla, el error se le
+devuelve al modelo para reintentar (hasta 3 veces). Aunque no valide,
+el archivo se guarda igual para edición manual.
+
+`run` ejecuta el archivo en la `pilas` ya viva (parchea `iniciar()` y
+`ejecutar()` como `%ejemplo`): el juego aparece en la ventana abierta
+y sus actores quedan accesibles en la consola.
+
 ---
 
 ## 7. Variables de entorno

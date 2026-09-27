@@ -65,6 +65,18 @@ class Actor(object):
         escena = pilas.escena_actual()
         if escena is not None:
             escena.agregar_actor(self)
+        self.iniciar()
+
+    def iniciar(self):
+        """Hook de pilas-engine: se llama una vez al crear el actor.
+
+        Redefinilo en tus propios actores para configurarlo::
+
+            class Nave(Actor):
+                def iniciar(self):
+                    self.aprender(pilas.habilidades.MoverseConElTeclado)
+        """
+        pass
 
     # -- posición ---------------------------------------------------------
 

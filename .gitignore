@@ -13,6 +13,9 @@ modelos/
 # aparte; nunca se commitea por peso y licencia de redistribución)
 pilas3d/_vendor/
 
+# Juegos generados por el asistente de IA (%ia make_game)
+juegos/
+
 # Assets de Minecraft (copyright Mojang - no se pueden publicar)
 Texturas Minecraf/
 /*.rar

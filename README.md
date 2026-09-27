@@ -120,6 +120,20 @@ In [5]: %ia ¿cómo pongo gravedad?          # asistente (opcional)
 In [6]: %explicar                          # explica el último error
 ```
 
+Con el asistente de IA también podés **generar juegos enteros**:
+
+```
+In [7]: %ia make_game un cubo que recolecta esferas
+In [8]: %ia run juegos/un_cubo_que_recolecta_esferas.py
+In [9]: %ia edit juegos/un_cubo_que_recolecta_esferas.py "agregá puntaje"
+In [10]: %ia list                        # juegos guardados en ./juegos
+```
+
+`make_game` genera el juego desde un template validado (el modelo solo
+rellena la lógica), lo prueba en modo headless y reintenta con el
+error si falla. `run` lo ejecuta en la ventana abierta. Los juegos
+quedan en `./juegos/` (en `.gitignore`).
+
 `%ejemplo <nombre>` ejecuta un archivo de `ejemplos/` dentro de la
 ventana ya abierta: el `iniciar()` del ejemplo devuelve la `pilas`
 viva y su `ejecutar()` se omite — el auto-refresco la sigue animando

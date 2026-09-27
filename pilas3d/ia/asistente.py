@@ -64,11 +64,8 @@ def _opciones():
     return {'num_gpu': 0}
 
 
-def preguntar(consulta, contexto='', modelo=MODELO):
-    """Le pregunta al asistente; descarga Ollama/modelo si hace falta.
-
-    >>> pilas.ayuda("¿cómo hago un enemigo que me persiga?")
-    """
+def llamar_ollama(prompt, system=SYSTEM, modelo=MODELO):
+    """Llama al modelo local y devuelve el texto de la respuesta."""
     asegurar_servidor()
     asegurar_modelo(modelo)
     cuerpo = {
@@ -76,10 +73,8 @@ def preguntar(consulta, contexto='', modelo=MODELO):
         'stream': False,
         'options': _opciones(),
         'messages': [
-            {'role': 'system', 'content': SYSTEM},
-            {'role': 'user', 'content':
-                ('Contexto actual:\n%s\n\n' % contexto
-                 if contexto else '') + 'Pregunta: ' + consulta},
+            {'role': 'system', 'content': system},
+            {'role': 'user', 'content': prompt},
         ],
     }
     req = urllib.request.Request(
@@ -90,8 +85,21 @@ def preguntar(consulta, contexto='', modelo=MODELO):
         with urllib.request.urlopen(req, timeout=300) as r:
             return json.loads(r.read())['message']['content']
     except urllib.error.URLError as e:
-        return ("No pude hablar con el modelo local (%s). "
-                "Probá de nuevo." % e)
+        raise RuntimeError(
+            "No pude hablar con el modelo local (%s)." % e)
+
+
+def preguntar(consulta, contexto='', modelo=MODELO):
+    """Le pregunta al asistente; descarga Ollama/modelo si hace falta.
+
+    >>> pilas.ayuda("¿cómo hago un enemigo que me persiga?")
+    """
+    prompt = ('Contexto actual:\n%s\n\n' % contexto
+              if contexto else '') + 'Pregunta: ' + consulta
+    try:
+        return llamar_ollama(prompt, modelo=modelo)
+    except RuntimeError as e:
+        return "No pude hablar con el modelo local. Probá de nuevo. (%s)" % e
 
 
 def explicar_error(texto_error, contexto=''):

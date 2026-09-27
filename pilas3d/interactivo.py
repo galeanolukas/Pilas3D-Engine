@@ -32,6 +32,8 @@ ejecutes refresca la escena automáticamente (pilas.paso()).
 `pilas.ayuda()` muestra la guía completa de la API.
 `%ejemplo <nombre>` corre un ejemplo en esta ventana (ej: %ejemplo hola_cubo).
 `%ia <pregunta>` consulta al asistente local (opcional, IA).
+`%ia make_game <idea>` genera un juego en juegos/ con IA.
+`%ia run <archivo>` / `%ia edit <archivo> <cambio>` / `%ia list`.
 `%explicar` pide a la IA que explique el último error.
 """
 
@@ -67,8 +69,86 @@ def main():
         else:
             ultimo_error['texto'] = None
 
-    def _ia(line):
+    def _correr_en_ventana(ruta):
+        """Ejecuta un .py dentro de la ventana ya abierta: parchea
+        pilas3d.iniciar (devuelve la pilas viva) y Pilas.ejecutar
+        (no-op; el auto-refresco con paso() la anima)."""
+        import pathlib
+        ruta = pathlib.Path(ruta)
+        codigo = compile(ruta.read_text(encoding='utf-8'),
+                         str(ruta), 'exec')
+        iniciar_orig, ejecutar_orig = (pilas3d.iniciar,
+                                       pilas3d.Pilas.ejecutar)
         try:
+            pilas3d.iniciar = lambda *a, **k: pilas
+            pilas3d.Pilas.ejecutar = lambda self: None
+            ns = shell.user_ns
+            archivo_previo = ns.get('__file__')
+            ns['__file__'] = str(ruta.resolve())
+            exec(codigo, ns)
+            ns['__file__'] = archivo_previo
+        finally:
+            pilas3d.iniciar = iniciar_orig
+            pilas3d.Pilas.ejecutar = ejecutar_orig
+
+    def _ia(line):
+        """Asistente con subcomandos: make_game, run, edit, list."""
+        import pathlib
+        from pilas3d.ia.make_game import (JUEGOS_DIR, generar_juego,
+                                          editar_juego)
+
+        partes = line.strip().split(maxsplit=2)
+        cmd = partes[0].lower() if partes else ''
+
+        try:
+            if cmd == 'make_game':
+                if len(partes) < 2:
+                    print("Uso: %ia make_game <descripción del juego>")
+                    return
+                descripcion = ' '.join(partes[1:])
+                print("Generando juego: %s" % descripcion)
+                exito, ruta, msg = generar_juego(descripcion)
+                print("%s %s" % ('✔' if exito else '⚠', msg))
+                print("  guardado en %s" % ruta)
+                print("  corré con: %%ia run %s" % ruta)
+                return
+
+            if cmd == 'run':
+                if len(partes) < 2:
+                    print("Uso: %ia run <archivo.py>")
+                    return
+                ruta = pathlib.Path(partes[1])
+                if not ruta.exists():
+                    print("No existe: %s" % ruta)
+                    return
+                _correr_en_ventana(ruta)
+                print("%s cargado en la escena actual" % ruta.name)
+                return
+
+            if cmd == 'edit':
+                if len(partes) < 3:
+                    print("Uso: %ia edit <archivo.py> <cambio>")
+                    return
+                ruta, cambio = pathlib.Path(partes[1]), partes[2]
+                if not ruta.exists():
+                    print("No existe: %s" % ruta)
+                    return
+                exito, msg = editar_juego(ruta, cambio)
+                print("%s %s — %s"
+                      % ('✔' if exito else '⚠', ruta.name, msg))
+                return
+
+            if cmd == 'list':
+                JUEGOS_DIR.mkdir(exist_ok=True)
+                juegos = sorted(JUEGOS_DIR.glob('*.py'))
+                if not juegos:
+                    print("No hay juegos guardados. "
+                          "Creá uno con %ia make_game <descripción>")
+                for f in juegos:
+                    print('  ', f)
+                return
+
+            # sin subcomando: charla normal con el asistente
             from pilas3d.ia.asistente import preguntar
             print(preguntar(line, contexto=pilas._contexto()))
         except RuntimeError as e:
@@ -104,21 +184,7 @@ def main():
             for e in disponibles:
                 print('  ', e)
             return
-        codigo = compile(ruta.read_text(encoding='utf-8'),
-                         str(ruta), 'exec')
-        iniciar_orig, ejecutar_orig = (pilas3d.iniciar,
-                                       pilas3d.Pilas.ejecutar)
-        try:
-            pilas3d.iniciar = lambda *a, **k: pilas
-            pilas3d.Pilas.ejecutar = lambda self: None
-            ns = shell.user_ns
-            archivo_previo = ns.get('__file__')
-            ns['__file__'] = str(ruta.resolve())
-            exec(codigo, ns)
-            ns['__file__'] = archivo_previo
-        finally:
-            pilas3d.iniciar = iniciar_orig
-            pilas3d.Pilas.ejecutar = ejecutar_orig
+        _correr_en_ventana(ruta)
 
     shell.register_magic_function(_ia, 'line', 'ia')
     shell.register_magic_function(_explicar, 'line', 'explicar')
