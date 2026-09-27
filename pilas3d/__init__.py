@@ -28,7 +28,17 @@ from pilas3d.sonidos import Sonidos
 from pilas3d.musica import _Musica
 from pilas3d import interpolaciones
 
-VERSION = "0.1.0"
+def _leer_version():
+    """Versión del motor, tomada del archivo VERSION de la raíz."""
+    ruta = os.path.join(os.path.dirname(__file__), '..', 'VERSION')
+    try:
+        with open(ruta, encoding='utf-8') as f:
+            return f.read().strip()
+    except OSError:
+        return '0.0.0'
+
+
+VERSION = _leer_version()
 
 AYUDA = """\
 pilas3d - guía rápida

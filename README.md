@@ -42,6 +42,17 @@ python3 -m venv .venv
 .venv/bin/pip install -e .   # opcional: habilita el comando pilas3d
 ```
 
+Para **actualizar** a la última versión:
+
+```bash
+./actualizar.sh        # Linux / macOS
+actualizar.bat         # Windows
+```
+
+Baja los cambios con `git pull --tags` y reinstala dependencias. La
+versión actual está en el archivo `VERSION` y cada entrega queda
+registrada con un tag de Git (`v0.2.0`, …).
+
 ### Asistente de IA (opcional)
 
 Los instaladores descargan el binario de [Ollama](https://ollama.com)
