@@ -80,6 +80,7 @@ quaternions, el mismo que usa para las animaciones del archivo).
 |---|---|
 | `M` | capturar la pose actual como keyframe |
 | `W` | borrar el último keyframe |
+| `B` | vaciar todos los keyframes capturados |
 | `P` | compilar los keyframes en la animación `mi_anim` y reproducirla en loop |
 | `J` | guardar la animación en `anim-<modelo>.json` |
 | `L` | cargar `anim-<modelo>.json` y reproducirla |

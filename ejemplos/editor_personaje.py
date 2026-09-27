@@ -8,8 +8,8 @@ Carga un modelo glTF riggeado y permite posar sus huesos:
 - IZQUIERDA/DERECHA: rotar el hueso ±10°
 - N: siguiente modelo (recorre los .glb de modelos/)
 - G: guardar pose en 'pose-<modelo>.json'   C: cargarla   R: reiniciar
-- M: capturar keyframe   W: borrar último   P: reproducir la
-  animación formada por los keyframes (interpolada)
+- M: capturar keyframe   W: borrar último   B: vaciar todos
+  P: reproducir la animación formada por los keyframes (interpolada)
 - J: guardar la animación en 'anim-<modelo>.json'   L: cargarla
 - A: abrir el explorador de archivos para cargar un .glb externo
   (con caja de selección y nombre personalizado para el modelo)
@@ -94,7 +94,7 @@ lista = pilas.actores.Texto("", tamano=12, ancho=PANEL - 16)
 info = pilas.actores.Texto("", tamano=15)
 info.color = pilas.colores.amarillo
 pilas.actores.Texto(
-    "N: modelo - flechas: hueso - X/Y/Z+<-/->: rotar - M/W/P: keyframes\n"
+    "N: modelo - flechas: hueso - X/Y/Z+<-/->: rotar - M/W/B/P: keyframes\n"
     "J/L: guardar/cargar anim - G/C/R: pose - A: cargar .glb externo\n"
     "T: animación procedural (caminar, correr, sentarse, cola...)",
     x=10, y=28, tamano=12)
@@ -335,6 +335,12 @@ def al_pulsar(tecla):
     elif tecla == s.w:
         if estado['frames']:
             estado['frames'].pop()
+        info.texto = "%d keyframes" % len(estado['frames'])
+        return
+    elif tecla == s.b:
+        estado['frames'] = []
+        info.texto = "keyframes vaciados"
+        return
     elif tecla == s.p:
         frames = estado['frames']
         if len(frames) < 2:
