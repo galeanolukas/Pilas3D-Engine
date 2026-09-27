@@ -1,16 +1,21 @@
 # -*- encoding: utf-8 -*-
-"""Mini-FPS estilo Doom con mapa ASCII y texturas.
+"""Mini-FPS estilo Doom con mapa ASCII, pathfinding y atmósfera.
 
 - El laberinto se define como texto: '#' pared, 'E' enemigo, 'J' jugador
 - WASD/flechas: caminar (las paredes bloquean)
 - Mouse: mirar alrededor
 - Click izquierdo: disparar (rayo desde la cámara)
+- Los enemigos te BUSCAN: persiguen con A* esquivando las paredes
+- Niebla + linterna para ambientación de pasillos oscuros
 - Si un enemigo te toca: volvés al inicio y perdés una vida
 """
+
+import random
 
 import pilas3d
 from pilas3d.actores.esfera import Esfera
 from pilas3d.actores.animacion import Animacion
+from pilas3d.luces import LuzPuntual
 
 # 13 filas x 14 columnas; cada celda mide 2 unidades.
 MAPA = """
@@ -48,10 +53,14 @@ vidas.valor = 3
 vidas.texto = "Vidas: 3"
 pilas.actores.Texto("WASD moverse - mouse mirar - click disparar",
                     x=10, y=30)
+mira = pilas.actores.Texto("+", x=395, y=288, tamano=24)
+mira.color = pilas.colores.rojo               # crosshair
+
+NEGRO = pilas.colores.negro
 
 
 class Enemigo(Animacion):
-    """Fantasma animado (billboard) que persigue al jugador."""
+    """Fantasma animado (billboard) que persigue al jugador con A*."""
 
     def __init__(self, pilas, jugador=None, **kw):
         super(Enemigo, self).__init__(pilas, SPR_FANTASMA, columnas=8,
@@ -64,12 +73,8 @@ class Enemigo(Animacion):
     def actualizar(self):
         super(Enemigo, self).actualizar()  # avanza los cuadros
         j = self.jugador
-        dx, dz = j.x - self.x, j.z - self.z
-        d = (dx ** 2 + dz ** 2) ** 0.5
-        if d > 0.1:
-            v = 2.5 * self.pilas.dt
-            self.x += dx / d * v
-            self.z += dz / d * v
+        if j is None:
+            return
 
         # Si toca al jugador: una vida menos y vuelta al inicio.
         # (en el plano XZ: el jugador y el enemigo tienen distinta y)
@@ -78,9 +83,19 @@ class Enemigo(Animacion):
             j.posicion = jugador_inicio
             vidas.valor -= 1
             vidas.texto = "Vidas: %d" % vidas.valor
+
+            # flash rojo de daño (niebla se pone roja un instante)
+            pilas.escena.niebla = (pilas.colores.rojo, 2, 14)
+            pilas.tareas.una_vez(0.25, restaurar_niebla)
+
             if vidas.valor <= 0:
-                pilas.actores.Texto("PERDISTE!", x=320, y=200, tamano=40)
+                pilas.actores.Texto("PERDISTE!", x=320, y=200,
+                                    tamano=40)
                 self.pilas.tareas.una_vez(2, pilas.terminar)
+
+
+def restaurar_niebla():
+    pilas.escena.niebla = (NEGRO, 4, 20)
 
 
 class Jugador(Esfera):
@@ -96,20 +111,26 @@ class Jugador(Esfera):
                       velocidad=6, altura=1.6)
 
     def actualizar(self):
+        # la linterna sigue a la cámara
+        cam = self.pilas.escena_actual().camara
+        linterna.x, linterna.y, linterna.z = cam.posicion
+
         self.espera_disparo -= self.pilas.dt
         if self.pilas.control.boton_izquierdo and \
                 self.espera_disparo <= 0:
             self.espera_disparo = 0.3
             sonido_disparo.reproducir()
-            blanco = self.pilas.escena_actual().camara.disparar_rayo(
-                self.enemigos, alcance=40)
+            blanco = cam.disparar_rayo(self.enemigos, alcance=40)
             if blanco:
-                # explosión animada donde estaba el enemigo
+                # explosión animada + partículas donde estaba
                 pilas.actores.Animacion(
                     SPR_EXPLOSION, columnas=7, velocidad=14,
                     ciclica=False, eliminar_al_terminar=True,
                     ancho=1.8, alto=1.8,
                     x=blanco.x, y=blanco.y, z=blanco.z)
+                pilas.actores.Particulas.explosion(
+                    pilas, x=blanco.x, y=blanco.y, z=blanco.z,
+                    color=pilas.colores.naranja)
                 blanco.eliminar()
                 self.enemigos.remove(blanco)
                 sonido_explosion.reproducir()
@@ -152,15 +173,27 @@ mapa = pilas.actores.Mapa(MAPA, {
 piso = pilas.actores.Plano(ancho=30, profundidad=30)
 piso.imagen = TEX_PISO
 
-# Cielo estrellado (domo que sigue a la cámara) + ambiente nocturno
+# Cielo estrellado + ambiente nocturno + niebla de pasillos
 pilas.actores.Cielo()
-pilas.luces.direccional.ambiente = 0.15
+pilas.luces.direccional.ambiente = 0.12
 pilas.luces.direccional.color = pilas.colores.gris
+pilas.escena.niebla = (NEGRO, 4, 20)
+
+# linterna: luz puntual cálida que sigue a la cámara
+linterna = pilas.luces.agregar(LuzPuntual(
+    x=0, y=2, z=0, alcance=12, color=(1, 0.9, 0.7)))
 
 jugador = Jugador(pilas, enemigos)
 jugador_inicio = spawn['pos']
 jugador.posicion = jugador_inicio
+
+# cada enemigo aprende a perseguir al jugador esquivando paredes (A*),
+# con velocidades levemente distintas para que no marchén en fila
 for enemigo in enemigos:
     enemigo.jugador = jugador
+    enemigo.aprender(pilas.habilidades.PerseguirAOtroActor,
+                     actor=jugador,
+                     velocidad=random.uniform(1.8, 2.6),
+                     tam_celda=0.8, cada=0.5)
 
 pilas.ejecutar()
