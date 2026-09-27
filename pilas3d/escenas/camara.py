@@ -22,6 +22,7 @@ class Camara(object):
         self.z = z
         self.objetivo = objetivo
         self._orbital = False
+        self._orbital_boton = mouse.LEFT
         self._orbital_distancia = 0.0
         self._orbital_yaw = 0.0
         self._orbital_pitch = 0.0
@@ -49,18 +50,41 @@ class Camara(object):
         o = Vec3(self.x, self.y, self.z)
         return (Vec3(*self.objetivo) - o).normalize()
 
-    def disparar_rayo(self, actores, alcance=100.0):
-        """Retorna el actor más cercano alcanzado por un rayo de vista.
+    def rayo_desde_mouse(self, x=None, y=None, ancho=None, alto=None,
+                         fov=60.0):
+        """Rayo de mundo que sale de la cámara y pasa por el píxel
+        (x, y) del mouse. Retorna ``(origen, direccion)``; sin x/y usa
+        la posición actual del mouse.
 
-        Intersección rayo-esfera usando ``radio_de_disparo`` de cada
-        actor (o ``radio_de_colision`` si no lo define). Devuelve None
-        si no alcanza a nadie.
+        Es la pieza de los controles de mouse de pilas: ``actor_bajo_
+        mouse`` para clicks y ``punto_bajo_mouse`` para arrastrar.
         """
-        origen = Vec3(self.x, self.y, self.z)
-        direccion = self.direccion()
+        pilas = self.escena.pilas
+        ventana = pilas.ventana
+        if x is None:
+            x = pilas.control.mouse_x
+        if y is None:
+            y = pilas.control.mouse_y
+        if ancho is None:
+            ancho = ventana.width if ventana is not None else 640
+        if alto is None:
+            alto = ventana.height if ventana is not None else 480
+
+        # píxel -> coordenadas de vista (frustum simétrico, fov=60)
+        f = math.tan(math.radians(fov) / 2.0)
+        nx = (2.0 * x / ancho - 1.0) * f * (ancho / float(alto))
+        ny = (1.0 - 2.0 * y / alto) * f
+
+        frente = self.direccion()
+        derecha = frente.cross(Vec3(0, 1, 0)).normalize()
+        arriba = derecha.cross(frente).normalize()
+        dir_mundo = (frente + derecha * nx + arriba * ny).normalize()
+        return Vec3(self.x, self.y, self.z), dir_mundo
+
+    def _intersectar_rayo(self, origen, direccion, actores, alcance):
+        """El actor más cercano alcanzado por el rayo (o None)."""
         mejor = None
         t_min = alcance
-
         for actor in actores:
             radio = actor.radio_de_disparo
             if radio is None:
@@ -75,13 +99,50 @@ class Camara(object):
                 t_min = t
         return mejor
 
+    def disparar_rayo(self, actores, alcance=100.0):
+        """Retorna el actor más cercano alcanzado por un rayo de vista.
+
+        Intersección rayo-esfera usando ``radio_de_disparo`` de cada
+        actor (o ``radio_de_colision`` si no lo define). Devuelve None
+        si no alcanza a nadie.
+        """
+        origen = Vec3(self.x, self.y, self.z)
+        return self._intersectar_rayo(origen, self.direccion(),
+                                      actores, alcance)
+
+    def actor_bajo_mouse(self, actores=None, alcance=200.0,
+                         x=None, y=None):
+        """El actor más cercano bajo el puntero (o None).
+
+        ``actores`` por defecto son los de la escena actual."""
+        if actores is None:
+            actores = list(self.escena.actores)
+        origen, direccion = self.rayo_desde_mouse(x, y)
+        return self._intersectar_rayo(origen, direccion, actores,
+                                      alcance)
+
+    def punto_bajo_mouse(self, y_plano=0.0, x=None, y=None):
+        """Punto del mundo donde el rayo del mouse corta el plano
+        horizontal ``y = y_plano`` (None si el rayo no lo toca)."""
+        origen, direccion = self.rayo_desde_mouse(x, y)
+        if abs(direccion.y) < 1e-8:
+            return None
+        t = (y_plano - origen.y) / direccion.y
+        if t < 0:
+            return None
+        p = origen + direccion * t
+        return (p.x, p.y, p.z)
+
     # -- control orbital con el mouse -------------------------------------
 
-    def usar_control_orbital(self):
-        """Activa órbita con botón izquierdo + zoom con la rueda.
+    def usar_control_orbital(self, boton=mouse.LEFT):
+        """Activa órbita con ``boton`` + drag y zoom con la rueda.
 
-        La cámara gira siempre alrededor de ``self.objetivo``.
+        La cámara gira siempre alrededor de ``self.objetivo``. Con
+        ``boton=mouse.RIGHT`` queda el izquierdo libre para habilidades
+        como ``Arrastrable``.
         """
+        self._orbital_boton = boton
         ox, oy, oz = self.objetivo
         dx, dy, dz = self.x - ox, self.y - oy, self.z - oz
         d = math.sqrt(dx * dx + dy * dy + dz * dz)
@@ -98,7 +159,7 @@ class Camara(object):
             )
 
     def _on_mouse_drag(self, x, y, dx, dy, botones, modificadores):
-        if not (botones & mouse.LEFT):
+        if not (botones & self._orbital_boton):
             return
         self._orbital_yaw += dx * 0.4
         self._orbital_pitch = max(

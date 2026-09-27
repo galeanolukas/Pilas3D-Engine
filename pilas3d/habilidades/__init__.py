@@ -25,6 +25,8 @@ from pilas3d.habilidades.pisa_plataformas import PisaPlataformas
 from pilas3d.habilidades.perseguir_a_otro_actor import (
     PerseguirAOtroActor)
 from pilas3d.habilidades.ser_bot import SerBot
+from pilas3d.habilidades.arrastrable import Arrastrable
+from pilas3d.habilidades.seguir_al_mouse import SeguirAlMouse
 
 
 class Habilidades(object):
@@ -49,6 +51,8 @@ class Habilidades(object):
     PisaPlataformas = PisaPlataformas
     PerseguirAOtroActor = PerseguirAOtroActor
     SerBot = SerBot
+    Arrastrable = Arrastrable
+    SeguirAlMouse = SeguirAlMouse
 
     def buscar_habilidad_por_nombre(self, nombre):
         disponibles = {
@@ -67,6 +71,8 @@ class Habilidades(object):
             'pisaplataformas': PisaPlataformas,
             'perseguiraotroactor': PerseguirAOtroActor,
             'serbot': SerBot,
+            'arrastrable': Arrastrable,
+            'seguiralmouse': SeguirAlMouse,
         }
         try:
             return disponibles[nombre.lower()]

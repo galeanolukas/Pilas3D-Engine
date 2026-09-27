@@ -196,7 +196,8 @@ bloquear con `ejecutar()`:
 | —                             | `habilidades.CaminarEnPrimeraPersona` (FPS: mouse look + WASD) |
 | —                             | `camara.disparar_rayo(actores)` (rayo-esfera, para disparos) |
 | —                             | `pilas.actores.Pared()` + `escena.obstaculos` (bloquean el paso) |
-| `pilas.control.mouse_x/y`     | posición y botones del mouse         |
+| `pilas.control.mouse_x/y`     | posición y botones del mouse + `pilas.cuando_hace_click(f)` → `f(actor, punto)`, `cuando_suelta_click(f)`, `cuando_mueve_mouse(f)` |
+| `habilidades.Arrastrable`…    | `Arrastrable` (drag en 3D) y `SeguirAlMouse` (camina al puntero) — usan `camara.rayo_desde_mouse` / `actor_bajo_mouse` / `punto_bajo_mouse` |
 | `pilas.sonidos.cargar()`      | igual (`reproducir`, `detener`, `pausar`, `continuar`, `volumen`) |
 | `pilas.musica.cargar()`       | igual (streaming, bucle por defecto, `detener_gradualmente`) |
 | `Grilla`/`Animacion`          | `pilas.actores.Animacion(img, columnas, filas, velocidad)` (billboard animado) |

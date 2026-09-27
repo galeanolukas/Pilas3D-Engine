@@ -87,6 +87,8 @@ Escena y cámara
     camara.x/y/z  camara.objetivo = (x, y, z)
     camara.usar_control_orbital()            # drag orbita, rueda zoom
     camara.disparar_rayo(actores, alcance=40)
+    camara.actor_bajo_mouse()                # picking con el mouse
+    camara.punto_bajo_mouse(y_plano=0)       # rayo -> punto del suelo
 
 Habilidades  (actor.aprender)
     pilas.habilidades.MoverseConElTeclado   RebotarComoPelota
@@ -97,6 +99,8 @@ Habilidades  (actor.aprender)
     RotarConMouse                           PuedeExplotar
     PisaPlataformas                         # gravedad que pisa bloques
     PerseguirAOtroActor                     # persigue esquivando (A*)
+    Arrastrable                             # arrastrar con el mouse
+    SeguirAlMouse                           # caminar hacia el puntero
 
 Tareas
     pilas.tareas.una_vez(2, f)   siempre(1, f)   condicional(0.1, f)
@@ -104,6 +108,8 @@ Tareas
 Entrada
     pilas.control.arriba/abajo/izquierda/derecha   (flechas + WASD)
     pilas.control.mouse_x/y  boton_izquierdo/derecho/medio
+    pilas.cuando_hace_click(f)    # f(actor, punto) al hacer click
+    pilas.cuando_suelta_click(f)  cuando_mueve_mouse(f)
 
 Depuración
     pilas.fps.ver()   pilas.mostrar_ejes()
@@ -197,6 +203,10 @@ class Pilas(object):
         self._actor_ejes = None
         self._fps_visible = False
         self.fps = _Fps(self)
+        self._callbacks_click = []
+        self._callbacks_suelta = []
+        self._callbacks_mueve = []
+        self._mouse_handlers_conectados = False
 
         self.actores = Actores(self)
         self.escenas = Escenas(self)
@@ -249,6 +259,70 @@ class Pilas(object):
     def luces(self):
         """Las luces de la escena actual (``pilas.luces.agregar(...)``)."""
         return self._escena_actual.luces
+
+    # -- eventos de mouse ---------------------------------------------------
+
+    def cuando_hace_click(self, funcion):
+        """Conecta ``funcion`` al click izquierdo del mouse.
+
+        La función recibe ``(actor, punto)``: el actor de la escena
+        bajo el puntero (o None) y el punto donde el rayo corta el
+        plano ``y=0`` (o None)::
+
+            >>> pilas.cuando_hace_click(al_clickear)
+            >>> def al_clickear(actor, punto):
+            ...     if actor: print("click en", actor)
+        """
+        self._callbacks_click.append(funcion)
+        self._conectar_mouse()
+
+    def cuando_suelta_click(self, funcion):
+        """Conecta ``funcion(x, y)`` al soltar el botón izquierdo."""
+        self._callbacks_suelta.append(funcion)
+        self._conectar_mouse()
+
+    def cuando_mueve_mouse(self, funcion):
+        """Conecta ``funcion(x, y)`` al mover el mouse (píxeles)."""
+        self._callbacks_mueve.append(funcion)
+        self._conectar_mouse()
+
+    def _conectar_mouse(self):
+        if (self.ventana is not None
+                and not self._mouse_handlers_conectados):
+            self.ventana.push_handlers(
+                on_mouse_press=self._ev_mouse_press,
+                on_mouse_release=self._ev_mouse_release,
+                on_mouse_motion=self._ev_mouse_motion)
+            self._mouse_handlers_conectados = True
+
+    def _ev_mouse_press(self, x, y, button, modifiers):
+        from pyglet.window import mouse
+        if button & mouse.LEFT:
+            self.procesar_click(x, y)
+
+    def _ev_mouse_release(self, x, y, button, modifiers):
+        from pyglet.window import mouse
+        if button & mouse.LEFT:
+            for fn in self._callbacks_suelta:
+                fn(x, y)
+
+    def _ev_mouse_motion(self, x, y, dx, dy):
+        for fn in self._callbacks_mueve:
+            fn(x, y)
+
+    def procesar_click(self, x, y):
+        """Ejecuta los callbacks de click para el píxel (x, y).
+
+        También sirve para simular clicks sin ventana real (tests,
+        consola interactiva): ``pilas.procesar_click(320, 240)``.
+        """
+        if not self._callbacks_click:
+            return
+        camara = self._escena_actual.camara
+        actor = camara.actor_bajo_mouse(x=x, y=y)
+        punto = camara.punto_bajo_mouse(0.0, x=x, y=y)
+        for fn in self._callbacks_click:
+            fn(actor, punto)
 
     def mostrar_ejes(self, largo=50):
         """Muestra los ejes X (rojo), Y (verde) y Z (azul) del origen."""

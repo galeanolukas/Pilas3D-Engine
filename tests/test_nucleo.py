@@ -1,6 +1,8 @@
 # -*- encoding: utf-8 -*-
 """Tests del núcleo de pilas3d (sin ventana ni contexto OpenGL)."""
 
+import pytest
+
 import pilas3d
 from pilas3d import colores
 
@@ -1410,3 +1412,94 @@ def test_gltf_esqueletico_carga_y_anima():
     assert abs(vx - 1.5) < 0.01
     assert abs(vy - 0.5) < 0.01
     assert abs(vz) < 0.01
+
+
+# -- controles de mouse ----------------------------------------------------
+
+
+def test_rayo_desde_mouse_centro_apunta_al_objetivo():
+    pilas = crear_pilas()
+    cam = pilas.escena.camara
+    origen, dir_ = cam.rayo_desde_mouse(320, 240, ancho=640, alto=480)
+    frente = cam.direccion()
+    assert abs(origen.x - cam.x) < 1e-6
+    for a, b in zip((dir_.x, dir_.y, dir_.z),
+                    (frente.x, frente.y, frente.z)):
+        assert abs(a - b) < 1e-6
+
+
+def test_actor_bajo_mouse_y_punto_en_plano():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()            # en el origen, radio 1
+    cam = pilas.escena.camara             # (0,5,12) mirando al origen
+
+    assert cam.actor_bajo_mouse(x=320, y=240) is cubo
+    assert cam.actor_bajo_mouse(x=0, y=0) is None     # esquina: nada
+
+    # el rayo del centro corta el piso justo en el origen
+    px, py, pz = cam.punto_bajo_mouse(0.0, x=320, y=240)
+    assert abs(px) < 1e-4 and abs(py) < 1e-4 and abs(pz) < 1e-4
+
+
+def test_cuando_hace_click_despacha_actor_y_punto():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    recibido = []
+    pilas.cuando_hace_click(lambda a, p: recibido.append((a, p)))
+
+    pilas.procesar_click(320, 240)     # centro: pega en el cubo
+    pilas.procesar_click(0, 0)         # esquina: nada bajo el mouse
+
+    assert recibido[0][0] is cubo
+    assert recibido[0][1] == pytest.approx((0, 0, 0), abs=1e-4)
+    assert recibido[1][0] is None
+
+
+class _ControlFalso(object):
+    izquierda = derecha = arriba = abajo = False
+    boton_izquierdo = boton_derecho = boton_medio = False
+    mouse_x, mouse_y = 320, 240
+
+    def simbolo(self, tecla):
+        return False
+
+
+def test_seguir_al_mouse_teletransporta_al_punto():
+    pilas = crear_pilas()
+    actor = pilas.actores.Esfera(x=20, z=20)
+    actor.aprender(pilas.habilidades.SeguirAlMouse)
+    pilas.control = _ControlFalso()          # mouse en el centro
+
+    actor.pre_actualizar()
+    esperado = pilas.escena.camara.punto_bajo_mouse(0.0, x=320, y=240)
+    assert actor.x == pytest.approx(esperado[0], abs=1e-4)
+    assert actor.z == pytest.approx(esperado[2], abs=1e-4)
+
+
+def test_arrastrable_arrastra_solo_al_actor_clickeado():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    otro = pilas.actores.Esfera(x=8, z=0)
+    cubo.aprender(pilas.habilidades.Arrastrable)
+    otro.aprender(pilas.habilidades.Arrastrable)
+    pilas.control = _ControlFalso()
+    pilas.control.boton_izquierdo = True
+
+    # click en el centro: sobre el cubo -> solo el cubo se arrastra
+    otro.pre_actualizar()
+    cubo.pre_actualizar()
+    assert otro.x == pytest.approx(8)
+    assert abs(cubo.x) < 0.01 and abs(cubo.z) < 0.01
+
+    # mouse a la esquina mientras sigue presionado -> el cubo sigue
+    pilas.control.mouse_x, pilas.control.mouse_y = 400, 240
+    cubo.pre_actualizar()
+    assert cubo.x > 0.01
+    assert otro.x == pytest.approx(8)
+
+    # al soltar deja de arrastrarse
+    pilas.control.boton_izquierdo = False
+    pilas.control.mouse_x, pilas.control.mouse_y = 500, 240
+    x_quieto = cubo.x
+    cubo.pre_actualizar()
+    assert cubo.x == pytest.approx(x_quieto)
