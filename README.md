@@ -101,6 +101,9 @@ de CPU). Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 .venv/bin/python ejemplos/juego_modelos.py      # recolectar gemas con modelos .obj
 .venv/bin/python ejemplos/plataformas.py        # plataformero: PisaPlataformas + salto
 .venv/bin/python ejemplos/particulas.py         # fuego, humo, lluvia, explosión
+.venv/bin/python ejemplos/personajes.py         # galería: Robot, Humanoide, Mono, Arania, Espectro
+.venv/bin/python ejemplos/bots.py               # NPCs: patrullan, te persiguen (SerBot) y vuelven
+.venv/bin/python ejemplos/niebla.py             # escena.niebla: abierta/cerrada/noche con linterna
 ```
 
 ## Consola interactiva (con autocompletado)
