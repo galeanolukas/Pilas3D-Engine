@@ -41,6 +41,10 @@ pilas.ejecutar()
 |---|---|---|
 | ![multijugador](capturas/multijugador.png) | ![modelos](capturas/modelos_minecraft.png) | ![particulas](capturas/particulas.png) |
 
+| Editor (lobo) | Editor (Fox) | Explorador de .glb |
+|---|---|---|
+| ![editor](capturas/editor_personaje.png) | ![editor fox](capturas/editor_fox.png) | ![explorador](capturas/editor_explorador.png) |
+
 Más en [`capturas/`](capturas/).
 
 ## Instalación
