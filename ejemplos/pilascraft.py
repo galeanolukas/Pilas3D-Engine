@@ -10,7 +10,8 @@ Si existe el directorio "Texturas Minecraf" usa las texturas y
 sonidos reales del juego; si no, un atlas procedural generado solo.
 
 WASD moverse - mouse mirar - SPACE saltar
-Click izquierdo: picar   Click derecho: colocar ladrillo   ESC salir
+Click izquierdo: picar   Click derecho: colocar ladrillo
+C: cambiar el cielo (dia/estrellas/celeste)   ESC salir
 """
 
 import math
@@ -19,6 +20,7 @@ import random
 
 import pilas3d
 from pilas3d.actores.esfera import Esfera
+from pyglet.window import key
 
 pilas = pilas3d.iniciar(titulo="pilas3d - PilasCraft")
 
@@ -70,10 +72,29 @@ for _ in range(8):
             for dy in (2, 3):
                 mundo.poner_bloque(tx + dx, suelo + dy, tz + dz, 'hojas')
 
-# Cielo celeste + niebla del mismo tono: el borde de los chunks
-# se funde con el horizonte y el mundo "no termina".
-cielo = pilas.actores.Cielo(imagen=None)
-cielo.color = pilas.colores.celeste
+# Cielo diurno con nubes + niebla del mismo tono: el borde de los
+# chunks se funde con el horizonte y el mundo "no termina".
+# Tecla C cicla el cielo: dia -> estrellas -> celeste liso.
+cielo = pilas.actores.Cielo('dia')
+
+CIELOS = [('dia', pilas.colores.celeste),
+          ('estrellas', (0.05, 0.05, 0.12)),
+          (None, pilas.colores.celeste)]
+cielo_idx = [0]
+
+
+def al_pulsar_tecla(simbolo):
+    if simbolo == key.C:
+        cielo_idx[0] = (cielo_idx[0] + 1) % len(CIELOS)
+        tipo, fondo = CIELOS[cielo_idx[0]]
+        cielo.tipo = tipo
+        pilas.escena.fondo = fondo
+        pilas.escena.niebla = (fondo,
+                               DISTANCIA_VISTA * 16 * 0.6,
+                               DISTANCIA_VISTA * 16 * 0.95)
+
+
+pilas.escena.cuando_pulsa_tecla = al_pulsar_tecla
 pilas.escena.fondo = pilas.colores.celeste
 pilas.escena.niebla = (pilas.colores.celeste,
                      DISTANCIA_VISTA * 16 * 0.6,
@@ -132,7 +153,7 @@ class Jugador(Esfera):
 jugador = Jugador(pilas, mundo)
 
 pilas.actores.Texto(
-    "WASD moverse - SPACE saltar - click izq: picar - der: colocar",
+    "WASD moverse - SPACE saltar - click: picar/colocar - C: cielo",
     x=10, y=10)
 
 pilas.ejecutar()
