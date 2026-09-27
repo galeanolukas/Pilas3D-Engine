@@ -1157,6 +1157,13 @@ def test_mundo_altura_suelo_respeta_ediciones():
     assert m.altura_suelo(0, 12) == suelo
 
 
+def test_escena_niebla_configurable():
+    pilas = crear_pilas()
+    assert pilas.escena.niebla is None
+    pilas.escena.niebla = (pilas.colores.gris, 10, 50)
+    assert pilas.escena.niebla == (pilas.colores.gris, 10, 50)
+
+
 def test_particulas_emiten_y_renacen():
     pilas = crear_pilas()
     p = pilas.actores.Particulas(cantidad=20, vida=0.1, velocidad=2)

@@ -32,6 +32,7 @@ class Escena(object):
         self.obstaculos = []  # actores con caja sólida (p. ej. Pared)
         from pilas3d.luces import Luces
         self.luces = Luces()
+        self.niebla = None  # o (color, inicio, fin) para niebla lineal
         self.pilas._definir_escena(self)
         self.iniciar()
 

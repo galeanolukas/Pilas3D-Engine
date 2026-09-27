@@ -103,6 +103,15 @@ class Ventana(pyglet.window.Window):
             )
             programa["vista"] = escena.camara.matriz_vista()
             escena.luces.aplicar(programa)
+            programa["cam_pos"] = tuple(escena.camara.posicion)
+            niebla = escena.niebla
+            programa["usar_niebla"] = niebla is not None
+            if niebla is not None:
+                color, inicio, fin = niebla
+                programa["niebla_color"] = tuple(
+                    colores.normalizar(color))
+                programa["niebla_inicio"] = float(inicio)
+                programa["niebla_fin"] = float(fin)
             escena.dibujar()
 
         if escena.tiene_overlays() or self.pilas._fps_visible:

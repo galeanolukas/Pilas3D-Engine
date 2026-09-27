@@ -203,6 +203,7 @@ bloquear con `ejecutar()`:
 | —                             | `pilas.actores.ModeloJSON('x.json')` — modelos de bloque Minecraft (formato elements/faces) |
 | —                             | `mundo.armar_atlas([pngs])` — atlas de bloques desde texturas propias |
 | —                             | `pilas.luces` — sol + hasta 8 puntuales con atenuación |
+| —                             | `escena.niebla = (color, inicio, fin)` — niebla lineal (None la apaga) |
 | —                             | `pilas.actores.Sombra(actor)` (sombra falsa tipo blob) |
 | —                             | `pilas.actores.Cielo()` — cielo estrellado (o `Cielo('fondo.png')`) |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |

@@ -59,6 +59,12 @@ uniform vec3 luz_posicion[MAX_LUCES];
 uniform vec3 luz_color[MAX_LUCES];
 uniform float luz_alcance[MAX_LUCES];
 
+uniform bool usar_niebla;
+uniform vec3 niebla_color;
+uniform float niebla_inicio;
+uniform float niebla_fin;
+uniform vec3 cam_pos;
+
 out vec4 fragmento;
 
 void main()
@@ -83,7 +89,16 @@ void main()
                        * aten * aten * 0.65;
         }
     }
-    fragmento = vec4(difuso.rgb * luz_rgb, difuso.a);
+    vec3 rgb = difuso.rgb * luz_rgb;
+    // Niebla lineal solo sobre fragmentos iluminados (el cielo y las
+    // líneas de debug no tienen normal y quedan limpios).
+    if (usar_niebla && length(v_normal) > 0.001) {
+        float dist = distance(v_posicion, cam_pos);
+        float f = clamp((dist - niebla_inicio)
+                        / (niebla_fin - niebla_inicio), 0.0, 1.0);
+        rgb = mix(rgb, niebla_color, f);
+    }
+    fragmento = vec4(rgb, difuso.a);
 }
 """ % MAX_LUCES
 
