@@ -58,7 +58,7 @@ In [2]: %explicar        # explica el último error
 Sin Ollama el motor funciona igual: `pilas.ayuda()` sigue mostrando la
 guía. Variables de entorno: `PILAS3D_IA_MODELO` (modelo alternativo,
 ej. `qwen2.5-coder:7b` con GPU) y `PILAS3D_IA_GPU=1` (usar GPU en vez
-de CPU).
+de CPU). Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 
 ## Ejemplos
 
