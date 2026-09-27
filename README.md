@@ -27,6 +27,22 @@ pilas.actores.Ejes()
 pilas.ejecutar()
 ```
 
+## Capturas
+
+| PilasCraft (día) | PilasCraft (noche) | Mini Doom |
+|---|---|---|
+| ![pilascraft dia](capturas/pilascraft_dia.png) | ![pilascraft noche](capturas/pilascraft_noche.png) | ![doom](capturas/doom.png) |
+
+| Menú | Bots | Niebla |
+|---|---|---|
+| ![menu](capturas/menu.png) | ![bots](capturas/bots.png) | ![niebla](capturas/niebla.png) |
+
+| Multijugador | Modelos Minecraft | Partículas |
+|---|---|---|
+| ![multijugador](capturas/multijugador.png) | ![modelos](capturas/modelos_minecraft.png) | ![particulas](capturas/particulas.png) |
+
+Más en [`capturas/`](capturas/).
+
 ## Instalación
 
 ```bash
