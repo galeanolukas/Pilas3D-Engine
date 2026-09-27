@@ -83,6 +83,7 @@ Escena y cámara
         def iniciar(self): ...           # hooks: terminar(),
         def cuando_pulsa_tecla(s): ...   # cuando_actualiza()
     pilas.escenas.vincular(Menu)         # luego pilas.escenas.Menu()
+    pilas.limpiar()                      # escena Normal vacía
     camara = pilas.escena_actual().camara
     camara.x/y/z  camara.objetivo = (x, y, z)
     camara.usar_control_orbital()            # drag orbita, rueda zoom
@@ -249,6 +250,16 @@ class Pilas(object):
         explícita, útil para volver a una escena ya construida.
         """
         self._definir_escena(escena)
+
+    def limpiar(self):
+        """Vuelve a una escena Normal vacía.
+
+        Atajo pensado para la consola interactiva: tras correr un
+        ``%ejemplo`` o probar cosas, ``pilas.limpiar()`` elimina todos
+        los actores y deja una escena nueva (equivalente a
+        ``pilas.escenas.Normal()``).
+        """
+        self.escenas.Normal()
 
     @property
     def tareas(self):
