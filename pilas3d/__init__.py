@@ -113,6 +113,11 @@ Entrada
     pilas.cuando_hace_click(f)    # f(actor, punto) al hacer click
     pilas.cuando_suelta_click(f)  cuando_mueve_mouse(f)
 
+Menu (overlay 2D, teclado+mouse)
+    pilas.actores.Menu(opciones=[("Jugar", fn), ("Salir", fn)],
+                       titulo="MI JUEGO", x=230, y=300)
+    menu.mover('abajo')  menu.elegir()  menu.opcion
+
 Depuración
     pilas.fps.ver()   pilas.mostrar_ejes()
     pilas.depurador.definir_modos(fps=True, ejes=True,

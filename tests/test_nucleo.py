@@ -1573,3 +1573,66 @@ def test_disparar_desde_camara_sigue_la_mira():
     for a, b in zip(p.direccion,
                     (frente.x, frente.y, frente.z)):
         assert a == pytest.approx(b)
+
+
+# -- menu ---------------------------------------------------------------------
+
+
+def test_menu_navega_y_ejecuta_opciones():
+    pilas = crear_pilas()
+    log = []
+    menu = pilas.actores.Menu(opciones=[
+        ("Jugar", lambda: log.append('jugar')),
+        ("Opciones", lambda: log.append('opc')),
+        ("Salir", lambda: log.append('salir')),
+    ])
+
+    assert menu.opcion == 0
+    menu.elegir()
+    menu.mover('abajo')
+    menu.mover('abajo')
+    assert menu.opcion == 2
+    menu.elegir()
+    menu.mover('abajo')                    # envuelve a la primera
+    assert menu.opcion == 0
+    menu.elegir()
+    assert log == ['jugar', 'salir', 'jugar']
+
+
+def test_menu_opcion_que_cicla_actualiza_texto():
+    pilas = crear_pilas()
+    calidades = iter(['Calidad: media', 'Calidad: alta'])
+    menu = pilas.actores.Menu(opciones=[
+        ("Calidad: baja", lambda: next(calidades)),
+    ])
+    menu.elegir()
+    assert menu._opciones[0][0] == 'Calidad: media'
+    menu.elegir()
+    assert menu._opciones[0][0] == 'Calidad: alta'
+
+
+def test_menu_click_en_opcion_la_activa():
+    pilas = crear_pilas()
+    elegido = []
+    menu = pilas.actores.Menu(
+        opciones=[("Uno", lambda: elegido.append(1)),
+                  ("Dos", lambda: elegido.append(2))],
+        x=100, y=200, separacion=40, tamano=20)
+
+    y_segunda = menu._textos[1]._y
+    menu._al_click_mouse(110, y_segunda + 10, 1, None)
+    assert elegido == [2]
+    assert menu.opcion == 1
+
+    # click fuera de cualquier opcion: nada
+    menu._al_click_mouse(5, 5, 1, None)
+    assert elegido == [2]
+
+
+def test_menu_limpia_sus_textos():
+    pilas = crear_pilas()
+    menu = pilas.actores.Menu(opciones=[("A", None), ("B", None)],
+                              titulo="Mi menu")
+    assert len(pilas.escena.actores) == 4    # menu + titulo + 2 items
+    pilas.limpiar()
+    assert len(pilas.escena.actores) == 0

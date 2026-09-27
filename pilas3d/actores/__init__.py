@@ -26,6 +26,7 @@ from pilas3d.actores.modelo_gltf import ModeloGLTF
 from pilas3d.actores.texto import Texto, Puntaje
 from pilas3d.actores.particulas import Particulas
 from pilas3d.actores.proyectil import Proyectil
+from pilas3d.actores.menu import Menu
 from pilas3d.actores.personajes import (Personaje, Robot, Humanoide,
                                       Mono, Arania, Espectro)
 
@@ -141,6 +142,14 @@ class Actores(object):
             alcance=alcance, objetivos=objetivos,
             cuando_impacta=cuando_impacta, ignorar=ignorar,
             radio=radio, color=color, x=x, y=y, z=z)
+
+    def Menu(self, opciones, x=200, y=300, separacion=38, tamano=22,
+             color=None, seleccionado=None, titulo=None):
+        """Menú navegable (flechas/ENTER o mouse) con opciones
+        ``[(texto, funcion), ...]``."""
+        return Menu(self._pilas, opciones, x=x, y=y,
+                    separacion=separacion, tamano=tamano, color=color,
+                    seleccionado=seleccionado, titulo=titulo)
 
     def Mapa(self, matriz, simbolos, tamano_celda=2.0, x=0, y=0, z=0):
         return Mapa(self._pilas, matriz, simbolos,
