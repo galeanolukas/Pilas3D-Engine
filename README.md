@@ -207,6 +207,7 @@ bloquear con `ejecutar()`:
 | —                             | `escena.niebla = (color, inicio, fin)` — niebla lineal (None la apaga) |
 | —                             | `pilas.red.hospedar/conectar` — multijugador simple: `enviar(tipo, **datos)`, `cuando_reciba(tipo, fn)` |
 | —                             | `pilas.actores.Sombra(actor)` (sombra falsa tipo blob) |
+| `Mono`/`Robot`/...            | `pilas.actores.Robot`/`Humanoide`/`Mono`/`Arania`/`Espectro` — personajes predefinidos (combinar primitivas, color por vértice, alambrado) |
 | —                             | `pilas.actores.Cielo()` — cielo estrellado (o `Cielo('fondo.png')`) |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
 

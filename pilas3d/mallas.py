@@ -213,3 +213,40 @@ def ejes(largo=5):
     ]
     uvs = [0.0] * 12
     return posiciones, normales, GL_LINES, colores, uvs
+
+
+def combinar(partes):
+    """Une varias geometrías en una sola malla (modo GL_TRIANGLES).
+
+    ``partes`` es una lista de ``(geometria, (dx, dy, dz))`` u
+    ``(geometria, (dx, dy, dz), color)``. Si alguna parte tiene color,
+    la malla sale con colores por vértice (las partes sin color quedan
+    blancas); si ninguna tiene, retorna ``colores=None`` y el actor
+    se puede teñir con ``actor.color`` como siempre::
+
+        geo = mallas.combinar([
+            (mallas.cubo(0.5), (0, 0, 0), colores.rojo),       # cuerpo
+            (mallas.esfera(0.2), (0, 0.4, 0), colores.rosa),   # cabeza
+        ])
+    """
+    from pilas3d import colores as _colores
+
+    posiciones, normales, uvs, cols = [], [], [], []
+    tiene_color = any(len(p) > 2 for p in partes)
+    for parte in partes:
+        datos = parte[0]
+        dx, dy, dz = parte[1]
+        p = datos[0]
+        n = len(p) // 3
+        for i in range(0, len(p), 3):
+            posiciones += [p[i] + dx, p[i + 1] + dy, p[i + 2] + dz]
+        normales += list(datos[1])
+        u = datos[4] if len(datos) > 4 and datos[4] else [0.0] * (n * 2)
+        uvs += list(u)
+        if tiene_color:
+            if len(parte) > 2:
+                r, g, b = _colores.normalizar(parte[2])
+            else:
+                r = g = b = 1.0
+            cols += [r, g, b, 1.0] * n
+    return posiciones, normales, GL_TRIANGLES, (cols or None), uvs

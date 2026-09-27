@@ -1249,3 +1249,26 @@ def test_red_cliente_servidor_localhost():
 
     cli_c.cerrar()
     srv.cerrar()
+
+
+def test_personajes_predefinidos_se_construyen():
+    pilas = crear_pilas()
+    for nombre in ('Robot', 'Humanoide', 'Mono', 'Arania', 'Espectro'):
+        p = getattr(pilas.actores, nombre)(x=1)
+        assert p in pilas.escena.actores
+        geo = p._generar_geometria()
+        assert len(geo[0]) > 0           # tiene vértices
+        assert len(geo[0]) == len(geo[1])  # una normal por vértice
+
+
+def test_mallas_combinar_con_colores():
+    from pilas3d import mallas, colores
+    geo = mallas.combinar([
+        (mallas.cubo(1.0), (0, 0, 0), colores.rojo),
+        (mallas.cubo(0.5), (0, 1, 0)),           # sin color -> blanco
+    ])
+    pos, nor, modo, cols, uvs = geo
+    n = len(pos) // 3
+    assert len(cols) == n * 4                    # rgba por vértice
+    assert cols[:4] == [1, 0, 0, 1]              # primera parte roja
+    assert cols[-4:] == [1, 1, 1, 1]             # última parte blanca

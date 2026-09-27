@@ -124,6 +124,15 @@ Luces y sombras
     pilas.actores.Cielo()                      # cielo estrellado
     pilas.actores.Cielo('mi_fondo.png')        # o con textura propia
 
+Personajes predefinidos (heredan de Actor, cada uno con un método
+de dibujo distinto)
+    pilas.actores.Robot()      # cuboides combinados, color por vértice
+    pilas.actores.Humanoide()  # bipedo estilo muñeco
+    pilas.actores.Mono()       # esferas + cuboides
+    pilas.actores.Arania()     # araña de primitivas (sin recursos)
+    pilas.actores.Espectro()   # alambrado (GL_LINES, sin superficie)
+    mallas.combinar([(geo, (dx,dy,dz), color), ...])  # arma los tuyos
+
 Partículas (efectos)
     pilas.actores.Particulas(cantidad=100, vida=2, velocidad=3,
         direccion=(0,1,0), dispersion=0.5, gravedad=0, tamano=4,

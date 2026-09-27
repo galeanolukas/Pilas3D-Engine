@@ -24,6 +24,8 @@ from pilas3d.actores.mundo import Mundo
 from pilas3d.actores.modelo_json import ModeloJSON
 from pilas3d.actores.texto import Texto, Puntaje
 from pilas3d.actores.particulas import Particulas
+from pilas3d.actores.personajes import (Personaje, Robot, Humanoide,
+                                      Mono, Arania, Espectro)
 
 
 class Actores(object):
@@ -130,6 +132,23 @@ class Actores(object):
         return Puntaje(
             self._pilas, x=x, y=y, tamano=tamano, prefijo=prefijo
         )
+
+    # -- personajes predefinidos (como pilas.actores.Mono en pilas) --
+
+    def Robot(self, x=0, y=0, z=0):
+        return Robot(self._pilas, x=x, y=y, z=z)
+
+    def Humanoide(self, x=0, y=0, z=0):
+        return Humanoide(self._pilas, x=x, y=y, z=z)
+
+    def Mono(self, x=0, y=0, z=0):
+        return Mono(self._pilas, x=x, y=y, z=z)
+
+    def Arania(self, x=0, y=0, z=0):
+        return Arania(self._pilas, x=x, y=y, z=z)
+
+    def Espectro(self, x=0, y=0, z=0):
+        return Espectro(self._pilas, x=x, y=y, z=z)
 
 
 # Los presets del emisor quedan accesibles desde la fábrica:
