@@ -3,7 +3,9 @@ REM Actualiza pilas3d: baja los ultimos cambios (con tags de version)
 REM y reinstala dependencias.
 cd /d "%~dp0"
 
-git pull --tags
+git pull
+REM --force: los tags pueden haberse movido (reescritura de historia)
+git fetch --tags --force
 
 if exist .venv (
     call .venv\Scripts\pip.exe install -q -r requirements.txt

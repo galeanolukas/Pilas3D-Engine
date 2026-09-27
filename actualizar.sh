@@ -4,7 +4,9 @@
 set -e
 cd "$(dirname "$0")"
 
-git pull --tags
+git pull
+# --force: los tags pueden haberse movido (reescritura de historia)
+git fetch --tags --force
 
 if [ -d .venv ]; then
     .venv/bin/pip install -q -r requirements.txt
