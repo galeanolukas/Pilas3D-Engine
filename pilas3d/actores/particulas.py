@@ -80,6 +80,7 @@ class Particulas(Actor):
     def actualizar(self):
         dt = self.pilas.dt
         g = self.gravedad
+        vivas = False
         for i in range(self.cantidad):
             self._edad[i] += dt
             if self._edad[i] >= self._ttl[i]:
@@ -87,11 +88,14 @@ class Particulas(Actor):
                     self._reset(i)
                 else:
                     continue    # muerta: queda con edad >= ttl
+            vivas = True
             self._vy[i] -= g * dt
             self._px[i] += self._vx[i] * dt
             self._py[i] += self._vy[i] * dt
             self._pz[i] += self._vz[i] * dt
         self._volcar()
+        if not vivas and not self.ciclico:
+            self.eliminar()   # estallido único terminado: se auto-destruye
 
     def _volcar(self):
         """Escribe posiciones y colores (alpha por edad) en la lista."""

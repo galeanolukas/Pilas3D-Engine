@@ -1,9 +1,10 @@
 # -*- encoding: utf-8 -*-
-"""Mini-Minecraft: mundo de bloques, picar y construir.
+"""PilasCraft: mundo voxel infinito, picar y construir.
 
-El mundo es UN solo actor (``Mundo``) que fusiona todos los bloques
-en una malla con solo las caras visibles — como hace Minecraft con
-sus chunks.
+El mundo es UN solo actor (``Mundo``) con ``infinito=True``: los
+chunks se generan proceduralmente alrededor de la cámara (determinista
+por ``semilla``) y sus mallas se descargan al alejarse. La niebla de
+la escena disimula el borde del mundo visible — el truco clásico.
 
 Si existe el directorio "Texturas Minecraf" usa las texturas y
 sonidos reales del juego; si no, un atlas procedural generado solo.
@@ -19,7 +20,7 @@ import random
 import pilas3d
 from pilas3d.actores.esfera import Esfera
 
-pilas = pilas3d.iniciar(titulo="pilas3d - mini minecraft")
+pilas = pilas3d.iniciar(titulo="pilas3d - PilasCraft")
 
 # -- texturas y sonidos reales (si está el pack de Minecraft) ----
 MC = os.path.join(os.path.dirname(__file__), '..',
@@ -27,6 +28,8 @@ MC = os.path.join(os.path.dirname(__file__), '..',
 TEX = os.path.join(MC, 'textures', 'blocks')
 SND = os.path.join(MC, 'sounds')
 usa_pack = os.path.isdir(TEX)
+
+DISTANCIA_VISTA = 3  # chunks de radio: ~48 bloques visibles
 
 if usa_pack:
     atlas = [os.path.join(TEX, t) for t in (
@@ -42,23 +45,24 @@ if usa_pack:
         'tronco': (7, 6, 7),   # arriba: anillos, costados: corteza
         'hojas': (8, 8, 8),
     }
-    mundo = pilas.actores.Mundo(tipos=tipos, atlas=atlas)
+    mundo = pilas.actores.Mundo(
+        tipos=tipos, atlas=atlas, infinito=True, semilla=7,
+        altura=5, distancia_vista=DISTANCIA_VISTA)
     son_picar = [pilas.sonidos.cargar(
         os.path.join(SND, 'dig', 'wood%d.ogg' % i)) for i in (1, 2, 3, 4)]
     son_poner = pilas.sonidos.cargar(os.path.join(SND, 'random', 'pop.ogg'))
 else:
-    mundo = pilas.actores.Mundo()
+    mundo = pilas.actores.Mundo(
+        infinito=True, semilla=7, altura=5,
+        distancia_vista=DISTANCIA_VISTA)
     son_picar = son_poner = None
 
-mundo.generar_terreno(48, 48, altura=5, semilla=3)
-
-# unos árboles: tronco vertical + cubo de hojas
+# unos árboles cerca del spawn: la altura la da la misma función
+# procedural del mundo (los chunks aún no existen al crear el script)
 rng = random.Random(1)
-for _ in range(10):
-    tx, tz = rng.randint(-20, 20), rng.randint(-20, 20)
-    suelo = mundo.altura_suelo(tx, tz)
-    if suelo is None:
-        continue
+for _ in range(8):
+    tx, tz = rng.randint(-18, 18), rng.randint(-18, 18)
+    suelo = mundo.altura_terreno_en(tx, tz)
     for j in range(3):
         mundo.poner_bloque(tx, suelo + j, tz, 'tronco')
     for dx in (-1, 0, 1):
@@ -66,9 +70,14 @@ for _ in range(10):
             for dy in (2, 3):
                 mundo.poner_bloque(tx + dx, suelo + dy, tz + dz, 'hojas')
 
-# Cielo celeste de día (sin textura, solo color a pleno brillo)
+# Cielo celeste + niebla del mismo tono: el borde de los chunks
+# se funde con el horizonte y el mundo "no termina".
 cielo = pilas.actores.Cielo(imagen=None)
 cielo.color = pilas.colores.celeste
+pilas.escena.fondo = pilas.colores.celeste
+pilas.escena.niebla = (pilas.colores.celeste,
+                     DISTANCIA_VISTA * 16 * 0.6,
+                     DISTANCIA_VISTA * 16 * 0.95)
 
 
 class Jugador(Esfera):
@@ -80,8 +89,8 @@ class Jugador(Esfera):
         self.mundo = mundo
         self._click_izq = False
         self._click_der = False
-        suelo = mundo.altura_suelo(0.5, 0.5) or 8
-        self.posicion = (0.5, suelo + 0.2, 0.5)
+        suelo = mundo.altura_terreno_en(0, 0)
+        self.posicion = (0.5, suelo + 0.7, 0.5)
         self.aprender(
             pilas.habilidades.CaminarEnPrimeraPersona,
             velocidad=5, mundo=mundo, gravedad=25, salto=9)
@@ -94,6 +103,12 @@ class Jugador(Esfera):
                 camara.posicion, camara.direccion(), alcance=6)
             if bloque:
                 self.mundo.sacar_bloque(*bloque)
+                # escombros del bloque roto
+                self.pilas.actores.Particulas.explosion(
+                    self.pilas, x=bloque[0] + 0.5, y=bloque[1] + 0.5,
+                    z=bloque[2] + 0.5, cantidad=25, velocidad=3,
+                    tamano=4, color=(0.45, 0.33, 0.2),
+                    color_final=(0.3, 0.3, 0.3))
                 if son_picar:
                     random.choice(son_picar).reproducir()
         if c.boton_derecho and not self._click_der:
@@ -109,8 +124,9 @@ class Jugador(Esfera):
         self._click_izq = c.boton_izquierdo
         self._click_der = c.boton_derecho
         if self.y < -20:  # cayó del mundo
-            self.posicion = (0.5, (self.mundo.altura_suelo(0.5, 0.5)
-                                   or 8) + 1, 0.5)
+            self.posicion = (0.5,
+                             self.mundo.altura_terreno_en(0, 0) + 1,
+                             0.5)
 
 
 jugador = Jugador(pilas, mundo)
