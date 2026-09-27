@@ -59,7 +59,8 @@ o a mano:
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-.venv/bin/pip install -e .   # opcional: habilita el comando pilas3d
+.venv/bin/pip install -e .   # opcional: habilita los comandos
+                             # `pilas3d` (consola) y `pilas3d-editor`
 ```
 
 Para **actualizar** a la última versión:
@@ -107,7 +108,9 @@ de CPU). Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 
 ### Editor de personajes
 
-`ejemplos/editor_personaje.py` carga modelos `.glb` riggeados y deja
+Se abre con `pilas3d-editor` (o `python3 ejemplos/editor_personaje.py`,
+o `pilas3d.editor.main()` desde la consola interactiva). Carga modelos
+`.glb` riggeados y deja
 **posar huesos, capturar keyframes y crear animaciones propias** que
 se guardan en JSON — sin Blender. Trae explorador de archivos para
 cargar `.glb` de cualquier carpeta, paneles laterales/inferior y

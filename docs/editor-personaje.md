@@ -1,11 +1,14 @@
 # Guía: editor de personajes
 
-`ejemplos/editor_personaje.py` es una mini-herramienta para **posar
+El editor (`pilas3d/editor.py`) es una mini-herramienta para **posar
 modelos articulados glTF y crear animaciones propias por keyframes**,
-sin necesidad de Blender. Todo queda en JSON al lado del ejemplo.
+sin necesidad de Blender. Todo queda en JSON junto a cada modelo.
 
 ```bash
-.venv/bin/python ejemplos/editor_personaje.py
+.venv/bin/pilas3d-editor                     # comando instalado
+.venv/bin/python ejemplos/editor_personaje.py   # o el ejemplo
+# o desde la consola interactiva (`pilas3d`):
+#   >>> pilas3d.editor.main()
 ```
 
 ---
