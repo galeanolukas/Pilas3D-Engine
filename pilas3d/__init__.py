@@ -392,6 +392,9 @@ class Pilas(object):
             ...     pilas.paso()
         """
         if self.ventana is None:
+            # tick igual: puede haber un cierre diferido pendiente
+            # (terminar() agenda el close para no romper el event loop)
+            pyglet.clock.tick()
             print("pilas3d se inició con sin_ventana=True; "
                   "no hay ventana que actualizar.")
             return
@@ -450,9 +453,15 @@ class Pilas(object):
             actor, atributo)
 
     def terminar(self):
-        if self.ventana is not None:
-            self.ventana.close()
-            self.ventana = None
+        """Cierra la ventana. El cierre es diferido: si se llama desde
+        dentro del event loop (un handler de tecla, el inputhook de
+        IPython que itera ``pyglet.app.windows``), cerrar en el acto
+        rompe la iteración con 'Set changed size during iteration'."""
+        ventana = self.ventana
+        self.ventana = None
+        if ventana is not None:
+            pyglet.clock.schedule_once(
+                lambda dt: ventana.close(), 0)
 
 
 def obtener_ruta(nombre):
