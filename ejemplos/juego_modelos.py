@@ -24,9 +24,9 @@ pilas.actores.Cielo()
 piso = pilas.actores.Plano(ancho=60, profundidad=60)
 piso.imagen = pilas3d.obtener_ruta('data/pasto.png')
 
-ARBOL = 'modelos/low_poly_tree/Lowpoly_tree_sample.obj'
-FAROLA = 'modelos/Streetlight/Obj/Streetlight_LowRes.obj'
-LUNA = 'modelos/Moon 2K.obj'
+ARBOL = 'modelos/props/low_poly_tree/Lowpoly_tree_sample.obj'
+FAROLA = 'modelos/props/streetlight/Streetlight_LowRes.obj'
+LUNA = 'modelos/props/moon/Moon 2K.obj'
 
 rng = random.Random(2)
 puntos = pilas.actores.Puntaje(x=10, y=450)
@@ -58,7 +58,7 @@ def hacer_luna():
     if os.path.exists(LUNA):
         luna = pilas.actores.Modelo(LUNA, x=14, y=22, z=-30,
                                     escala=2.2)
-        luna.imagen = 'modelos/Textures/Diffuse_2K.png'
+        luna.imagen = 'modelos/props/moon/texturas/Diffuse_2K.png'
     else:
         luna = pilas.actores.Esfera(x=14, y=22, z=-30, radio=2)
         luna.color = pilas.colores.blanco

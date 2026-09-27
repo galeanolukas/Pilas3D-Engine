@@ -20,7 +20,7 @@ pilas.actores.Ejes()
 pilas.luces.direccional.ambiente = 0.6         # luz de día suave
 
 lobo = pilas.actores.ModeloGLTF(
-    'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb', y=0)
+    'modelos/personajes/wolf/Wolf-Blender-2.82a.glb', y=0)
 lobo.escala = 2.5
 lobo.animar('02_walk_Armature_0', ciclica=True)
 

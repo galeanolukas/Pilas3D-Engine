@@ -20,7 +20,7 @@ from pilas3d.actores.modelo_gltf import ModeloGLTF
 
 pilas = pilas3d.iniciar(titulo="pilas3d - mundo infinito con lobos")
 
-LOBO = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
+LOBO = 'modelos/personajes/wolf/Wolf-Blender-2.82a.glb'
 DISTANCIA_VISTA = 3
 
 # mundo voxel infinito (usa el pack de Minecraft si está)

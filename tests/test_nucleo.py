@@ -1826,7 +1826,7 @@ def test_camara_seguir_a_primera_y_segunda():
 def test_gltf_rotar_y_guardar_pose(tmp_path):
     import math
     from pilas3d import gltf as _g
-    ruta = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
+    ruta = 'modelos/personajes/wolf/Wolf-Blender-2.82a.glb'
     if not os.path.exists(ruta):
         pytest.skip('modelo wolf no disponible')
     pilas = crear_pilas()
@@ -1850,7 +1850,7 @@ def test_gltf_rotar_y_guardar_pose(tmp_path):
 
 
 def test_gltf_crear_animacion_desde_keyframes():
-    ruta = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
+    ruta = 'modelos/personajes/wolf/Wolf-Blender-2.82a.glb'
     if not os.path.exists(ruta):
         pytest.skip('modelo wolf no disponible')
     pilas = crear_pilas()
@@ -1878,7 +1878,7 @@ def test_gltf_crear_animacion_desde_keyframes():
 
 
 def test_gltf_guardar_y_cargar_animacion(tmp_path):
-    ruta = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
+    ruta = 'modelos/personajes/wolf/Wolf-Blender-2.82a.glb'
     if not os.path.exists(ruta):
         pytest.skip('modelo wolf no disponible')
     pilas = crear_pilas()
@@ -1901,7 +1901,7 @@ def test_gltf_guardar_y_cargar_animacion(tmp_path):
 
 
 def test_gltf_rotar_hueso_por_nombre(tmp_path):
-    ruta = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
+    ruta = 'modelos/personajes/wolf/Wolf-Blender-2.82a.glb'
     if not os.path.exists(ruta):
         pytest.skip('modelo wolf no disponible')
     pilas = crear_pilas()
@@ -1927,7 +1927,7 @@ def test_panel_es_overlay():
 
 
 def test_esqueleto_mapear_y_animar():
-    ruta = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
+    ruta = 'modelos/personajes/wolf/Wolf-Blender-2.82a.glb'
     if not os.path.exists(ruta):
         pytest.skip('modelo wolf no disponible')
     from pilas3d.esqueleto import mapear_huesos, animacion_procedural
