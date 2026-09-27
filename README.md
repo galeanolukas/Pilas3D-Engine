@@ -116,6 +116,8 @@ bloquear con `ejecutar()`:
 | `Grilla`/`Animacion`          | `pilas.actores.Animacion(img, columnas, filas, velocidad)` (billboard animado) |
 | —                             | `pilas.actores.Cartel()` (sprite que siempre mira a la cámara) |
 | —                             | `pilas.actores.Modelo('x.obj')` (carga modelos Wavefront .obj) |
+| —                             | `pilas.luces` — sol + hasta 8 puntuales con atenuación |
+| —                             | `pilas.actores.Sombra(actor)` (sombra falsa tipo blob) |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
 
 ## Licencia

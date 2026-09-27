@@ -637,6 +637,34 @@ def test_cargar_obj_con_materiales(tmp_path):
     assert d['colores'][12:16] == [0.0, 1.0, 0.0, 1.0]
 
 
+def test_luces_agregar_quitar_limpiar():
+    from pilas3d import luces as L
+    pilas = crear_pilas()
+    luz = pilas.luces.agregar(L.LuzPuntual(x=1, y=2, z=3, alcance=5))
+    assert luz in pilas.luces.puntuales
+    sol = L.LuzDireccional(direccion=(0, -1, 0), color=(1, 0, 0))
+    pilas.luces.agregar(sol)
+    assert pilas.luces.direccional is sol
+    pilas.luces.quitar(luz)
+    assert pilas.luces.puntuales == []
+    pilas.luces.agregar(L.LuzPuntual())
+    pilas.luces.limpiar()
+    assert pilas.luces.puntuales == []
+    assert pilas.luces.direccional.ambiente == 0.35
+
+
+def test_sombra_sigue_al_actor():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo(x=3, z=-2)
+    sombra = pilas.actores.Sombra(cubo)
+    assert sombra.escala == cubo.radio_de_colision
+    pilas.escena_actual().actualizar(1 / 60.0)
+    assert (sombra.x, sombra.z) == (3, -2)
+    cubo.eliminar()
+    pilas.escena_actual().actualizar(1 / 60.0)
+    assert sombra not in pilas.escena_actual().actores
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()

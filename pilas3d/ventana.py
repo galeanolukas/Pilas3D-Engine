@@ -96,6 +96,7 @@ class Ventana(pyglet.window.Window):
                 aspecto, 0.1, 1000.0, fov=60
             )
             programa["vista"] = escena.camara.matriz_vista()
+            escena.luces.aplicar(programa)
             escena.dibujar()
 
         if escena.tiene_overlays() or self.pilas._fps_visible:

@@ -87,6 +87,14 @@ Audio
     pilas.sonidos.cargar('explosion.wav').reproducir()
     pilas.musica.cargar('tema.ogg').reproducir()   # en bucle
 
+Luces y sombras
+    pilas.luces.direccional.color = pilas.colores.blanco  # el "sol"
+    pilas.luces.direccional.ambiente = 0.2     # luz ambiente (0..1)
+    pilas.luces.agregar(pilas3d.luces.LuzPuntual(x=2, y=4, z=0,
+        color=(1, 0.7, 0.3), alcance=10))      # hasta 8 puntuales
+    pilas.luces.quitar(luz) / pilas.luces.limpiar()
+    pilas.actores.Sombra(actor)                # sombra falsa en el piso
+
 Modo interactivo (consola de Python)
     >>> import pilas3d
     >>> pilas = pilas3d.iniciar()
@@ -156,6 +164,11 @@ class Pilas(object):
     def tareas(self):
         """El planificador de tareas de la escena actual."""
         return self._escena_actual.tareas
+
+    @property
+    def luces(self):
+        """Las luces de la escena actual (``pilas.luces.agregar(...)``)."""
+        return self._escena_actual.luces
 
     def mostrar_ejes(self, largo=50):
         """Muestra los ejes X (rojo), Y (verde) y Z (azul) del origen."""

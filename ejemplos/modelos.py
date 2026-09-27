@@ -35,6 +35,17 @@ farola = pilas.actores.Modelo(
     x=-5, escala=0.012)
 
 pilas.actores.Piso()
+
+# Sombras falsas (disco oscuro que sigue al actor, estilo años 90)
+for actor in (arbol, luna, farola):
+    pilas.actores.Sombra(actor)
+
+# Luces: ambiente más bajo + una luz puntual cálida sobre el árbol
+pilas.luces.direccional.ambiente = 0.18
+pilas.luces.direccional.color = pilas.colores.gris
+pilas.luces.agregar(pilas3d.luces.LuzPuntual(
+    x=3, y=4, z=3, color=(1.0, 0.75, 0.4), alcance=12))
+
 camara = pilas.escena_actual().camara
 camara.posicion = (0, 6, 16)
 camara.objetivo = (0, 2, 0)

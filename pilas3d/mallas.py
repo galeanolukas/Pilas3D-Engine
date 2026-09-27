@@ -127,6 +127,22 @@ def cartel(ancho=1.0, alto=1.0):
     return posiciones, normales, GL_TRIANGLES, None, uvs
 
 
+def disco(radio=1.0, lados=24):
+    """Círculo horizontal sobre XZ, centrado — para sombras falsas."""
+    posiciones = []
+    normales = []
+    uvs = []
+    for i in range(lados):
+        a0 = 2 * math.pi * i / lados
+        a1 = 2 * math.pi * (i + 1) / lados
+        posiciones.extend([0, 0, 0,
+                           radio * math.cos(a0), 0, radio * math.sin(a0),
+                           radio * math.cos(a1), 0, radio * math.sin(a1)])
+        normales.extend([0, 1, 0] * 3)
+        uvs.extend([0.0] * 6)
+    return posiciones, normales, GL_TRIANGLES, None, uvs
+
+
 def esfera_alambrada(radio=1.0, meridianos=16, paralelos=10):
     """Esfera de líneas (wireframe), rojiza, para radios de colisión."""
     posiciones = []

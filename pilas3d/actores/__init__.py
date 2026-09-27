@@ -17,6 +17,7 @@ from pilas3d.actores.mapa import Mapa
 from pilas3d.actores.cartel import Cartel
 from pilas3d.actores.animacion import Animacion
 from pilas3d.actores.modelo import Modelo
+from pilas3d.actores.sombra import Sombra
 from pilas3d.actores.texto import Texto, Puntaje
 
 
@@ -63,6 +64,9 @@ class Actores(object):
 
     def Modelo(self, ruta, x=0, y=0, z=0, escala=1.0):
         return Modelo(self._pilas, ruta, x=x, y=y, z=z, escala=escala)
+
+    def Sombra(self, dueno, radio=None, opacidad=60):
+        return Sombra(self._pilas, dueno, radio=radio, opacidad=opacidad)
 
     def Mapa(self, matriz, simbolos, tamano_celda=2.0, x=0, y=0, z=0):
         return Mapa(self._pilas, matriz, simbolos,
