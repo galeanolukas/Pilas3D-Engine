@@ -160,8 +160,11 @@ class Actores(object):
         return Mapa(self._pilas, matriz, simbolos,
                     tamano_celda=tamano_celda, x=x, y=y, z=z)
 
-    def Texto(self, texto="", x=10, y=10, tamano=18):
-        return Texto(self._pilas, texto=texto, x=x, y=y, tamano=tamano)
+    def Texto(self, texto="", x=10, y=10, tamano=18, ancho=None):
+        """Texto en overlay 2D; con saltos de línea ('\\n') se dibuja
+        multilínea y ``ancho`` limita el ancho en píxeles."""
+        return Texto(self._pilas, texto=texto, x=x, y=y, tamano=tamano,
+                     ancho=ancho)
 
     def Panel(self, x=0, y=0, ancho=200, alto=200, color=None,
               opacidad=255):

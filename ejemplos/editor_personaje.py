@@ -80,16 +80,16 @@ marcador.color = pilas.colores.rojo
 panel_der = pilas.actores.Panel(color=pilas.colores.negro)
 panel_inf = pilas.actores.Panel(color=pilas.colores.negro)
 
-lista = pilas.actores.Texto("", tamano=13)
+PANEL = 250   # ancho del panel lateral en px
+PIE = 90      # alto del panel inferior
+
+lista = pilas.actores.Texto("", tamano=12, ancho=PANEL - 16)
 info = pilas.actores.Texto("", tamano=15)
 info.color = pilas.colores.amarillo
 pilas.actores.Texto(
-    "N: modelo - flechas: hueso - X/Y/Z+<-/->: rotar - M/W/P: anim "
-    "- J/L/G/C/R - A: cargar .glb",
-    x=10, y=12, tamano=12)
-
-PANEL = 250   # ancho del panel lateral en px
-PIE = 90      # alto del panel inferior
+    "N: modelo - flechas: hueso - X/Y/Z+<-/->: rotar - M/W/P: keyframes\n"
+    "J/L: guardar/cargar anim - G/C/R: pose - A: cargar .glb externo",
+    x=10, y=28, tamano=12)
 
 
 def organizar_layout():
@@ -106,7 +106,8 @@ def organizar_layout():
     panel_inf.ancho = w
     panel_inf.alto = PIE
     lista.x = w - PANEL + 8
-    lista.y = h - 20
+    lista.y = h - 25
+    lista.ancho = PANEL - 16
     info.x = 10
     info.y = 58
 
