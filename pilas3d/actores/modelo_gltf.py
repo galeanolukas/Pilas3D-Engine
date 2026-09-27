@@ -183,15 +183,20 @@ class ModeloGLTF(Actor):
         """Recomputa la piel con la pose actual (sin animación)."""
         self._aplicar_piel()
 
+    def _pose_actual(self):
+        """Dict ``{indice: {'r','t','s','nombre'}}`` de los huesos."""
+        nodos = self._escena['nodos']
+        return {str(j): {'nombre': nodos[j]['nombre'],
+                         'r': list(nodos[j]['r']),
+                         't': list(nodos[j]['t']),
+                         's': list(nodos[j]['s'])}
+                for j, _ in self.huesos()}
+
     def guardar_pose(self, ruta):
         """Guarda la pose actual en JSON: ``{indice: rot_xyzw}``."""
         import json
-        nodos = self._escena['nodos']
-        datos = {str(j): {'nombre': nodos[j]['nombre'], 'r': nodos[j]['r'],
-                          't': nodos[j]['t'], 's': nodos[j]['s']}
-                 for j, _ in self.huesos()}
         with open(ruta, 'w') as f:
-            json.dump(datos, f, indent=1)
+            json.dump(self._pose_actual(), f, indent=1)
 
     def cargar_pose(self, ruta):
         """Aplica una pose guardada con ``guardar_pose``."""
@@ -206,6 +211,40 @@ class ModeloGLTF(Actor):
             if 's' in d:
                 nodos[int(i)]['s'] = list(d['s'])
         self.refrescar_pose()
+
+    def crear_animacion(self, nombre, poses, duracion=0.5):
+        """Crea un clip de animación interpolando entre poses.
+
+        ``poses`` es una lista de dicts como los que escribe
+        ``guardar_pose`` (``{indice_nodo: {'r': [...], ...}}``) — cada
+        pose es un keyframe; ``duracion`` son los segundos *entre*
+        keyframes. El clip queda disponible para ``animar(nombre)``
+        y la escena lo reproduce con interpolación LINEAR de
+        quaternions (nlerp), igual que las animaciones del archivo.
+        """
+        nodos = self._escena['nodos']
+        tiempos = [k * duracion for k in range(len(poses))]
+        canales = []
+        tocados = sorted({int(i) for pose in poses for i in pose})
+        for i in tocados:
+            base = nodos[i]
+            for camino, clave in (('rotation', 'r'),
+                                  ('translation', 't'),
+                                  ('scale', 's')):
+                valores = [list(pose[str(i)].get(clave, base[clave]))
+                           if str(i) in pose else list(base[clave])
+                           for pose in poses]
+                if any(v != valores[0] for v in valores):
+                    canales.append({'nodo': i, 'camino': camino,
+                                    'tiempos': tiempos,
+                                    'valores': valores,
+                                    'interp': 'LINEAR'})
+        if not canales:
+            raise ValueError("las poses son iguales: no hay animación")
+        self._escena['animaciones'][nombre] = {
+            'canales': canales,
+            'duracion': tiempos[-1] or duracion}
+        return nombre
 
     def _indice_hueso(self, hueso):
         """Acepta índice de nodo, índice de articulación o nombre."""

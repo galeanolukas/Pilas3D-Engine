@@ -1849,6 +1849,34 @@ def test_gltf_rotar_y_guardar_pose(tmp_path):
     assert tuple(lobo._escena['nodos'][i]['r']) == pytest.approx(r1)
 
 
+def test_gltf_crear_animacion_desde_keyframes():
+    ruta = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
+    if not os.path.exists(ruta):
+        pytest.skip('modelo wolf no disponible')
+    pilas = crear_pilas()
+    lobo = pilas.actores.ModeloGLTF(ruta)
+    i, _ = lobo.huesos()[3]
+    pose_a = lobo._pose_actual()            # keyframe 0: pose base
+    lobo.rotar_hueso(i, 'z', 90)
+    pose_b = lobo._pose_actual()            # keyframe 1: rotado
+    nombre = lobo.crear_animacion('test', [pose_a, pose_b],
+                                  duracion=1.0)
+    lobo.animar(nombre, ciclica=False)
+    assert lobo.animacion == 'test'
+    anim = lobo._escena['animaciones']['test']
+    assert anim['duracion'] == 1.0
+    canal = [c for c in anim['canales'] if c['nodo'] == i][0]
+    assert canal['camino'] == 'rotation'
+    assert canal['tiempos'] == [0.0, 1.0]
+    # mid-animación: el hueso queda interpolado (ni A ni B)
+    lobo._t = 0.5
+    lobo.actualizar()
+    r_mid = lobo._escena['nodos'][i]['r']
+    assert r_mid != pytest.approx(canal['valores'][0])
+    with pytest.raises(ValueError):          # poses iguales -> error
+        lobo.crear_animacion('vacia', [pose_a, dict(pose_a)])
+
+
 def test_gltf_rotar_hueso_por_nombre(tmp_path):
     ruta = 'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb'
     if not os.path.exists(ruta):

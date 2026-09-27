@@ -8,6 +8,8 @@ Carga un modelo glTF riggeado y permite posar sus huesos:
 - IZQUIERDA/DERECHA: rotar el hueso ±10°
 - N: siguiente modelo (recorre los .glb de modelos/)
 - G: guardar pose en 'pose-<modelo>.json'   C: cargarla   R: reiniciar
+- M: capturar keyframe   W: borrar último   P: reproducir la
+  animación formada por los keyframes (interpolada)
 - Botón derecho + drag: orbitar la cámara
 - La esfera roja marca la articulación seleccionada
 """
@@ -53,7 +55,7 @@ def autoescala(modelo, objetivo=1.8):
 
 
 estado = {'modelo': None, 'huesos': [], 'sel': 0, 'eje': 'y',
-          'indice': 0}
+          'indice': 0, 'frames': []}
 
 marcador = pilas.actores.Esfera(radio=0.08)
 marcador.color = pilas.colores.rojo
@@ -63,7 +65,7 @@ info = pilas.actores.Texto("", x=10, y=420, tamano=15)
 info.color = pilas.colores.amarillo
 pilas.actores.Texto(
     "N: modelo - arriba/abajo: hueso - X/Y/Z: eje - <-/->: rotar - "
-    "G guardar - C cargar - R reset",
+    "M: keyframe - W: borrar - P: play - G/C/R: pose",
     x=10, y=10)
 
 
@@ -77,6 +79,7 @@ def cargar_modelo(i):
     estado['modelo'] = modelo
     estado['huesos'] = modelo.huesos()
     estado['sel'] = 0
+    estado['frames'] = []
     refrescar_ui()
 
 
@@ -149,6 +152,26 @@ def al_pulsar(tecla):
             modelo.cargar_pose(pose)
     elif tecla == s.r:
         modelo.reiniciar_pose()
+    elif tecla == s.m:
+        # captura la pose actual como keyframe (copia JSON-able)
+        modelo.detener()
+        import json
+        pose = json.loads(json.dumps(modelo._pose_actual()))
+        estado['frames'].append(pose)
+        info.texto = "%d keyframes" % len(estado['frames'])
+        return
+    elif tecla == s.w:
+        if estado['frames']:
+            estado['frames'].pop()
+    elif tecla == s.p:
+        frames = estado['frames']
+        if len(frames) < 2:
+            info.texto = "necesitás >= 2 keyframes (tecla M)"
+            return
+        modelo.crear_animacion('mi_anim', frames)
+        modelo.animar('mi_anim', ciclica=True)
+        info.texto = "reproduciendo %d keyframes" % len(frames)
+        return
     refrescar_ui()
 
 
