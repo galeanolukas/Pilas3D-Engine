@@ -785,6 +785,65 @@ def test_modelo_animado_suavizar_requiere_mismos_vertices(tmp_path):
         pass
 
 
+def test_mundo_bloques_basicos():
+    pilas = crear_pilas()
+    mundo = pilas.actores.Mundo()
+    mundo.poner_bloque(1, 2, 3, 'ladrillo')
+    assert mundo.hay_bloque(1, 2, 3)
+    assert mundo.bloque_en(1, 2, 3) == 'ladrillo'
+    assert not mundo.hay_bloque(0, 0, 0)
+    mundo.sacar_bloque(1, 2, 3)
+    assert not mundo.hay_bloque(1, 2, 3)
+    assert mundo in pilas.escena_actual().obstaculos
+
+
+def test_mundo_cara_compartida_no_se_dibuja():
+    pilas = crear_pilas()
+    mundo = pilas.actores.Mundo()
+    mundo.poner_bloque(0, 0, 0)
+    mundo.poner_bloque(1, 0, 0)
+    pos, _, _, _, _ = mundo._generar_geometria()
+    # 2 bloques separados = 12 caras = 72 vértices; pegados = 10 caras
+    assert len(pos) // 3 == 10 * 2 * 3
+
+
+def test_mundo_disparar_bloque_dda():
+    pilas = crear_pilas()
+    mundo = pilas.actores.Mundo()
+    mundo.poner_bloque(3, 0, 0)
+    # rayo horizontal +x desde el origen
+    bloque, adyacente = mundo.disparar_bloque(
+        (0.5, 0.5, 0.5), (1.0, 0.0, 0.0), alcance=10)
+    assert bloque == (3, 0, 0)
+    assert adyacente == (2, 0, 0)
+    # rayo que no pega nada
+    bloque, adyacente = mundo.disparar_bloque(
+        (0.5, 0.5, 0.5), (0.0, 1.0, 0.0), alcance=3)
+    assert bloque is None
+
+
+def test_mundo_resolver_circulo_empuja():
+    pilas = crear_pilas()
+    mundo = pilas.actores.Mundo()
+    mundo.poner_bloque(0, 0, 0)  # ocupa x/z en [0, 1)
+    # círculo en x=0.9 dentro del bloque a la altura del bloque
+    x, z = mundo.resolver_circulo(0.9, 0.5, 0.3, 0.0, 1.6)
+    assert x > 1.0 or z < 0.0 or z > 1.0  # quedó afuera
+    # a la altura de arriba del bloque no choca
+    x2, z2 = mundo.resolver_circulo(0.9, 0.5, 0.3, 2.0, 3.0)
+    assert (x2, z2) == (0.9, 0.5)
+
+
+def test_mundo_generar_terreno_y_suelo():
+    pilas = crear_pilas()
+    mundo = pilas.actores.Mundo()
+    mundo.generar_terreno(16, 16, altura=4, semilla=1)
+    assert len(mundo.bloques) > 16
+    suelo = mundo.altura_suelo(0.5, 0.5)
+    assert suelo is not None and suelo >= 1
+    assert mundo.altura_suelo(999, 999) is None
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()

@@ -19,11 +19,17 @@ from pilas3d.habilidades.habilidad import Habilidad
 
 class CaminarEnPrimeraPersona(Habilidad):
     def iniciar(self, receptor, velocidad=6, altura=1.6,
-                sensibilidad=0.15):
+                sensibilidad=0.15, mundo=None, gravedad=0.0,
+                salto=8.0):
         super(CaminarEnPrimeraPersona, self).iniciar(receptor)
         self.velocidad = velocidad
         self.altura = altura
         self.sensibilidad = sensibilidad
+        self.mundo = mundo          # Mundo de voxels, si hay
+        self.gravedad = gravedad    # 0 = sin gravedad (estilo Doom)
+        self.salto = salto
+        self.vel_y = 0.0
+        self.en_suelo = False
         self.pitch = 0.0
 
         ventana = self.pilas.ventana
@@ -75,12 +81,43 @@ class CaminarEnPrimeraPersona(Habilidad):
             z = r.z + dz / norma * v
 
             escena = self.pilas.escena_actual()
-            cajas = [o.obtener_caja() for o in escena.obstaculos]
+            cajas = []
+            for o in escena.obstaculos:
+                resolver = getattr(o, 'resolver_circulo', None)
+                if resolver is not None:
+                    # Obstáculo con colisión propia (p. ej. un Mundo).
+                    x, z = resolver(x, z, r.radio_de_colision,
+                                    r.y, r.y + self.altura)
+                else:
+                    cajas.append(o.obtener_caja())
             r.x, r.z = colisiones.resolver_circulo_en_cajas(
                 x, z, r.radio_de_colision, cajas)
+
+        if self.gravedad:
+            self._actualizar_gravedad()
 
         # La cámara se posa en la cabeza del actor.
         camara = self.pilas.escena_actual().camara
         camara.posicion = (r.x, r.y + self.altura, r.z)
         vx, vy, vz = self.direccion_vista()
         camara.objetivo = (r.x + vx, r.y + self.altura + vy, r.z + vz)
+
+    def _actualizar_gravedad(self):
+        """Gravedad + salto (SPACE) + apoyo sobre el suelo del mundo."""
+        from pyglet.window import key
+
+        r = self.receptor
+        dt = self.pilas.dt
+        self.vel_y -= self.gravedad * dt
+        r.y += self.vel_y * dt
+
+        suelo = self.mundo.altura_suelo(r.x, r.z) \
+            if self.mundo is not None else 0.0
+        if suelo is not None and r.y <= suelo:
+            r.y = suelo
+            self.vel_y = 0.0
+            self.en_suelo = True
+        else:
+            self.en_suelo = False
+        if self.en_suelo and self.pilas.control.simbolo(key.SPACE):
+            self.vel_y = self.salto
