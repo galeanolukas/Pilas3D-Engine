@@ -11,14 +11,18 @@ import pilas3d
 from pyglet.window import key
 
 pilas = pilas3d.iniciar(titulo="pilas3d - glTF esqueletico")
-pilas.escena.fondo = pilas.colores.gris_oscuro
 
-pilas.actores.Piso(tamano=30, divisiones=30)
+pilas.actores.Cielo('dia')                     # celeste con nubes
+pilas.escena.fondo = pilas.colores.celeste
+
+piso = pilas.actores.Piso(tamano=30, divisiones=30)
+piso.color = pilas.colores.verde            # grilla clara tipo pasto
 pilas.actores.Ejes()
+pilas.luces.direccional.ambiente = 0.6         # luz de día suave
 
 lobo = pilas.actores.ModeloGLTF(
     'modelos/33-gltf-wolf/gltf/Wolf-Blender-2.82a.glb', y=0)
-lobo.escala = 1.5
+lobo.escala = 2.5
 lobo.animar('02_walk_Armature_0', ciclica=True)
 
 # la lista de clips que trae el archivo:
@@ -50,7 +54,7 @@ pilas.escena.cuando_pulsa_tecla = al_pulsar
 mostrar_nombre()
 
 camara = pilas.escena.camara
-camara.posicion = (0, 2.5, 7)
+camara.posicion = (0, 2.2, 4.5)
 camara.objetivo = (0, 1, 0)
 camara.usar_control_orbital()
 
