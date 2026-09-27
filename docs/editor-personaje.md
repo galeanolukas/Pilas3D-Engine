@@ -44,8 +44,16 @@ propósito: los modelos son locales tuyos.
 | `.obj` | ✖ en el editor | sin esqueleto: `actores.Modelo` lo carga como prop estático, y `ModeloAnimado` lo anima **por secuencia de frames** (interpolación de vértices estilo MD2), no por huesos |
 | `.fbx`/`.dae`/`.blend`/`.c4d`/`.ma`/`.max` | ✖ | formatos de autoría — abrí el archivo en Blender y exportá a `.glb` |
 
-Las poses y animaciones se guardan **junto al modelo**:
-`modelos/personajes/fox/Fox.pose.json` y `Fox.anim.json`.
+Las poses y animaciones se guardan **junto al modelo**, clasificadas
+por nombre:
+
+```text
+modelos/personajes/fox/
+├── Fox.glb
+├── Fox.pose.json          # una pose (tecla G)
+├── Fox.caminar.anim.json  # una animación por archivo (tecla J)
+└── Fox.correr.anim.json
+```
 
 - **N**: pasa al siguiente modelo de la lista (cicla).
 - Cada modelo se **auto-escala** a ~1.8 unidades de alto (el Fox de
@@ -94,9 +102,9 @@ quaternions, el mismo que usa para las animaciones del archivo).
 | `M` | capturar la pose actual como keyframe |
 | `W` | borrar el último keyframe |
 | `B` | vaciar todos los keyframes capturados |
-| `P` | compilar los keyframes en la animación `mi_anim` y reproducirla en loop |
-| `J` | guardar la animación en `<modelo>.anim.json` (junto al .glb) |
-| `L` | cargar `<modelo>.anim.json` y reproducirla |
+| `P` | compilar los keyframes en una animación y reproducirla en loop |
+| `J` | pedir un **nombre** y guardar `<modelo>.<nombre>.anim.json` |
+| `L` | ciclar los `.anim.json` guardados del modelo y reproducirlos |
 
 Mínimo 2 keyframes. Cada keyframe son ~0.5 s de animación.
 
@@ -126,10 +134,19 @@ modelo** (los índices de hueso tienen que coincidir).
 
 ### Carga automática
 
-Si un `.anim.json` está **junto al .glb** (`Fox.anim.json` al lado de
-`Fox.glb`), `ModeloGLTF` lo registra solo al instanciarse — podés
-hacer `animar('mi_anim')` sin `cargar_animacion`. El archivo también
-acepta una **lista de clips** para guardar varias animaciones juntas.
+Al instanciar un `.glb`, `ModeloGLTF` registra automáticamente
+**todos** los `<modelo>[.<nombre>].anim.json` que haya junto al
+archivo:
+
+```python
+# existe modelos/personajes/fox/Fox.correr.anim.json:
+fox = pilas.actores.ModeloGLTF('modelos/personajes/fox/Fox.glb')
+fox.animaciones()            # ['Run', 'Survey', 'Walk', 'correr']
+fox.animar('correr')         # la del editor, sin cargar_animacion
+```
+
+El archivo también acepta una **lista de clips** si preferís guardar
+varias animaciones en un solo JSON.
 
 ## 6. Límites honestos
 

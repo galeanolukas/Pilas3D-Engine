@@ -44,14 +44,19 @@ class ModeloGLTF(Actor):
             self.animar(animacion)
 
     def _cargar_anims_junto_al_modelo(self):
-        """Si existe ``<modelo>.anim.json`` junto al .glb, registra el
-        clip automáticamente (salvo si el archivo trae una lista de
-        clips — ``cargar_animacion`` acepta ambos formatos)."""
+        """Registra automáticamente los ``<modelo>[.<nombre>].anim.json``
+        que haya junto al .glb (un clip o lista de clips por archivo)."""
+        import glob
         import os
-        base = os.path.splitext(self.ruta)[0] + '.anim.json'
-        if os.path.exists(base):
+        import re
+        base = os.path.splitext(self.ruta)[0]
+        patron = re.compile('^%s\\.(?:[^.]+\\.)?anim\\.json$'
+                            % re.escape(os.path.basename(base)))
+        for f in sorted(glob.glob(base + '*.anim.json')):
+            if not patron.match(os.path.basename(f)):
+                continue
             try:
-                self.cargar_animacion(base)
+                self.cargar_animacion(f)
             except Exception:
                 pass          # json roto o incompatible: no molesta
 

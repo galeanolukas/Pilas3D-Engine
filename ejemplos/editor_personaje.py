@@ -11,7 +11,8 @@ Carga un modelo glTF riggeado y permite posar sus huesos:
   R: reiniciar
 - M: capturar keyframe   W: borrar último   B: vaciar todos
   P: reproducir la animación formada por los keyframes (interpolada)
-- J: guardar la animación en '<modelo>.anim.json'   L: cargarla
+- J: guardar la animación con nombre → '<modelo>.<nombre>.anim.json'
+  L: cicla las animaciones guardadas del modelo
 - A: abrir el explorador de archivos para cargar un .glb externo
   (con caja de selección y nombre personalizado para el modelo)
 - T: animación procedural (caminar, correr, sentarse, cola, saludar,
@@ -58,9 +59,21 @@ def ruta_pose(ruta_modelo):
     return base + '.pose.json'
 
 
-def ruta_anim(ruta_modelo):
+def ruta_anim(ruta_modelo, nombre=None):
+    """``<modelo>.<nombre>.anim.json`` junto al .glb (o
+    ``<modelo>.anim.json`` si no se nombra)."""
     base = os.path.splitext(ruta_modelo)[0]
-    return base + '.anim.json'
+    return base + ('.%s' % nombre if nombre else '') + '.anim.json'
+
+
+def anims_del_modelo(ruta_modelo):
+    """Archivos .anim.json junto al modelo (para ciclar con L)."""
+    import re
+    base = os.path.splitext(ruta_modelo)[0]
+    patron = re.compile('^%s\\.(?:[^.]+\\.)?anim\\.json$'
+                        % re.escape(os.path.basename(base)))
+    return [f for f in sorted(glob.glob(base + '*.anim.json'))
+            if patron.match(os.path.basename(f))]
 
 
 def autoescala(modelo, objetivo=1.8):
@@ -75,13 +88,14 @@ def autoescala(modelo, objetivo=1.8):
 
 
 estado = {'modelo': None, 'huesos': [], 'sel': 0, 'eje': 'y',
-          'indice': 0, 'frames': [], 'modo': 'editar', 'proc': 0}
+          'indice': 0, 'frames': [], 'modo': 'editar', 'proc': 0,
+          'anim_sel': 0}
 
 TIPOS_PROC = ['caminar', 'correr', 'sentarse', 'cola', 'saludar',
               'asentir']
 nombres = {}   # ruta -> nombre amigable elegido al cargar externo
 exp = {'dir': os.path.expanduser('~'), 'sel': 0, 'entradas': []}
-nombrar = {'texto': '', 'ruta': None}
+nombrar = {'texto': '', 'ruta': None, 'para': 'modelo'}
 
 
 def nombre_modelo(ruta):
@@ -136,6 +150,7 @@ def cargar_modelo(i):
     """Instancia el modelo i de MODELOS, recrea lista de huesos."""
     if estado['modelo'] is not None:
         estado['modelo'].eliminar()
+    estado['indice'] = i
     ruta = MODELOS[i]
     modelo = pilas.actores.ModeloGLTF(ruta)
     modelo.escala = autoescala(modelo)
@@ -143,6 +158,7 @@ def cargar_modelo(i):
     estado['huesos'] = modelo.huesos()
     estado['sel'] = 0
     estado['frames'] = []
+    estado['anim_sel'] = 0
     refrescar_ui()
 
 
@@ -229,6 +245,7 @@ def _tecla_explorador(t):
         else:
             nombrar['ruta'] = os.path.join(exp['dir'], e)
             nombrar['texto'] = os.path.splitext(e)[0]
+            nombrar['para'] = 'modelo'
             estado['modo'] = 'nombre'
     if estado['modo'] == 'explorar':
         _pintar_explorador()
@@ -239,8 +256,13 @@ def _tecla_explorador(t):
 
 
 def _pintar_nombre():
-    base = os.path.basename(nombrar['ruta'])
-    info.texto = "nombre para %s (ENTER confirma, ESC cancela)" % base
+    if nombrar['para'] == 'anim':
+        info.texto = ("nombre de la animación (ENTER guarda, "
+                      "ESC cancela)")
+    else:
+        base = os.path.basename(nombrar['ruta'])
+        info.texto = "nombre para %s (ENTER confirma, ESC cancela)" \
+            % base
     lista.texto = '>> %s_' % nombrar['texto']
 
 
@@ -253,13 +275,38 @@ def _tecla_nombre(t):
         nombrar['texto'] = nombrar['texto'][:-1]
         _pintar_nombre()
     elif t == s.ENTER:
+        if nombrar['para'] == 'anim':
+            _guardar_anim_con_nombre()
+            return
         ruta = nombrar['ruta']
         MODELOS.append(ruta)
         if nombrar['texto'].strip():
             nombres[ruta] = nombrar['texto'].strip()
         estado['modo'] = 'editar'
-        estado['indice'] = len(MODELOS) - 1
-        cargar_modelo(estado['indice'])
+        cargar_modelo(len(MODELOS) - 1)
+
+
+def _guardar_anim_con_nombre():
+    """Compila los keyframes si hace falta y guarda
+    ``<modelo>.<nombre>.anim.json``."""
+    modelo = estado['modelo']
+    nombre = nombrar['texto'].strip() or 'mi_anim'
+    estado['modo'] = 'editar'
+    if len(estado['frames']) >= 2:
+        try:
+            modelo.crear_animacion(nombre, estado['frames'])
+        except ValueError as e:
+            refrescar_ui()
+            info.texto = str(e)
+            return
+    if nombre not in modelo.animaciones():
+        refrescar_ui()
+        info.texto = "necesitás >= 2 keyframes (tecla M)"
+        return
+    ruta = ruta_anim(MODELOS[estado['indice']], nombre)
+    modelo.guardar_animacion(ruta, nombre)
+    refrescar_ui()
+    info.texto = "animación '%s' guardada" % nombre
 
 
 def _al_pulsar_overlay(simbolo, _mod):
@@ -298,8 +345,7 @@ def al_pulsar(tecla):
         abrir_explorador()
         return
     if tecla == s.n:
-        estado['indice'] = (estado['indice'] + 1) % len(MODELOS)
-        cargar_modelo(estado['indice'])
+        cargar_modelo((estado['indice'] + 1) % len(MODELOS))
         return
     if not huesos:
         refrescar_ui()
@@ -359,22 +405,22 @@ def al_pulsar(tecla):
         info.texto = "reproduciendo %d keyframes" % len(frames)
         return
     elif tecla == s.j:
-        frames = estado['frames']
-        if len(frames) >= 2:
-            modelo.crear_animacion('mi_anim', frames)
-        if 'mi_anim' not in modelo.animaciones():
-            info.texto = "necesitás >= 2 keyframes (tecla M)"
-            return
-        ruta = ruta_anim(MODELOS[estado['indice']])
-        modelo.guardar_animacion(ruta, 'mi_anim')
-        info.texto = "animación guardada: " + os.path.basename(ruta)
+        # pide el nombre: 'Fox.correr.anim.json' junto al modelo
+        nombrar['para'] = 'anim'
+        nombrar['texto'] = modelo.animacion or 'mi_anim'
+        estado['modo'] = 'nombre'
+        _pintar_nombre()
         return
     elif tecla == s.l:
-        ruta = ruta_anim(MODELOS[estado['indice']])
-        if os.path.exists(ruta):
-            modelo.animar(modelo.cargar_animacion(ruta), ciclica=True)
-            info.texto = "animación cargada: " + os.path.basename(ruta)
+        anims = anims_del_modelo(MODELOS[estado['indice']])
+        if not anims:
+            info.texto = "no hay .anim.json para este modelo"
             return
+        estado['anim_sel'] = (estado['anim_sel'] + 1) % len(anims)
+        ruta = anims[estado['anim_sel']]
+        modelo.animar(modelo.cargar_animacion(ruta), ciclica=True)
+        info.texto = "animación: " + os.path.basename(ruta)
+        return
     elif tecla == s.t:
         tipo = TIPOS_PROC[estado['proc'] % len(TIPOS_PROC)]
         estado['proc'] += 1
