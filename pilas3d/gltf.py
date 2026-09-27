@@ -10,7 +10,9 @@ Soporte deliberadamente acotado (motor educativo):
   indices opcionales.
 - Una sola skin y animaciones de nodos (translation/rotation/scale)
   con interpolación LINEAR o STEP.
-- Materiales: solo ``baseColorFactor`` como color por vértice.
+- Materiales: ``baseColorFactor`` como color por vértice y
+  ``baseColorTexture`` (primera textura encontrada: PNG/JPEG externa,
+  data URI o embebida en el .glb).
 
 ``cargar(ruta)`` retorna un dict con todo lo necesario para animar
 por CPU (ver ``ModeloGLTF``).
@@ -20,6 +22,7 @@ import base64
 import json
 import os
 import struct
+import urllib.parse
 
 from pyglet.math import Mat4, Quaternion, Vec3
 
@@ -128,10 +131,15 @@ def cargar(ruta):
             }
             if 'material' in p:
                 mat = doc.get('materials', [])[p['material']]
-                base_c = mat.get('pbrMetallicRoughness', {}) \
-                           .get('baseColorFactor')
+                pbr = mat.get('pbrMetallicRoughness', {})
+                base_c = pbr.get('baseColorFactor')
                 if base_c:
                     entrada['color'] = tuple(base_c)
+                imagen = _extraer_imagen(doc, vistas, blobs,
+                                         pbr.get('baseColorTexture'),
+                                         os.path.dirname(ruta))
+                if imagen is not None:
+                    entrada['imagen'] = imagen
             mallas.append(entrada)
 
     # a qué nodo cuelga cada mesh (para pose de reposo)
@@ -176,6 +184,33 @@ def cargar(ruta):
 
     return {'mallas': mallas, 'nodos': nodos, 'raices': raices,
             'skin': skin, 'animaciones': animaciones}
+
+
+def _extraer_imagen(doc, vistas, blobs, textura, base_dir):
+    """Extrae la imagen de un ``textureInfo`` (baseColorTexture).
+
+    Retorna una ruta de archivo si es externa, o ``bytes`` si viene
+    embebida (bufferView del .glb o data URI)."""
+    if not textura:
+        return None
+    fuentes = doc.get('textures', [])
+    if textura.get('index', 0) >= len(fuentes):
+        return None
+    src = fuentes[textura['index']].get('source')
+    if src is None or src >= len(doc.get('images', [])):
+        return None
+    img = doc['images'][src]
+    if 'uri' in img:
+        uri = urllib.parse.unquote(img['uri'])
+        if uri.startswith('data:'):
+            return base64.b64decode(uri.split(',', 1)[1])
+        return os.path.join(base_dir, uri)
+    if 'bufferView' in img:
+        v = vistas[img['bufferView']]
+        blob = blobs[v.get('buffer', 0)]
+        ini = v.get('byteOffset', 0)
+        return blob[ini:ini + v['byteLength']]
+    return None
 
 
 # -- evaluación de pose --------------------------------------------------------

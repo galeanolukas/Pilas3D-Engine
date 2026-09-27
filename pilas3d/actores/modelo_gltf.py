@@ -10,8 +10,8 @@ frame (como ``ModeloAnimado``): sirve para modelos de pocos miles de
 vértices; modelos grandes van a ir lentos — para eso haría falta
 skinning en GPU por shader.
 
-Soporte acotado: ver ``pilas3d.gltf`` (un solo mesh visible de la
-primera skin, color plano del material, sin texturas PBR todavía).
+Soporte acotado: ver ``pilas3d.gltf`` (una sola skin, color plano
+``baseColorFactor`` + primera ``baseColorTexture`` como textura).
 """
 
 import math
@@ -35,8 +35,23 @@ class ModeloGLTF(Actor):
         self._armar_malla()
         super(ModeloGLTF, self).__init__(pilas, x=x, y=y, z=z)
         self.escala = escala
+        self._aplicar_textura()
         if animacion:
             self.animar(animacion)
+
+    def _aplicar_textura(self):
+        """Toma la primera ``baseColorTexture`` encontrada y la asigna
+        como ``imagen`` del actor (path, bytes embebidos → ImageData)."""
+        img = next((m.get('imagen') for m in self._escena['mallas']
+                    if m.get('imagen')), None)
+        if img is None:
+            return
+        if isinstance(img, bytes):
+            import io
+            from pyglet.image import load as _load
+            ext = '.png' if img[:4] == b'\x89PNG' else '.jpg'
+            img = _load('textura' + ext, file=io.BytesIO(img))
+        self.imagen = img
 
     # -- carga ------------------------------------------------------------------
 

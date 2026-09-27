@@ -251,7 +251,7 @@ bloquear con `ejecutar()`:
   mejorá ejemplos o documentación.
 - **Ideas pendientes**: transiciones con fade entre escenas, lanzador
   gráfico de ejemplos, shadow mapping real (hoy `Sombra` es un blob),
-  texturas y materiales glTF (hoy solo `baseColorFactor`), skinning
+  materiales glTF completos (hoy `baseColorFactor` + 1 `baseColorTexture`), skinning
   en GPU, más habilidades de pilas (`PuedeExplotar` con radio,
   `SeMantieneEnEscena`…).
 - **Ejemplos**: un nuevo juego o demo usando la API es una gran
