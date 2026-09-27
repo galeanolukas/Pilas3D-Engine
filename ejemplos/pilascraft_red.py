@@ -98,7 +98,7 @@ pilas.escena.niebla = (pilas.colores.celeste,
 # dibujado con un método distinto (primitivas combinadas, color por
 # vértice, alambrado).
 SPYDER = os.path.join(os.path.dirname(__file__), '..', 'modelos',
-                      'SpiderAnimate',
+                      'props', 'spider',
                       'Only_Spider_with_Animations_Export.obj')
 tiene_spyder = os.path.isfile(SPYDER)
 

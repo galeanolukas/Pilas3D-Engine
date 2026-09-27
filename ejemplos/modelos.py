@@ -20,18 +20,21 @@ pilas.fps.ver()
 
 # Árbol: los colores Bark/Tree salen solos del archivo .mtl
 arbol = pilas.actores.Modelo(
-    os.path.join(M, 'low_poly_tree', 'Lowpoly_tree_sample.obj'),
+    os.path.join(M, 'props', 'low_poly_tree',
+                 'Lowpoly_tree_sample.obj'),
     escala=0.1)
 
 # Luna: el obj trae coordenadas UV; la textura se asigna con imagen
 luna = pilas.actores.Modelo(
-    os.path.join(M, 'Moon 2K.obj'), x=6, y=3.5, escala=1.5)
-luna.imagen = os.path.join(M, 'Textures', 'Diffuse_2K.png')
+    os.path.join(M, 'props', 'moon', 'Moon 2K.obj'),
+    x=6, y=3.5, escala=1.5)
+luna.imagen = os.path.join(M, 'props', 'moon', 'texturas',
+                           'Diffuse_2K.png')
 luna.aprender(pilas.habilidades.GirarConstantemente, velocidad=20)
 
 # Farola: sin textura, queda gris (el color del material o del actor)
 farola = pilas.actores.Modelo(
-    os.path.join(M, 'Streetlight', 'Obj', 'Streetlight_LowRes.obj'),
+    os.path.join(M, 'props', 'streetlight', 'Streetlight_LowRes.obj'),
     x=-5, escala=0.012)
 
 pilas.actores.Piso()
