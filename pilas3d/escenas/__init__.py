@@ -16,3 +16,16 @@ class Escenas(object):
 
     def Escena(self):
         return Escena(self._pilas)
+
+    def vincular(self, clase):
+        """Registra una clase de escena propia, como en pilas-engine.
+
+        >>> class Menu(pilas3d.escenas.Escena):
+        ...     def iniciar(self): ...
+        >>> pilas.escenas.vincular(Menu)
+        >>> pilas.escenas.Menu()     # crea y activa la escena
+        """
+        nombre = clase.__name__
+        setattr(self, nombre,
+                lambda: clase(self._pilas))
+        return clase

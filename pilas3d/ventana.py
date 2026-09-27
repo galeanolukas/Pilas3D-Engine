@@ -64,6 +64,12 @@ class Ventana(pyglet.window.Window):
             dep.definir_modos(
                 puntos_de_control=not dep.puntos_de_control)
 
+        # Despues de los atajos globales, la escena recibe la tecla.
+        if simbolo != key.ESCAPE:
+            escena = self.pilas.escena_actual()
+            if escena is not None:
+                escena.cuando_pulsa_tecla(simbolo)
+
     def on_mouse_motion(self, x, y, dx, dy):
         self.mouse_x = x
         self.mouse_y = y

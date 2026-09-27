@@ -59,7 +59,11 @@ Cada actor
     actor.radio_de_colision = 0.5  radio_de_disparo = 0.8
 
 Escena y cámara
-    pilas.escena_actual()  pilas.escenas.Normal()
+    pilas.escena_actual()  pilas.escena  pilas.cambiar_escena(e)
+    class Menu(pilas3d.escenas.Escena):   # escena propia
+        def iniciar(self): ...           # hooks: terminar(),
+        def cuando_pulsa_tecla(s): ...   # cuando_actualiza()
+    pilas.escenas.vincular(Menu)         # luego pilas.escenas.Menu()
     camara = pilas.escena_actual().camara
     camara.x/y/z  camara.objetivo = (x, y, z)
     camara.usar_control_orbital()            # drag orbita, rueda zoom
@@ -161,6 +165,23 @@ class Pilas(object):
         return self._escena_actual
 
     @property
+    def escena(self):
+        """La escena activa. Asignable: ``pilas.escena = Menu(pilas)``."""
+        return self._escena_actual
+
+    @escena.setter
+    def escena(self, escena):
+        self._definir_escena(escena)
+
+    def cambiar_escena(self, escena):
+        """Activa otra escena (la anterior recibe ``terminar()``).
+
+        Crear una escena ya la activa sola; este método es la forma
+        explícita, útil para volver a una escena ya construida.
+        """
+        self._definir_escena(escena)
+
+    @property
     def tareas(self):
         """El planificador de tareas de la escena actual."""
         return self._escena_actual.tareas
@@ -181,6 +202,10 @@ class Pilas(object):
             self._actor_ejes = None
 
     def _definir_escena(self, escena):
+        anterior = self._escena_actual
+        if anterior is not None and anterior is not escena:
+            anterior.terminar()
+            self._actor_ejes = None
         self._escena_actual = escena
 
     def _tick(self, dt):

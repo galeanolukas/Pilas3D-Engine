@@ -96,7 +96,7 @@ bloquear con `ejecutar()`:
 | `pilas.actores.Aceituna()`    | `pilas.actores.Cubo()` / `Esfera()`… |
 | `actor.x`, `actor.y`          | `actor.x`, `actor.y`, `actor.z` real |
 | `actor.rotacion`              | `rotacion_x/y/z` (`rotacion` = eje Y)|
-| `pilas.escenas.Normal()`      | `pilas.escenas.Normal()`             |
+| `pilas.escenas.Normal()`      | igual + `escenas.vincular(Clase)`, hooks `iniciar`/`terminar`/`cuando_pulsa_tecla`, `pilas.escena`, `pilas.cambiar_escena` |
 | `escena.camara.x/y`           | `camara.x/y/z` + `camara.objetivo`   |
 | `pilas.control.izquierda`…    | igual (flechas + WASD)               |
 | `pilas.actores.Texto/Puntaje` | `pilas.actores.Texto()` / `Puntaje()` (overlay 2D) |

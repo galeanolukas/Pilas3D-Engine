@@ -665,6 +665,59 @@ def test_sombra_sigue_al_actor():
     assert sombra not in pilas.escena_actual().actores
 
 
+def test_escena_personalizada_con_vincular():
+    import pilas3d
+    pilas = crear_pilas()
+    eventos = []
+
+    class MiEscena(pilas3d.escenas.Escena):
+        def iniciar(self):
+            eventos.append('inicio')
+            self.cubo = self.pilas.actores.Cubo()
+
+        def terminar(self):
+            eventos.append('fin')
+
+        def cuando_actualiza(self):
+            eventos.append('tick')
+
+    pilas.escenas.vincular(MiEscena)
+    escena = pilas.escenas.MiEscena()
+    assert pilas.escena_actual() is escena
+    assert eventos == ['inicio']
+    assert len(escena.actores) == 1
+    escena.actualizar(1 / 60.0)
+    assert 'tick' in eventos
+
+    otra = pilas.escenas.Normal()
+    assert 'fin' in eventos
+    assert pilas.escena_actual() is otra
+    assert otra.actores == []  # la nueva escena arranca vacía
+
+
+def test_cambiar_escena_y_propiedad_escena():
+    pilas = crear_pilas()
+    e1 = pilas.escena_actual()
+    e2 = pilas.escenas.Normal()
+    assert pilas.escena is e2
+    pilas.cambiar_escena(e1)
+    assert pilas.escena_actual() is e1
+    pilas.escena = e2
+    assert pilas.escena_actual() is e2
+
+
+def test_cambio_de_escena_aisla_actores_y_luces():
+    from pilas3d import luces as L
+    pilas = crear_pilas()
+    e1 = pilas.escena_actual()
+    pilas.actores.Cubo()
+    pilas.luces.agregar(L.LuzPuntual())
+    e2 = pilas.escenas.Normal()
+    assert len(e1.actores) == 1
+    assert e2.actores == []
+    assert e2.luces.puntuales == []
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()

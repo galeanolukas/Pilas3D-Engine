@@ -1,5 +1,21 @@
 # -*- encoding: utf-8 -*-
-"""Escena base: contenedor de actores, cámara y color de fondo."""
+"""Escena base: contenedor de actores, cámara y color de fondo.
+
+Para hacer una escena propia se hereda de esta clase y se redefinen
+los métodos ``iniciar``, ``cuando_actualiza``, ``cuando_pulsa_tecla``
+y ``terminar`` — igual que en pilas-engine::
+
+    class Menu(pilas3d.escenas.Escena):
+        def iniciar(self):
+            self.pilas.actores.Texto('ENTER para jugar')
+
+        def cuando_pulsa_tecla(self, simbolo):
+            if simbolo == key.ENTER:
+                Juego(self.pilas)
+
+    pilas.escenas.vincular(Menu)
+    pilas.escenas.Menu()          # crear una escena la activa sola
+"""
 
 from pilas3d import colores
 from pilas3d.escenas.camara import Camara
@@ -17,6 +33,19 @@ class Escena(object):
         from pilas3d.luces import Luces
         self.luces = Luces()
         self.pilas._definir_escena(self)
+        self.iniciar()
+
+    def iniciar(self):
+        """Se invoca una vez, al activarse la escena. Redefinible."""
+
+    def terminar(self):
+        """Se invoca cuando otra escena la reemplaza. Redefinible."""
+
+    def cuando_actualiza(self):
+        """Se invoca en cada frame, tras actores y tareas."""
+
+    def cuando_pulsa_tecla(self, simbolo):
+        """Se invoca al pulsar una tecla (tras los atajos globales)."""
 
     def agregar_actor(self, actor):
         self.actores.append(actor)
@@ -34,6 +63,7 @@ class Escena(object):
         for actor in list(self.actores):
             actor.pre_actualizar()
             actor.actualizar()
+        self.cuando_actualiza()
 
     def dibujar(self):
         """Dibuja los actores 3D (los overlays se dibujan aparte)."""
