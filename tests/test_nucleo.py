@@ -734,6 +734,57 @@ def test_cielo_acepta_textura_generada():
     assert textura.width == 64
 
 
+def _escribir_obj(ruta, dx=0.0):
+    """Triángulo mínimo desplazado en x (un cuadro de animación)."""
+    ruta.write_text(
+        "v %f 0 0\nv %f 1 0\nv %f 0 1\nf 1 2 3\n"
+        % (dx, dx, dx))
+
+
+def test_modelo_animado_avanza_cuadros(tmp_path):
+    pilas = crear_pilas()
+    for i in range(4):
+        _escribir_obj(tmp_path / ("f%d.obj" % i), dx=float(i))
+    anim = pilas.actores.ModeloAnimado(
+        str(tmp_path / "*.obj"), velocidad=10)
+    assert anim.cantidad_de_cuadros == 4
+    assert anim.cuadro_actual == 0
+    pilas.dt = 0.1  # a 10fps, 0.1s = 1 cuadro
+    anim.actualizar()
+    assert anim.cuadro_actual == 1
+    for _ in range(10):
+        anim.actualizar()
+    assert anim.cuadro_actual in range(4)  # ciclica: envuelve
+
+
+def test_modelo_animado_no_ciclico_y_definir_cuadro(tmp_path):
+    pilas = crear_pilas()
+    for i in range(3):
+        _escribir_obj(tmp_path / ("c%d.obj" % i))
+    anim = pilas.actores.ModeloAnimado(
+        [str(tmp_path / ("c%d.obj" % i)) for i in range(3)],
+        velocidad=10, ciclica=False)
+    pilas.dt = 1.0
+    anim.actualizar()
+    assert anim.cuadro_actual == 2
+    assert not anim.reproduciendo
+    anim.definir_cuadro(1)
+    assert anim.cuadro_actual == 1
+
+
+def test_modelo_animado_suavizar_requiere_mismos_vertices(tmp_path):
+    pilas = crear_pilas()
+    _escribir_obj(tmp_path / "a.obj")
+    (tmp_path / "b.obj").write_text(
+        "v 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\nf 1 2 3 4\n")
+    try:
+        pilas.actores.ModeloAnimado(
+            str(tmp_path / "*.obj"), suavizar=True)
+        assert False, "debio lanzar ValueError"
+    except ValueError:
+        pass
+
+
 def test_interpolacion_transparencia():
     pilas = crear_pilas()
     cubo = pilas.actores.Cubo()

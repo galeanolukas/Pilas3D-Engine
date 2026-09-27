@@ -19,6 +19,7 @@ from pilas3d.actores.animacion import Animacion
 from pilas3d.actores.modelo import Modelo
 from pilas3d.actores.sombra import Sombra
 from pilas3d.actores.cielo import Cielo
+from pilas3d.actores.modelo_animado import ModeloAnimado
 from pilas3d.actores.texto import Texto, Puntaje
 
 
@@ -72,6 +73,16 @@ class Actores(object):
     def Cielo(self, imagen="estrellas", radio=400):
         """Domo de fondo: 'estrellas' genera un cielo sin archivos."""
         return Cielo(self._pilas, imagen=imagen, radio=radio)
+
+    def ModeloAnimado(self, rutas, velocidad=8, ciclica=True,
+                      suavizar=False, eliminar_al_terminar=False,
+                      x=0, y=0, z=0, escala=1.0):
+        """Secuencia de .obj animada (lista de rutas o patrón glob)."""
+        return ModeloAnimado(
+            self._pilas, rutas, velocidad=velocidad, ciclica=ciclica,
+            suavizar=suavizar,
+            eliminar_al_terminar=eliminar_al_terminar,
+            x=x, y=y, z=z, escala=escala)
 
     def Mapa(self, matriz, simbolos, tamano_celda=2.0, x=0, y=0, z=0):
         return Mapa(self._pilas, matriz, simbolos,
