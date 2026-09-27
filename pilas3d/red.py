@@ -22,9 +22,9 @@ import socket
 import threading
 
 
-def _mandar(sock, tipo, datos):
+def _mandar(sock, nombre, datos):
     """Envía un mensaje como línea JSON (con su propio lock por socket)."""
-    linea = json.dumps({'t': tipo, 'd': datos}) + '\n'
+    linea = json.dumps({'t': nombre, 'd': datos}) + '\n'
     sock.sendall(linea.encode('utf-8'))
 
 
@@ -37,26 +37,26 @@ class _Conexion(object):
         self._cola = queue.Queue()
         self.cerrada = False
 
-    def cuando_reciba(self, tipo, funcion):
-        """Registra ``funcion(datos, de)`` para mensajes de ese ``tipo``.
+    def cuando_reciba(self, nombre, funcion):
+        """Registra ``funcion(datos, de)`` para mensajes de ese nombre.
 
         ``de`` es el id del cliente que lo envió (None si lo mandó
         directamente el servidor). La funcion corre en el hilo del
         juego durante el próximo ``paso()``/frame.
         """
-        self._callbacks.setdefault(tipo, []).append(funcion)
+        self._callbacks.setdefault(nombre, []).append(funcion)
 
-    def _encolar(self, tipo, datos, de):
-        self._cola.put((tipo, datos, de))
+    def _encolar(self, nombre, datos, de):
+        self._cola.put((nombre, datos, de))
 
     def actualizar(self):
         """Despacha los mensajes encolados (llamado por ``Pilas._tick``)."""
         while True:
             try:
-                tipo, datos, de = self._cola.get_nowait()
+                nombre, datos, de = self._cola.get_nowait()
             except queue.Empty:
                 return
-            for fn in self._callbacks.get(tipo, ()):
+            for fn in self._callbacks.get(nombre, ()):
                 fn(datos, de)
 
     def cerrar(self):
@@ -88,15 +88,15 @@ class Servidor(_Conexion):
         """Ids de los clientes conectados (sin contar al que hospeda)."""
         return sorted(self._clientes)
 
-    def enviar(self, tipo, **datos):
+    def enviar(self, nombre, **datos):
         """Broadcast a todos los clientes conectados."""
         for cid in list(self._clientes):
-            self._mandar_a(cid, tipo, datos)
+            self._mandar_a(cid, nombre, datos)
 
-    def _mandar_a(self, cid, tipo, datos):
+    def _mandar_a(self, cid, nombre, datos):
         try:
             with self._locks[cid]:
-                _mandar(self._clientes[cid], tipo, datos)
+                _mandar(self._clientes[cid], nombre, datos)
         except (OSError, KeyError):
             pass   # el cliente se fue; el hilo lector lo limpia
 
@@ -127,13 +127,13 @@ class Servidor(_Conexion):
                     msg = json.loads(linea)
                 except ValueError:
                     continue
-                tipo, datos = msg.get('t'), msg.get('d', {})
+                nombre, datos = msg.get('t'), msg.get('d', {})
                 fwd = dict(datos, de=cid) if isinstance(datos, dict) \
                     else {'de': cid, 'v': datos}
                 for otro in list(self._clientes):   # reenvío a los demás
                     if otro != cid:
-                        self._mandar_a(otro, tipo, fwd)
-                self._encolar(tipo, datos, cid)
+                        self._mandar_a(otro, nombre, fwd)
+                self._encolar(nombre, datos, cid)
         except OSError:
             pass
         finally:
@@ -179,9 +179,9 @@ class Cliente(_Conexion):
         self._hilo.daemon = True
         self._hilo.start()
 
-    def enviar(self, tipo, **datos):
+    def enviar(self, nombre, **datos):
         with self._lock:
-            _mandar(self._sock, tipo, datos)
+            _mandar(self._sock, nombre, datos)
 
     def _escuchar(self):
         try:
@@ -190,12 +190,12 @@ class Cliente(_Conexion):
                     msg = json.loads(linea)
                 except ValueError:
                     continue
-                tipo, datos = msg.get('t'), msg.get('d', {})
+                nombre, datos = msg.get('t'), msg.get('d', {})
                 de = datos.pop('de', None) if isinstance(datos, dict) \
                     else None
-                if tipo == 'hola':
+                if nombre == 'hola':
                     self.id = datos.get('id')
-                self._encolar(tipo, datos, de)
+                self._encolar(nombre, datos, de)
         except OSError:
             pass
         finally:

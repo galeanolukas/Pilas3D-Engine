@@ -97,6 +97,7 @@ de CPU). Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 .venv/bin/python ejemplos/modelo_animado.py     # modelos .obj animados
 .venv/bin/python ejemplos/escenas.py            # menu -> juego (escenas)
 .venv/bin/python ejemplos/pilascraft.py         # PilasCraft: mundo voxel infinito, picar/colocar, niebla y escombros
+.venv/bin/python ejemplos/pilascraft_red.py     # PilasCraft multijugador (host; otros: `... <ip>`)
 .venv/bin/python ejemplos/juego_modelos.py      # recolectar gemas con modelos .obj
 .venv/bin/python ejemplos/plataformas.py        # plataformero: PisaPlataformas + salto
 .venv/bin/python ejemplos/particulas.py         # fuego, humo, lluvia, explosión
