@@ -16,3 +16,6 @@ pilas3d = "pilas3d.interactivo:main"
 
 [tool.setuptools.packages.find]
 include = ["pilas3d*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
