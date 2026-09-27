@@ -24,8 +24,10 @@ import random
 import sys
 
 import pilas3d
+from pilas3d import mallas
+from pilas3d.actores.actor import Actor
 from pilas3d.actores.esfera import Esfera
-from pilas3d.actores.cubo import Cubo
+from pilas3d.actores.modelo import Modelo
 
 pilas = pilas3d.iniciar(titulo="pilas3d - PilasCraft en red")
 
@@ -90,22 +92,22 @@ pilas.escena.niebla = (pilas.colores.celeste,
                      DISTANCIA_VISTA * 16 * 0.6,
                      DISTANCIA_VISTA * 16 * 0.95)
 
-# -- jugadores remotos: un cubo fantasma por id --------------------
+# -- jugadores remotos: un personaje por id ------------------------
+# Uno usa el modelo externo (SpiderAnimate, si está en modelos/) y
+# los demás son clases que heredan de Actor con geometría propia —
+# para probar herencias.
+SPYDER = os.path.join(os.path.dirname(__file__), '..', 'modelos',
+                      'SpiderAnimate',
+                      'Only_Spider_with_Animations_Export.obj')
+tiene_spyder = os.path.isfile(SPYDER)
+
 COLORES = [(0.9, 0.3, 0.3), (0.3, 0.9, 0.4), (0.9, 0.8, 0.2),
            (0.7, 0.3, 0.9), (0.3, 0.7, 0.9)]
 fantasmas = {}
 
 
-class Fantasma(Cubo):
-    """Copia remota de un jugador: interpola hacia la última
-    posición que mandó por red."""
-
-    def __init__(self, pilas, cid):
-        color = COLORES[cid % len(COLORES)]
-        super(Fantasma, self).__init__(pilas, y=mundo.altura_terreno_en(0, 0))
-        self.cid = cid
-        self.color = color
-        self._objetivo = None
+class MovimientoSuave(object):
+    """Mixin: el personaje interpola hacia la última posición de red."""
 
     def ir_a(self, pos):
         self._objetivo = pos
@@ -119,9 +121,81 @@ class Fantasma(Cubo):
         self.z += (oz - self.z) * 0.25
 
 
+def _combinar(partes):
+    """Une varias geometrías de ``mallas`` en una sola, cada una con
+    su desplazamiento: ``[(geometria, (dx, dy, dz)), ...]``."""
+    pos, nor, uv = [], [], []
+    for datos, (dx, dy, dz) in partes:
+        p = datos[0]
+        for i in range(0, len(p), 3):
+            pos += [p[i] + dx, p[i + 1] + dy, p[i + 2] + dz]
+        nor += list(datos[1])
+        uvs = datos[4] if len(datos) > 4 and datos[4] else \
+            [0.0] * (len(p) // 3 * 2)
+        uv += list(uvs)
+    from pyglet.gl import GL_TRIANGLES
+    return pos, nor, GL_TRIANGLES, None, uv
+
+
+class Personaje(MovimientoSuave, Actor):
+    """Base de los personajes remotos: color por id + movimiento
+    interpolado. Hereda de Actor (la base de todo actor de pilas)."""
+
+    def __init__(self, pilas, cid, **kw):
+        super(Personaje, self).__init__(pilas, **kw)
+        self.cid = cid
+        self.color = COLORES[cid % len(COLORES)]
+        self._objetivo = None
+
+
+class Robot(Personaje):
+    """Personaje armado con primitivas: torso + cabeza + antena.
+    Los pies quedan ~0.8 bajo el origen (el remoto manda la altura
+    de sus ojos)."""
+
+    def _generar_geometria(self):
+        return _combinar([
+            (mallas.cuboide(0.55, 0.7, 0.3), (0, -0.45, 0)),   # torso
+            (mallas.cubo(0.4), (0, 0.15, 0)),                  # cabeza
+            (mallas.esfera(0.07, 8, 6), (0, 0.45, 0)),         # antena
+        ])
+
+
+class RobotAlto(Robot):
+    """Hereda de Robot: mismo cuerpo, más grande y escala distinta
+    (muestra que la geometría del padre se reutiliza)."""
+
+    def __init__(self, pilas, cid, **kw):
+        super(RobotAlto, self).__init__(pilas, cid, **kw)
+        self.escala = 1.5
+
+
+class Arania(MovimientoSuave, Modelo):
+    """El personaje con modelo externo: hereda el comportamiento de
+    red del mixin y la malla .obj de Modelo (que a su vez ES Actor).
+    El obj es una exportación estática — las animaciones originales
+    eran lógica de Blender Game Engine, no viajan en el formato."""
+
+    def __init__(self, pilas, cid, **kw):
+        super(Arania, self).__init__(pilas, SPYDER, escala=0.02, **kw)
+        self.cid = cid
+        self._objetivo = None
+
+
 def crear_fantasma(cid):
-    if cid not in fantasmas:
-        fantasmas[cid] = Fantasma(pilas, cid)
+    """El id 1 es la araña (si el modelo existe); el resto alterna
+    Robot y RobotAlto."""
+    if cid in fantasmas:
+        return
+    if cid == 1 and tiene_spyder:
+        fantasmas[cid] = Arania(pilas, cid,
+                                y=mundo.altura_terreno_en(0, 0))
+    elif cid % 2:
+        fantasmas[cid] = RobotAlto(pilas, cid,
+                                   y=mundo.altura_terreno_en(0, 0))
+    else:
+        fantasmas[cid] = Robot(pilas, cid,
+                               y=mundo.altura_terreno_en(0, 0))
 
 
 def on_hola(datos, de):
