@@ -385,6 +385,27 @@ var INICIAL =
   '</block></statement></block></xml>';
 Blockly.Xml.domToWorkspace(Blockly.Xml.textToDom(INICIAL), ws);
 
+// -- cargador de ejemplos ---------------------------------------------
+// cada ejemplo es un workspace XML (ver ejemplos.js): se limpia el
+// editor y se cargan sus bloques, listos para mirar y ejecutar.
+
+var selEjemplos = document.getElementById('ejemplos');
+if (typeof EJEMPLOS !== 'undefined') {
+  EJEMPLOS.forEach(function (e, i) {
+    var op = document.createElement('option');
+    op.value = i;
+    op.textContent = e.nombre;
+    selEjemplos.appendChild(op);
+  });
+}
+selEjemplos.onchange = function () {
+  if (selEjemplos.value === '') return;
+  var e = EJEMPLOS[parseInt(selEjemplos.value, 10)];
+  ws.clear();
+  Blockly.Xml.domToWorkspace(Blockly.Xml.textToDom(e.xml), ws);
+  selEjemplos.value = '';
+};
+
 // -- vista de código + ejecución --------------------------------------
 
 var divCodigo = document.getElementById('codigo');

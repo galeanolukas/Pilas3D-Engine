@@ -2064,6 +2064,72 @@ def test_puente_bloques_subproceso(tmp_path, monkeypatch):
         puente.detener()
 
 
+def _ejemplos_bloques():
+    """Parsea pilas3d/bloques_web/ejemplos.js -> [{nombre, xml}]."""
+    import re
+    import xml.etree.ElementTree as ET
+    from pathlib import Path
+
+    src = (Path(__file__).parent.parent /
+           'pilas3d/bloques_web/ejemplos.js').read_text()
+    ejemplos = []
+    for m in re.finditer(r"nombre:\s*'([^']+)'", src):
+        # el xml es la concatenación de literales '...' + hasta la coma
+        xml_m = re.search(
+            r"xml:\s*((?:'[^']*'\s*\+\s*)*'[^']*')",
+            src[m.end():])
+        xml = ''.join(re.findall(r"'([^']*)'", xml_m.group(1)))
+        ejemplos.append({'nombre': m.group(1), 'xml': xml})
+        ET.fromstring(xml)           # falla si el XML está roto
+    return ejemplos
+
+
+def test_ejemplos_bloques_validos():
+    """Cada ejemplo precargado: XML bien formado y solo usa bloques
+    que existen en bloques.js con sus campos correctos."""
+    import re
+    import xml.etree.ElementTree as ET
+    from pathlib import Path
+
+    src = (Path(__file__).parent.parent /
+           'pilas3d/bloques_web/bloques.js').read_text()
+    definidos = set(re.findall(r"type:\s*'(p3d_\w+)'", src))
+    std = {'controls_if', 'controls_repeat_ext', 'logic_compare',
+           'logic_operation', 'logic_negate', 'math_number',
+           'math_arithmetic'}
+    # campos declarados por bloque: name:'X' entre un type y el próximo
+    campos = {}
+    partes = re.split(r"type:\s*'(p3d_\w+)'", src)
+    for tipo, cuerpo in zip(partes[1::2], partes[2::2]):
+        campos.setdefault(tipo, set()).update(
+            re.findall(r"name:\s*'(\w+)'", cuerpo))
+
+    ejemplos = _ejemplos_bloques()
+    assert len(ejemplos) >= 3
+    for e in ejemplos:
+        assert e['nombre']
+        for b in ET.fromstring(e['xml']).iter('block'):
+            tipo = b.get('type')
+            assert tipo in definidos | std, (e['nombre'], tipo)
+            for f in b.findall('field'):
+                assert f.get('name') in campos.get(tipo, set()), \
+                    (e['nombre'], tipo, f.get('name'))
+
+
+def test_ejemplos_selector_en_pagina():
+    """index.html expone el selector y carga ejemplos.js; bloques.js
+    cablea el onchange que reemplaza el workspace."""
+    from pathlib import Path
+    web = Path(__file__).parent.parent / 'pilas3d/bloques_web'
+    html = (web / 'index.html').read_text()
+    js = (web / 'bloques.js').read_text()
+    assert 'id="ejemplos"' in html
+    assert 'ejemplos.js' in html
+    assert html.index('ejemplos.js') < html.index('bloques.js')
+    assert 'selEjemplos.onchange' in js
+    assert 'ws.clear()' in js
+
+
 def test_mapas_guardar_cargar(tmp_path):
     """Round-trip de *.mapa.json: bloques + spawn + nombre."""
     pilas = crear_pilas()

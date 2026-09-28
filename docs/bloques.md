@@ -8,10 +8,10 @@ código. Inspirado en Pilas Bloques.
 .venv/bin/pilas3d-bloques
 ```
 
-Abre dos cosas:
-
-- la **ventana 3D** de pilas3d (donde corre el programa)
-- el **navegador** con el editor de bloques en `http://127.0.0.1:8765/`
+Arranca **solo el servidor** y abre el navegador con el editor de
+bloques en `http://127.0.0.1:8765/` — la ventana 3D aparece recién al
+pulsar **▶ Ejecutar** (corre en un proceso propio) y el botón pasa a
+**■ Detener** para cerrarla.
 
 ---
 
@@ -19,13 +19,20 @@ Abre dos cosas:
 
 ```
 bloques en el navegador → Python generado (visible a la derecha)
-   → botón Ejecutar → POST al motor → corre en la ventana 3D
+   → ▶ Ejecutar → POST al servidor → subproceso abre la ventana 3D
+   → ■ Detener → cierra el subproceso y la ventana
 ```
 
-Cada **Ejecutar** limpia la escena (bandera verde de Scratch): los
-actores y tareas de la corrida anterior desaparecen. Si el código
-falla, el panel "Resultado" muestra el traceback — el motor sigue
-vivo.
+Si el código falla, el panel "Resultado" muestra el traceback — el
+servidor y el editor siguen vivos.
+
+### Ejemplos precargados
+
+El menú **ejemplos…** del header carga workspaces armados (`Hola
+cubo`, `Cubo girando`, `Mover con flechas`, `Choque entre actores`):
+se ve el armado en bloques, el Python que generan a la derecha y se
+pueden ejecutar con ▶. Están en `pilas3d/bloques_web/ejemplos.js`
+como XML de Blockly — para agregar uno, otra entrada en `EJEMPLOS`.
 
 ## 2. Los bloques
 
@@ -78,13 +85,17 @@ pilas.tareas.siempre(0, siempre)
 ## 4. Debajo del capó
 
 - `pilas3d/puente.py` — `PuenteBloques`: `ThreadingHTTPServer` en
-  `127.0.0.1:8765` (solo local). El código encolado se ejecuta **en el
-  hilo principal** una vez por frame (OpenGL no es thread-safe).
+  `127.0.0.1:8765` (solo local). Sin pilas: `/codigo` lanza
+  `bloques_runner.py` como subproceso (su ventana 3D es del proceso
+  hijo) y `/detener` lo mata. Con pilas (modo legado/tests): ejecuta
+  el código **en el hilo principal** una vez por frame.
+- `pilas3d/bloques_runner.py` — proceso hijo que corre el código
+  generado con `pilas` ya inicializada.
 - `pilas3d/bloques_web/` — la página: Blockly 9.3 vendored (offline,
-  sin internet), definiciones en `bloques.js`, renderer `zelos` (el
-  estilo visual de Scratch).
-- `pilas3d/bloques.py` — `main()`: inicia pilas + puente + abre el
-  navegador.
+  sin internet), definiciones en `bloques.js`, ejemplos precargados
+  en `ejemplos.js`, renderer `zelos` (el estilo visual de Scratch).
+- `pilas3d/bloques.py` — `main()`: levanta el servidor y abre el
+  navegador (sin ventana 3D).
 
 ### Agregar un bloque nuevo
 
