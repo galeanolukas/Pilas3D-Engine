@@ -403,20 +403,36 @@ ws.addChangeListener(function (e) {
 });
 regenerar();
 
-document.getElementById('ejecutar').onclick = function () {
+var boton = document.getElementById('ejecutar');
+var corriendo = false;
+
+function pintar_boton() {
+  if (corriendo) {
+    boton.textContent = '■ Detener';
+    boton.style.background = '#c0392b';
+  } else {
+    boton.textContent = '▶ Ejecutar';
+    boton.style.background = '';
+  }
+}
+
+boton.onclick = function () {
+  if (corriendo) {
+    fetch('/detener', { method: 'POST' }).then(consultar_resultado);
+    return;
+  }
   var codigo = GEN.workspaceToCode(ws);
   spanEstado.className = '';
-  spanEstado.textContent = 'ejecutando…';
+  spanEstado.textContent = 'abriendo la ventana…';
   fetch('/codigo', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ codigo: codigo }),
   }).then(function () {
-    // el motor lo corre en el próximo frame: espero un toque
-    setTimeout(consultar_resultado, 400);
+    setTimeout(consultar_resultado, 600);
   }).catch(function () {
     spanEstado.className = 'error';
-    spanEstado.textContent = 'no llega al motor — ¿la ventana está abierta?';
+    spanEstado.textContent = 'no llega al servidor';
   });
 };
 
@@ -424,17 +440,30 @@ var ultimo_resultado = null;
 function consultar_resultado() {
   fetch('/resultado').then(function (r) { return r.json(); })
     .then(function (r) {
+      corriendo = (r.estado === 'ejecutando');
+      pintar_boton();
       if (r === ultimo_resultado) return;
       ultimo_resultado = r;
-      if (r.estado === 'ok') {
+      if (r.estado === 'ejecutando') {
         spanEstado.className = 'ok';
-        spanEstado.textContent = 'corrió bien';
+        spanEstado.textContent = 'corriendo — la ventana está abierta';
+        divSalida.textContent = r.salida || '(sin salida todavía)';
+      } else if (r.estado === 'ok') {
+        spanEstado.className = 'ok';
+        spanEstado.textContent = 'terminó bien';
         divSalida.textContent = r.salida || '(sin salida)';
       } else if (r.estado === 'error') {
         spanEstado.className = 'error';
         spanEstado.textContent = 'error en el código';
         divSalida.textContent = r.salida;
+      } else if (r.estado === 'detenido') {
+        spanEstado.className = '';
+        spanEstado.textContent = 'detenido';
+        divSalida.textContent = r.salida || '(sin salida)';
       }
-    }).catch(function () {});
+    }).catch(function () {
+      corriendo = false;
+      pintar_boton();
+    });
 }
 setInterval(consultar_resultado, 900);

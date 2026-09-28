@@ -2023,6 +2023,47 @@ def test_puente_bloques(tmp_path):
         puente.detener()
 
 
+def test_puente_bloques_subproceso(tmp_path, monkeypatch):
+    """Sin pilas: /codigo lanza un proceso con ventana propia y
+    /detener lo mata. (PILAS3D_SIN_VENTANA -> no abre ventana real.)"""
+    import json
+    import os
+    import time
+    import urllib.request
+    from pilas3d.puente import PuenteBloques
+
+    monkeypatch.setenv('PILAS3D_SIN_VENTANA', '1')
+    web = tmp_path / 'web'
+    web.mkdir()
+    (web / 'index.html').write_text('pagina')
+
+    puente = PuenteBloques(None, str(web))
+    url = puente.iniciar(0)
+    try:
+        req = urllib.request.Request(
+            url + 'codigo',
+            data=json.dumps({'codigo': "print('anduvo')"}).encode(),
+            headers={'Content-Type': 'application/json'})
+        assert json.loads(urllib.request.urlopen(req).read()) == \
+            {'estado': 'lanzado'}
+
+        # sin ventana el proceso ejecuta y termina -> 'ok' + salida
+        for _ in range(100):
+            r = json.loads(
+                urllib.request.urlopen(url + 'resultado').read())
+            if r['estado'] != 'ejecutando':
+                break
+            time.sleep(0.05)
+        assert r['estado'] == 'ok' and 'anduvo' in r['salida']
+
+        # detener cuando ya terminó no explota
+        req = urllib.request.Request(url + 'detener', data=b'')
+        assert json.loads(urllib.request.urlopen(req).read()) == \
+            {'estado': 'detenido'}
+    finally:
+        puente.detener()
+
+
 def test_mapas_guardar_cargar(tmp_path):
     """Round-trip de *.mapa.json: bloques + spawn + nombre."""
     pilas = crear_pilas()

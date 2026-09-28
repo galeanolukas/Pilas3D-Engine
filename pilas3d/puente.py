@@ -9,20 +9,35 @@ drenando la cola una vez por frame desde una tarea ``siempre``.
 Endpoints:
 
 - ``GET  /``            → sirve ``bloques_web/`` (la página de bloques)
-- ``POST /codigo``      → ``{"codigo": "..."}`` se encola para ejecutar
-- ``GET  /resultado``   → ``{"estado": "ok|error", "salida": "..."}``
+- ``POST /codigo``      → ``{"codigo": "..."}`` ejecuta el código
+- ``POST /detener``     → mata la corrida en curso
+- ``GET  /resultado``   → ``{"estado": ..., "salida": "..."}``
+
+Dos modos:
+
+- **con ``pilas``**: el código se encola y corre en el hilo
+  principal de la ventana ya abierta (la usa el motor vivo).
+- **sin ``pilas``** (``pilas3d-bloques``): el código corre en un
+  **subproceso** con su propia ventana (``bloques_runner``);
+  "ejecutar" lo crea, "detener" lo termina.
 """
 
 import contextlib
 import io
 import json
 import os
+import subprocess
+import sys
+import tempfile
 import threading
 import traceback
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from queue import Empty, Queue
 
 PUERTO = 8765
+
+_RUNNER = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       'bloques_runner.py')
 
 
 class PuenteBloques(object):
@@ -35,11 +50,15 @@ class PuenteBloques(object):
         self.ultimo = {'estado': 'inactivo', 'salida': ''}
         self._tarea = None
         self._srv = None
+        self._proc = None
+        self._salida = None
 
     # -- lado del motor -----------------------------------------------------
 
     def enganchar(self):
         """Registra la tarea que drena la cola cada frame."""
+        if self.pilas is None:
+            return
         self._tarea = self.pilas.tareas.siempre(0, self.procesar)
 
     def procesar(self):
@@ -51,6 +70,56 @@ class PuenteBloques(object):
             except Empty:
                 return
             self._ejecutar(codigo)
+
+    # -- modo subproceso (sin pilas: cada corrida abre su ventana) ---
+
+    def _lanzar(self, codigo):
+        """Ejecuta el código en un proceso nuevo con ventana propia."""
+        self.detener_proceso()
+        fd, ruta = tempfile.mkstemp(prefix='pilas3d_bloques_',
+                                    suffix='.py')
+        os.write(fd, codigo.encode('utf-8'))
+        os.close(fd)
+        fd, salida = tempfile.mkstemp(prefix='pilas3d_bloques_',
+                                      suffix='.txt')
+        self._salida = os.fdopen(fd, 'w+b')
+        self._proc = subprocess.Popen(
+            [sys.executable, _RUNNER, ruta],
+            stdout=self._salida, stderr=subprocess.STDOUT)
+        self.ultimo = {'estado': 'ejecutando', 'salida': ''}
+
+    def detener_proceso(self):
+        """Mata la corrida en curso (botón detener)."""
+        if self._proc is not None:
+            self._proc.terminate()
+            try:
+                self._proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                self._proc.kill()
+            self._proc = None
+            self.ultimo = {'estado': 'detenido', 'salida':
+                           self._leer_salida()}
+
+    def _leer_salida(self):
+        if self._salida is None:
+            return ''
+        self._salida.flush()
+        self._salida.seek(0)
+        return self._salida.read().decode('utf-8', 'replace')
+
+    def estado_actual(self):
+        """Refresca ``ultimo`` mirando si el subproceso sigue vivo."""
+        if self._proc is not None:
+            codigo = self._proc.poll()
+            if codigo is None:
+                self.ultimo = {'estado': 'ejecutando',
+                               'salida': self._leer_salida()}
+            else:
+                self.ultimo = {
+                    'estado': 'ok' if codigo == 0 else 'error',
+                    'salida': self._leer_salida()}
+                self._proc = None
+        return self.ultimo
 
     def _reiniciar_escena(self):
         """Bandera verde estilo Scratch: saca los actores y las tareas
@@ -95,7 +164,7 @@ class PuenteBloques(object):
 
             def do_GET(self):
                 if self.path == '/resultado':
-                    self._json(puente.ultimo)
+                    self._json(puente.estado_actual())
                     return
                 # estáticos de bloques_web/ (path confinado al dir)
                 ruta = self.path.split('?')[0].lstrip('/') or 'index.html'
@@ -122,6 +191,10 @@ class PuenteBloques(object):
                 self.wfile.write(cuerpo)
 
             def do_POST(self):
+                if self.path == '/detener':
+                    puente.detener_proceso()
+                    self._json({'estado': 'detenido'})
+                    return
                 if self.path != '/codigo':
                     self.send_error(404)
                     return
@@ -137,8 +210,12 @@ class PuenteBloques(object):
                     self._json({'estado': 'error', 'salida':
                                 'código vacío'}, 400)
                     return
-                puente.cola.put(codigo)
-                self._json({'estado': 'encolado'})
+                if puente.pilas is None:
+                    puente._lanzar(codigo)   # subproceso + ventana
+                    self._json({'estado': 'lanzado'})
+                else:
+                    puente.cola.put(codigo)  # corre en la ventana viva
+                    self._json({'estado': 'encolado'})
 
         self._srv = ThreadingHTTPServer(('127.0.0.1', puerto), Handler)
         hilo = threading.Thread(target=self._srv.serve_forever,
@@ -147,6 +224,7 @@ class PuenteBloques(object):
         return 'http://127.0.0.1:%d/' % self._srv.server_address[1]
 
     def detener(self):
+        self.detener_proceso()
         if self._srv is not None:
             self._srv.shutdown()
             self._srv = None

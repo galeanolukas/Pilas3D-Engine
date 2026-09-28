@@ -1,9 +1,10 @@
 # -*- encoding: utf-8 -*-
 """pilas3d-bloques: programación por bloques sobre el motor.
 
-Abre una ventana de pilas3d y una página web con Blockly (estilo
-Scratch): los bloques generan código Python real que se ejecuta en la
-escena vía :mod:`pilas3d.puente`.
+Arranca SOLO el servidor y abre la página Blockly en el navegador —
+sin ventana de pilas. La ventana 3D aparece cuando el usuario pulsa
+"Ejecutar" (el código generado corre en un subproceso propio) y el
+botón pasa a "Detener" para matarlo.
 
     pilas3d-bloques            # comando (pip install -e .)
 
@@ -14,35 +15,33 @@ escena vía :mod:`pilas3d.puente`.
 import os
 import webbrowser
 
-import pilas3d
 from pilas3d.puente import PUERTO, PuenteBloques
 
 DIR_WEB = os.path.join(os.path.dirname(__file__), 'bloques_web')
 
 
-def main(ejecutar=True, abrir_navegador=True):
-    """Inicia pilas, levanta el puente HTTP y abre la página de
-    bloques en el navegador. Devuelve ``(pilas, url)``."""
-    pilas = pilas3d.iniciar(titulo="pilas3d - bloques")
-    pilas.escena.fondo = pilas.colores.gris_oscuro
-    pilas.luces.direccional.ambiente = 0.6
-
-    puente = PuenteBloques(pilas, DIR_WEB)
-    puente.enganchar()                    # drena la cola cada frame
+def main(abrir_navegador=True, servir=True):
+    """Levanta el puente HTTP (sin ventana) y abre la página de
+    bloques. Con ``servir=False`` devuelve ``(puente, url)`` sin
+    bloquear — útil para tests o para integrarlo en otro programa."""
+    puente = PuenteBloques(None, DIR_WEB)   # sin ventana: subprocesos
     url = puente.iniciar(PUERTO)
-    pilas.puente_bloques = puente         # acceso desde consola/tests
 
     print("pilas3d-bloques listo en", url)
-    print("los bloques generan Python y se ejecutan en esta ventana")
+    print("armá bloques en el navegador; 'Ejecutar' abre la ventana")
 
     if abrir_navegador:
         webbrowser.open(url)
-    if ejecutar:
+    if servir:
         try:
-            pilas.ejecutar()
+            while True:                   # el hilo HTTP sirve solo
+                import time
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
         finally:
             puente.detener()
-    return pilas, url
+    return puente, url
 
 
 def cli():
