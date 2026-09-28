@@ -265,7 +265,7 @@ def organizar_layout():
     lista.y = h - 25
     lista.ancho = PANEL - 16
     info.x = 10
-    info.y = 58
+    info.y = 70
 
 
 def refrescar_ui():
@@ -482,7 +482,11 @@ def al_pulsar(tecla):
     s = pilas.simbolos
     if estado['modo'] != 'editar':
         return
-    if tecla == s.IZQUIERDA or tecla == s.DERECHA:
+    digitos = [s._1, s._2, s._3, s._4, s._5]
+    if tecla in digitos and estado['paleta'] == 'bloques':
+        estado['tipo'] = digitos.index(tecla)
+        refrescar_ui()
+    elif tecla == s.IZQUIERDA or tecla == s.DERECHA:
         d = -1 if tecla == s.IZQUIERDA else 1
         if estado['paleta'] == 'props' and PROPS:
             estado['prop'] = (estado['prop'] + d) % len(PROPS)
@@ -580,12 +584,11 @@ def main(directorio='mapas', ejecutar=True):
     info = pilas.actores.Texto("", tamano=15)
     info.color = pilas.colores.amarillo
     pilas.actores.Texto(
-        "click: poner - medio/X: sacar - der+drag: orbitar\n"
-        "M: paleta bloques/props - <-/->: elegir - R: girar prop\n"
-        "D: agarrar prop - F/V: subir/bajar - Z/C: escala\n"
-        "Q/E: columna - S: spawn - T: terreno - N: nuevo\n"
-        "G: guardar - O: guardar como - L: cargar (explorador)",
-        x=10, y=28, tamano=12)
+        "click: poner - medio/X: sacar - der: orbitar - rueda: zoom\n"
+        "1-5 o <-/->: elegir - M: bloques/props - R: girar - D: agarrar\n"
+        "F/V: subir/bajar prop - Z/C: escala - Q/E: columna - S: spawn\n"
+        "T: terreno - N: nuevo - G: guardar - O: como - L: cargar - ESC",
+        x=10, y=52, tamano=12)
 
     organizar_layout()
     pilas.tareas.siempre(0.5, organizar_layout)
