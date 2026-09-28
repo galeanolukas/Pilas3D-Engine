@@ -67,7 +67,7 @@ def _opciones():
 def llamar_ollama(prompt, system=SYSTEM, modelo=MODELO):
     """Llama al modelo local y devuelve el texto de la respuesta."""
     asegurar_servidor()
-    asegurar_modelo(modelo)
+    modelo = asegurar_modelo(modelo)
     cuerpo = {
         'model': modelo,
         'stream': False,

@@ -152,15 +152,24 @@ def borrar_modelo(modelo):
 
 
 def asegurar_modelo(modelo=MODELO):
-    """Descarga el modelo si falta (primera vez, ~1 GB)."""
+    """Descarga el modelo si falta (primera vez, ~1 GB).
+
+    Devuelve el nombre del modelo listo para usar. Si falta el tag
+    exacto pero hay otro tamaño de la misma familia instalado, se
+    usa ese en vez de descargar uno nuevo.
+    """
+    modelo = modelo or MODELO
     try:
         tags = _get('/api/tags', timeout=5)
     except urllib.error.URLError:
-        return   # sin servidor todavía; asegurar_servidor() lo llama
+        return modelo   # sin servidor todavía; asegurar_servidor() lo llama
     modelos = [m.get('name', '') for m in tags.get('models', [])]
+    if modelo in modelos or modelo + ':latest' in modelos:
+        return modelo
     base = modelo.split(':')[0]
-    if any(m == modelo or m.split(':')[0] == base for m in modelos):
-        return
+    for m in modelos:
+        if m.split(':')[0] == base:
+            return m   # misma familia, otro tag: usar el instalado
     print("Descargando el modelo '%s' (solo la primera vez)..."
           % modelo)
     req = urllib.request.Request(
@@ -174,3 +183,4 @@ def asegurar_modelo(modelo=MODELO):
             if estado and estado != completado:
                 print('  ', estado)
                 completado = estado
+    return modelo
