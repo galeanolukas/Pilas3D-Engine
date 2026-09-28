@@ -205,13 +205,15 @@ class Actores(object):
         return Robot(self._pilas, x=x, y=y, z=z)
 
     def ActorIA(self, personaje='robot', x=0, y=0, z=0, habla=True,
-                nombre=None):
+                nombre=None, voz=None):
         """NPC que conversa: responde con Ollama y habla con Piper.
 
         ``personaje`` puede ser 'robot'/'humanoide'/'mono'/'arania'/
-        'espectro' o la ruta a un modelo .glb/.gltf/.obj."""
+        'espectro' o la ruta a un modelo .glb/.gltf/.obj.
+        ``voz`` es un nombre de Piper ('es_AR-daniela-high') o uno
+        amigable de ``voz.VOCES`` ('mujer', 'hombre')."""
         return ActorIA(self._pilas, personaje=personaje, x=x, y=y,
-                       z=z, habla=habla, nombre=nombre)
+                       z=z, habla=habla, nombre=nombre, voz=voz)
 
     def Humanoide(self, x=0, y=0, z=0):
         return Humanoide(self._pilas, x=x, y=y, z=z)
