@@ -174,7 +174,7 @@ class Globo(Actor):
 
         self._label.x = cx
         self._label.y = cy + 6
-        r, g, b = colores.normalizar(colores.negro)
+        r, g, b = colores.negro   # Label.color pide enteros 0-255
         self._label.color = (r, g, b, 255)
         self._label.draw()
 
