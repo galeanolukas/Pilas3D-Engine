@@ -16,6 +16,7 @@ pilas3d = "pilas3d.interactivo:main"
 pilas3d-editor = "pilas3d.editor:cli"
 pilas3d-bloques = "pilas3d.bloques:cli"
 pilas3d-ide = "pilas3d.ide:cli"
+pilas3d-mapas = "pilas3d.mapa_editor:cli"
 
 [tool.setuptools.packages.find]
 include = ["pilas3d*"]

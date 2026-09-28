@@ -240,6 +240,8 @@ class Pilas(object):
         self.depurador = Depurador(self)
         self.sonidos = Sonidos(self)
         self.musica = _Musica(self)
+        from pilas3d.mapas import Mapas
+        self.mapas = Mapas(self)
         self.interpolaciones = interpolaciones
         from pilas3d.red import Red
         self.red = Red(self)

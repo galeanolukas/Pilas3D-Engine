@@ -2021,3 +2021,31 @@ def test_puente_bloques(tmp_path):
         assert len(pilas.escena.actores) == 0
     finally:
         puente.detener()
+
+
+def test_mapas_guardar_cargar(tmp_path):
+    """Round-trip de *.mapa.json: bloques + spawn + nombre."""
+    pilas = crear_pilas()
+    mundo = pilas.actores.Mundo()
+    mundo.poner_bloque(0, 0, 0, 'cesped')
+    mundo.poner_bloque(0, 1, 0, 'ladrillo')
+    mundo.poner_bloque(1, 0, 0, 'tierra')
+
+    ruta = str(tmp_path / 'nivel.mapa.json')
+    pilas.mapas.guardar(ruta, mundo, nombre='nivel',
+                        spawn=(0.5, 2.0, 0.5))
+
+    cargado = pilas.mapas.cargar(ruta)
+    assert cargado.nombre == 'nivel'
+    assert cargado.spawn == (0.5, 2.0, 0.5)
+    assert cargado.bloque_en(0, 1, 0) == 'ladrillo'
+    assert len(cargado.bloques) == 3
+    assert cargado.props == []
+
+    # archivo inexistente de props se ignora sin romper
+    import json
+    datos = json.load(open(ruta))
+    datos['props'] = [{'ruta': 'no_existe.glb', 'x': 0,
+                       'y': 0, 'z': 0}]
+    json.dump(datos, open(ruta, 'w'))
+    assert pilas.mapas.cargar(ruta).props == []
