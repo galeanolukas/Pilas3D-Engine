@@ -61,9 +61,11 @@ def _buscar_binario():
     if en_path:
         return en_path
     exe = 'piper.exe' if os.name == 'nt' else 'piper'
+    # ojo: el tar descomprime a _vendor/piper/piper/piper — el primer
+    # candidato puede ser un DIRECTORIO llamado 'piper': is_file()
     for ruta in (_dir_piper() / exe,
                  _dir_piper() / 'piper' / exe):
-        if ruta.exists():
+        if ruta.is_file():
             return str(ruta)
     return None
 
