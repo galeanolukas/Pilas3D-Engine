@@ -246,10 +246,17 @@ def al_click(x, y, boton, _mod):
     if estado['modo'] != 'editar':
         return None
     from pyglet.window import mouse
-    if boton & mouse.LEFT:
+    # fuera del area 3D (paneles laterales/inferior) no se edita
+    ax, ay, aw, ah = pilas.ventana.area_3d or (0, 0, 10 ** 9, 10 ** 9)
+    if not (ax <= x < ax + aw and ay <= y < ay + ah):
+        return None
+    # boton es el valor del boton pulsado (no mascara): comparar ==.
+    # Con &, un driver que reporte el derecho como 5/7/9 lo tomaria
+    # como izquierdo y colocaria un bloque al orbitar.
+    if boton == mouse.LEFT:
         _poner_bloque()
         return True
-    if boton & mouse.MIDDLE:
+    if boton == mouse.MIDDLE:
         _sacar_bloque()
         return True
     return None                 # derecho: orbitar
