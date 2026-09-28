@@ -2113,6 +2113,30 @@ def test_voz_url_voz():
     assert js == onnx + '.json'
 
 
+def test_pedir_texto():
+    """pedir_texto: overlay que junta texto y ENTER lo entrega."""
+    pilas = crear_pilas()
+    handlers = {}
+
+    class VentanaFalsa:
+        def push_handlers(self, **kw):
+            handlers.update(kw)
+
+    pilas.ventana = VentanaFalsa()
+    visto = []
+    pilas.pedir_texto('pregunta:', al_aceptar=visto.append)
+    s = pilas.simbolos
+    for letra in 'hola':
+        assert handlers['on_text'](letra) is True
+    handlers['on_key_press'](s.BACKSPACE, 0)      # borra la 'a'
+    handlers['on_text']('i')
+    handlers['on_key_press'](s.ENTER, 0)          # confirma 'holi'
+    assert visto == ['holi']
+    # cerrado: los handlers ya no consumen nada
+    assert handlers['on_key_press'](s.ENTER, 0) is None
+    assert handlers['on_text']('x') is None
+
+
 def test_voz_resolver_voz():
     """Nombres amigables → voz del catálogo; desconocidos pasan igual."""
     from pilas3d.ia import voz

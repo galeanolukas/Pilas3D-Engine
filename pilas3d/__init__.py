@@ -347,6 +347,56 @@ class Pilas(object):
         for fn in self._callbacks_mueve:
             fn(x, y)
 
+    def pedir_texto(self, etiqueta='', al_aceptar=None,
+                    al_cancelar=None, x=15, y=95):
+        """Muestra un cuadro para tipear texto y avisa al confirmar.
+
+        ENTER llama ``al_aceptar(texto)``, ESC llama ``al_cancelar()``
+        (opcional) y BACKSPACE borra. Mientras está abierto captura
+        el teclado — la escena no recibe teclas::
+
+            >>> pilas.pedir_texto('pregunta:', al_aceptar=npc.preguntar)
+        """
+        estado = {'texto': '', 'activo': True}
+        rotulo = self.actores.Texto('', x=x, y=y, tamano=16)
+
+        def pintar():
+            rotulo.texto = '%s %s_' % (etiqueta, estado['texto'])
+
+        def cerrar():
+            estado['activo'] = False
+            rotulo.eliminar()
+
+        def al_pulsar(simbolo, _mod):
+            if not estado['activo']:
+                return None
+            s = self.simbolos
+            if simbolo == s.ESCAPE:
+                cerrar()
+                if al_cancelar:
+                    al_cancelar()
+            elif simbolo == s.BACKSPACE:
+                estado['texto'] = estado['texto'][:-1]
+                pintar()
+            elif simbolo == s.ENTER:
+                cerrar()
+                if al_aceptar:
+                    al_aceptar(estado['texto'])
+            return True
+
+        def al_texto(t):
+            if not estado['activo']:
+                return None
+            if t >= ' ' and t != '\r':
+                estado['texto'] += t
+                pintar()
+            return True
+
+        if self.ventana is not None:
+            self.ventana.push_handlers(on_key_press=al_pulsar,
+                                       on_text=al_texto)
+        pintar()
+
     def procesar_click(self, x, y):
         """Ejecuta los callbacks de click para el píxel (x, y).
 
