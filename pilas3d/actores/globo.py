@@ -16,7 +16,16 @@ Sirve para NPCs que hablan, nombres sobre personajes, pistas, etc.::
 Si el actor sale de pantalla o queda detrás de la cámara el globo
 se oculta solo. ``x``/``y`` en píxeles solo aplican cuando
 ``actor`` es None (posición fija).
+
+Los textos largos se reparten en varios globos (páginas) para no
+crecer demasiado: ``decir`` corta a ``lineas_por_pagina`` líneas de
+``ancho_caracteres`` caracteres y avanza solo::
+
+    globo.decir(respuesta_larga, duracion=4)   # 4s por globo
+    globo.decir(respuesta_larga)               # ritmo de lectura
 """
+
+import textwrap
 
 from pyglet.gl import GL_TRIANGLES
 
@@ -26,6 +35,11 @@ from pilas3d.actores.actor import Actor
 
 class Globo(Actor):
     """Bocadillo 2D (borde + relleno + pico + texto) overlay."""
+
+    #: Tope de caracteres por línea y de líneas por globo: lo que
+    #: sobra pasa al globo siguiente.
+    ancho_caracteres = 34
+    lineas_por_pagina = 4
 
     es_overlay = True
 
@@ -41,6 +55,10 @@ class Globo(Actor):
         self._texto = texto
         self._visible = bool(texto)
         self._restante = 0.0
+        self._paginas = []
+        self._indice = 0
+        self._dur_pagina = 0.0
+        self._auto = False
         self._label = None
         self._fondo = None
         self._borde = None
@@ -57,12 +75,39 @@ class Globo(Actor):
         self._texto = valor
         self._visible = bool(valor)
 
+    def _partir(self, texto):
+        """Corta el texto en páginas de ``lineas_por_pagina`` líneas
+        de hasta ``ancho_caracteres`` (por palabra)."""
+        lineas = []
+        for parrafo in str(texto).split('\n'):
+            lineas += textwrap.wrap(parrafo, self.ancho_caracteres) \
+                or ['']
+        return ['\n'.join(lineas[i:i + self.lineas_por_pagina])
+                for i in range(0, len(lineas), self.lineas_por_pagina)
+                ] or ['']
+
+    def _poner_pagina(self):
+        self._texto = self._paginas[self._indice]
+        self._visible = bool(self._texto)
+        if self._auto:
+            # ritmo de lectura: ~2.5s de base + 45ms por caracter
+            self._restante = min(15.0, 2.5 + 0.045 * len(self._texto))
+        else:
+            self._restante = self._dur_pagina
+
     def decir(self, texto, duracion=None):
-        """Muestra ``texto``; si hay duración se oculta solo."""
-        self.texto = texto
-        if duracion is not None:
-            self.duracion = duracion
-        self._restante = self.duracion
+        """Muestra ``texto`` repartido en globos si es largo.
+
+        ``duracion`` = segundos por globo; al terminar el último se
+        oculta. Con 0 (o None con ``duracion`` global en 0) las
+        páginas avanzan a ritmo de lectura y la última queda fija.
+        """
+        d = self.duracion if duracion is None else duracion
+        self._dur_pagina = d
+        self._auto = d <= 0
+        self._paginas = self._partir(texto)
+        self._indice = 0
+        self._poner_pagina()
 
     def _generar_geometria(self):
         return [], [], GL_TRIANGLES, None, None
@@ -78,8 +123,14 @@ class Globo(Actor):
         if self._restante > 0:
             self._restante -= self.pilas.dt
             if self._restante <= 0:
-                self._texto = ''
-                self._visible = False
+                if self._indice + 1 < len(self._paginas):
+                    self._indice += 1
+                    self._poner_pagina()
+                elif not self._auto:
+                    self._texto = ''
+                    self._visible = False
+                else:
+                    self._restante = 0.0   # última página queda fija
 
     def dibujar(self):
         if not self._visible or not self._texto:
@@ -88,7 +139,8 @@ class Globo(Actor):
             from pyglet.text import Label
             from pyglet.shapes import Rectangle, Triangle
             self._label = Label('', font_size=self.tamano,
-                                anchor_x='center', anchor_y='baseline')
+                                anchor_x='center', anchor_y='baseline',
+                                multiline=True, width=4096)
             self._fondo = Rectangle(0, 0, 1, 1, color=(255, 255, 255))
             self._borde = Rectangle(0, 0, 1, 1, color=(30, 30, 30))
             self._pico = Triangle(0, 0, 0, 0, 0, 0, color=(255, 255, 255))

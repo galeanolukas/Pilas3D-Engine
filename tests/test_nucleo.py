@@ -2148,6 +2148,41 @@ def test_globo_decir_con_duracion():
     globo.eliminar()
 
 
+def test_globo_pagina_textos_largos():
+    """Textos largos se reparten en páginas que avanzan solas."""
+    pilas = crear_pilas()
+    globo = pilas.actores.Globo(None, x=100, y=100)
+    largo = ' '.join('palabra%d' % i for i in range(60))   # ~7 líneas
+    globo.decir(largo, duracion=0.5)
+    assert len(globo._paginas) >= 2
+    primera = globo.texto
+    pilas.dt = 0.6
+    globo.actualizar()               # avanza a la página 2
+    assert globo.texto != primera
+    assert globo._visible
+    # consume todas las páginas -> se oculta (duracion > 0)
+    for _ in range(len(globo._paginas) + 1):
+        globo.actualizar()
+    assert not globo._visible
+    globo.eliminar()
+
+
+def test_globo_paginas_auto_queda_ultima():
+    """Sin duración las páginas avanzan a ritmo de lectura y la
+    última queda visible."""
+    pilas = crear_pilas()
+    globo = pilas.actores.Globo(None, x=100, y=100)
+    globo.decir(' '.join('w%d' % i for i in range(80)))
+    n = len(globo._paginas)
+    assert n >= 2
+    pilas.dt = 10.0                  # cada update agota una página
+    for _ in range(n + 2):
+        globo.actualizar()
+    assert globo._indice == n - 1
+    assert globo._visible            # última página queda fija
+    globo.eliminar()
+
+
 # -- voz (Piper) y ActorIA --------------------------------------------------
 
 def test_voz_url_voz():

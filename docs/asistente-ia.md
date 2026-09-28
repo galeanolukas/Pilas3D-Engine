@@ -208,6 +208,12 @@ Como `personaje` acepta 'robot'/'humanoide'/'mono'/'arania'/
 
 Se oculta solo si el actor queda detrás de la cámara.
 
+Los textos largos se reparten en varios globos: `decir` corta a
+`lineas_por_pagina` (4) líneas de `ancho_caracteres` (34) y las
+páginas avanzan solas — con `duracion` > 0 es N segundos por globo
+y se oculta al final; con 0 avanzan a ritmo de lectura y la última
+queda fija. Así una respuesta larga de la IA no tapa la escena.
+
 ## 8. Variables de entorno
 
 | Variable | Default | Qué hace |

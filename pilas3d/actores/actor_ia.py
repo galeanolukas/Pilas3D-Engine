@@ -76,9 +76,10 @@ class ActorIA(Actor):
     # -- charla -------------------------------------------------------------
 
     def decir(self, texto):
-        """Muestra la respuesta como subtítulo y dispara el callback."""
+        """Muestra la respuesta en el globo (paginado si es larga)
+        y dispara el callback."""
         self.ultima_respuesta = texto
-        self.subtitulo.texto = "%s: %s" % (self.nombre, texto)
+        self.subtitulo.decir("%s: %s" % (self.nombre, texto))
         if self.al_responder:
             self.al_responder(texto)
 
