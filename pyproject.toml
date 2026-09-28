@@ -14,9 +14,13 @@ dependencies = ["pyglet>=2.1,<3"]
 [project.scripts]
 pilas3d = "pilas3d.interactivo:main"
 pilas3d-editor = "pilas3d.editor:cli"
+pilas3d-bloques = "pilas3d.bloques:cli"
 
 [tool.setuptools.packages.find]
 include = ["pilas3d*"]
+
+[tool.setuptools.package-data]
+pilas3d = ["bloques_web/**/*", "bloques_web/**/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

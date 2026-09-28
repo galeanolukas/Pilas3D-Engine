@@ -1973,3 +1973,51 @@ def test_gltf_anim_json_junto_al_modelo(tmp_path):
     assert 'propia' in otro.animaciones()
     otro.animar('propia')
     assert otro.animacion == 'propia'
+
+
+def test_puente_bloques(tmp_path):
+    """El puente HTTP encola código y lo ejecuta en la escena."""
+    import json
+    import urllib.request
+    from pilas3d.puente import PuenteBloques
+
+    web = tmp_path / 'web'
+    web.mkdir()
+    (web / 'index.html').write_text('pagina de prueba')
+
+    pilas = crear_pilas()
+    puente = PuenteBloques(pilas, str(web))
+    puente.enganchar()
+    url = puente.iniciar(0)          # puerto libre al azar
+    try:
+        assert urllib.request.urlopen(url).read() == b'pagina de prueba'
+
+        req = urllib.request.Request(
+            url + 'codigo',
+            data=json.dumps({'codigo':
+                             "cubo = pilas.actores.Cubo()\n"
+                             "print('hola')"}).encode(),
+            headers={'Content-Type': 'application/json'})
+        assert json.loads(urllib.request.urlopen(req).read()) == \
+            {'estado': 'encolado'}
+
+        puente.procesar()            # lo que haría la tarea cada frame
+        r = json.loads(
+            urllib.request.urlopen(url + 'resultado').read())
+        assert r['estado'] == 'ok' and 'hola' in r['salida']
+        assert len(pilas.escena.actores) == 1
+
+        # código con error: no rompe el motor, reporta traceback
+        req = urllib.request.Request(
+            url + 'codigo',
+            data=json.dumps({'codigo': 'boom()'}).encode(),
+            headers={'Content-Type': 'application/json'})
+        urllib.request.urlopen(req)
+        puente.procesar()
+        r = json.loads(
+            urllib.request.urlopen(url + 'resultado').read())
+        assert r['estado'] == 'error' and 'boom' in r['salida']
+        # al re-ejecutar la escena anterior quedó limpia
+        assert len(pilas.escena.actores) == 0
+    finally:
+        puente.detener()

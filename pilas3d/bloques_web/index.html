@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>pilas3d - bloques</title>
+<style>
+  body { margin: 0; font-family: sans-serif; background: #1e1e1e;
+         color: #ddd; display: flex; flex-direction: column;
+         height: 100vh; }
+  header { background: #2d2d2d; padding: 8px 14px; display: flex;
+           align-items: center; gap: 14px; }
+  header b { color: #ffd23f; }
+  #ejecutar { background: #3ba55d; color: #fff; border: 0;
+              padding: 8px 20px; font-size: 15px; border-radius: 5px;
+              cursor: pointer; font-weight: bold; }
+  #ejecutar:hover { background: #45c268; }
+  #estado { font-size: 13px; color: #aaa; }
+  #estado.error { color: #ff7b72; }
+  #estado.ok { color: #7ee787; }
+  #principal { flex: 1; display: flex; min-height: 0; }
+  #blockly { flex: 1.6; }
+  #lateral { flex: 1; display: flex; flex-direction: column;
+             background: #252526; border-left: 1px solid #333;
+             min-width: 0; }
+  #lateral h3 { margin: 10px 12px 4px; font-size: 13px;
+                color: #999; text-transform: uppercase; }
+  #codigo, #salida { flex: 1; margin: 4px 12px; padding: 10px;
+    background: #1e1e1e; border: 1px solid #333; border-radius: 4px;
+    font-family: monospace; font-size: 13px; overflow: auto;
+    white-space: pre; color: #9cdcfe; }
+  #salida { flex: 0 0 auto; max-height: 30%; color: #ce9178; }
+</style>
+</head>
+<body>
+<header>
+  <b>pilas3d bloques</b>
+  <button id="ejecutar">▶ Ejecutar</button>
+  <span id="estado">editor listo</span>
+</header>
+<div id="principal">
+  <div id="blockly"></div>
+  <div id="lateral">
+    <h3>Código Python generado</h3>
+    <pre id="codigo"></pre>
+    <h3>Resultado</h3>
+    <pre id="salida">(vacío)</pre>
+  </div>
+</div>
+<script src="vendor/blockly_compressed.js"></script>
+<script src="vendor/blocks_compressed.js"></script>
+<script src="vendor/python_compressed.js"></script>
+<script src="vendor/es.js"></script>
+<script src="bloques.js"></script>
+</body>
+</html>

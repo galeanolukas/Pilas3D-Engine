@@ -60,7 +60,8 @@ o a mano:
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/pip install -e .   # opcional: habilita los comandos
-                             # `pilas3d` (consola) y `pilas3d-editor`
+                             # `pilas3d` (consola), `pilas3d-editor`
+                             # y `pilas3d-bloques`
 ```
 
 Para **actualizar** a la última versión:
@@ -105,6 +106,15 @@ Sin Ollama el motor funciona igual: `pilas.ayuda()` sigue mostrando la
 guía. Variables de entorno: `PILAS3D_IA_MODELO` (modelo alternativo,
 ej. `qwen2.5-coder:7b` con GPU) y `PILAS3D_IA_GPU=1` (usar GPU en vez
 de CPU). Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
+
+### Programación por bloques
+
+`pilas3d-bloques` abre la ventana 3D y una página web con **bloques
+tipo Scratch** (Blockly): los chicos arrastran "crear cubo", "mover",
+"si tecla", "por siempre"... y el panel lateral muestra el **código
+Python real** que generan — se ejecuta en la escena al apretar
+Ejecutar. Es el puente de bloques a código (idea de Pilas Bloques).
+Guía: [docs/bloques.md](docs/bloques.md).
 
 ### Editor de personajes
 
