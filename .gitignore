@@ -6,8 +6,11 @@ _deb_extract/
 *.deb
 .pytest_cache/
 
-# Modelos 3D y archivos pesados del usuario (no van al repo)
-modelos/
+# Modelos 3D y archivos pesados del usuario: solo se sube la
+# estructura de directorios (un .gitkeep por carpeta), no los assets
+modelos/**/*
+!modelos/**/
+!modelos/**/.gitkeep
 
 # Binario de Ollama descargado por los instaladores (MIT, se baja
 # aparte; nunca se commitea por peso y licencia de redistribución)
