@@ -99,6 +99,12 @@ def refrescar_cursor():
         ag = estado['agarrado']
         if ag is not None:
             ag.posicion = (i + 0.5, float(j), k + 0.5)
+        elif estado['paleta'] == 'props':
+            # el marcador salta al prop bajo el cursor: es el objetivo
+            # de D (agarrar), R (girar), F/V/Z/C y X (borrar)
+            prop = _prop_cercano(estado['celda'], 2.5)
+            if prop is not None:
+                marcador.posicion = (prop.x, prop.y + 0.4, prop.z)
     else:
         marcador.transparencia = 100
 

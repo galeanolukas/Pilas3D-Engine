@@ -32,6 +32,8 @@ se guardan en `mapas/<nombre>.mapa.json` y los juegos los cargan con
 
 La esfera roja marca la celda donde caería el bloque (adyacente al
 bloque golpeado por el rayo del mouse, o el piso si no hay bloques).
+En la paleta de **props** el marcador salta al prop bajo el cursor:
+ese es el objetivo de `D`, `R`, `F`/`V`, `Z`/`C` y `X`.
 La grilla es 24×24 con altura hasta 10.
 
 ## Tipos de bloque
