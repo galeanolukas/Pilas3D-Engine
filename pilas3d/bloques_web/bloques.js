@@ -221,6 +221,18 @@ Blockly.defineBlocksWithJsonArray([
     colour: 160,
   },
   {
+    type: 'p3d_ir_al_azar',
+    message0: 'llevar %1 a un lugar al azar entre %2 y %3',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
+      { type: 'field_number', name: 'MIN', value: -5 },
+      { type: 'field_number', name: 'MAX', value: 5 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 160,
+    tooltip: 'Teletransporta al actor a un punto al azar del piso',
+  },
+  {
     type: 'p3d_girar',
     message0: 'girar %1 en %2 %3 grados',
     args0: [
@@ -480,6 +492,15 @@ registrar('p3d_ir_a', function (block) {
          n + '.z = ' + block.getFieldValue('Z') + '\n';
 });
 
+registrar('p3d_ir_al_azar', function (block) {
+  GEN.definitions_['import random'] = 'import random';
+  var n = campo_nombre(block);
+  var mn = block.getFieldValue('MIN');
+  var mx = block.getFieldValue('MAX');
+  return n + '.x = random.uniform(' + mn + ', ' + mx + ')\n' +
+         n + '.z = random.uniform(' + mn + ', ' + mx + ')\n';
+});
+
 registrar('p3d_girar', function (block) {
   return campo_nombre(block) + '.' + block.getFieldValue('EJE') +
          ' += ' + block.getFieldValue('N') + '\n';
@@ -612,6 +633,7 @@ var TOOLBOX = {
       contents: [
         { kind: 'block', type: 'p3d_mover' },
         { kind: 'block', type: 'p3d_ir_a' },
+        { kind: 'block', type: 'p3d_ir_al_azar' },
         { kind: 'block', type: 'p3d_girar' },
       ] },
     { kind: 'category', name: 'Apariencia', colour: '200',
@@ -656,6 +678,8 @@ var TOOLBOX = {
       contents: [
         { kind: 'block', type: 'math_number' },
         { kind: 'block', type: 'math_arithmetic' },
+        { kind: 'block', type: 'math_random_int' },
+        { kind: 'block', type: 'math_random_float' },
       ] },
   ],
 };

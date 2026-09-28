@@ -148,4 +148,112 @@ var EJEMPLOS = [
       '</block></statement></block>' +
       '</xml>',
   },
+
+  // Un mini-juego completo: el mono se teletransporta cada 2
+  // segundos y hay que clickearlo antes de que escape.
+  {
+    nombre: 'Cazá al mono',
+    xml:
+      '<xml>' +
+      '<block type="p3d_al_iniciar" x="30" y="30">' +
+      '<statement name="HACER">' +
+      '<block type="p3d_crear_escenario">' +
+      '<field name="TIPO">Piso</field><field name="NOMBRE">piso</field>' +
+      '<next><block type="p3d_crear_actor">' +
+      '<field name="TIPO">Mono</field><field name="NOMBRE">mono</field>' +
+      '<next><block type="p3d_texto">' +
+      '<field name="TEXTO">clickeá al mono antes de que escape</field>' +
+      '<field name="X">10</field><field name="Y">30</field>' +
+      '<next><block type="p3d_camara_orbital">' +
+      '</block></next></block></next></block></next></block>' +
+      '</statement></block>' +
+
+      '<block type="p3d_cada" x="30" y="240">' +
+      '<field name="SEG">2</field>' +
+      '<statement name="HACER"><block type="p3d_ir_al_azar">' +
+      '<field name="NOMBRE">mono</field>' +
+      '<field name="MIN">-5</field><field name="MAX">5</field>' +
+      '</block></statement></block>' +
+
+      '<block type="p3d_al_click" x="30" y="340">' +
+      '<field name="DONDE">mono</field>' +
+      '<statement name="HACER"><block type="p3d_globo">' +
+      '<field name="NOMBRE">mono</field>' +
+      '<field name="TEXTO">¡me atrapaste!</field>' +
+      '<field name="SEG">2</field>' +
+      '<next><block type="p3d_sonido">' +
+      '<field name="RUTA">tick.wav</field>' +
+      '</block></next></block></statement></block>' +
+      '</xml>',
+  },
+
+  // Otro mini-juego: mover la pelota con las flechas hasta la meta;
+  // al tocarla vuelve al centro, suena y avisa con un globo.
+  {
+    nombre: 'Llegada a la meta',
+    xml:
+      '<xml>' +
+      '<block type="p3d_al_iniciar" x="30" y="30">' +
+      '<statement name="HACER">' +
+      '<block type="p3d_crear_escenario">' +
+      '<field name="TIPO">Piso</field><field name="NOMBRE">piso</field>' +
+      '<next><block type="p3d_crear_actor">' +
+      '<field name="TIPO">Esfera</field><field name="NOMBRE">pelota</field>' +
+      '<field name="X">-6</field>' +
+      '<next><block type="p3d_crear_actor">' +
+      '<field name="TIPO">Cubo</field><field name="NOMBRE">meta</field>' +
+      '<field name="X">6</field>' +
+      '<next><block type="p3d_color">' +
+      '<field name="NOMBRE">meta</field><field name="COLOR">amarillo</field>' +
+      '<next><block type="p3d_camara_seguir">' +
+      '<field name="NOMBRE">pelota</field>' +
+      '<field name="MODO">tercera</field>' +
+      '</block></next></block></next></block></next></block></next>' +
+      '</block>' +
+      '</statement></block>' +
+
+      '<block type="p3d_por_siempre" x="30" y="300">' +
+      '<statement name="HACER">' +
+      '<block type="controls_if">' +
+      '<value name="IF0"><block type="p3d_tecla">' +
+      '<field name="TECLA">izquierda</field></block></value>' +
+      '<statement name="DO0"><block type="p3d_mover">' +
+      '<field name="NOMBRE">pelota</field><field name="EJE">x</field>' +
+      '<field name="N">-0.1</field></block></statement>' +
+      '<next><block type="controls_if">' +
+      '<value name="IF0"><block type="p3d_tecla">' +
+      '<field name="TECLA">derecha</field></block></value>' +
+      '<statement name="DO0"><block type="p3d_mover">' +
+      '<field name="NOMBRE">pelota</field><field name="EJE">x</field>' +
+      '<field name="N">0.1</field></block></statement>' +
+      '<next><block type="controls_if">' +
+      '<value name="IF0"><block type="p3d_tecla">' +
+      '<field name="TECLA">arriba</field></block></value>' +
+      '<statement name="DO0"><block type="p3d_mover">' +
+      '<field name="NOMBRE">pelota</field><field name="EJE">z</field>' +
+      '<field name="N">-0.1</field></block></statement>' +
+      '<next><block type="controls_if">' +
+      '<value name="IF0"><block type="p3d_tecla">' +
+      '<field name="TECLA">abajo</field></block></value>' +
+      '<statement name="DO0"><block type="p3d_mover">' +
+      '<field name="NOMBRE">pelota</field><field name="EJE">z</field>' +
+      '<field name="N">0.1</field></block></statement>' +
+      '<next><block type="controls_if">' +
+      '<value name="IF0"><block type="p3d_colisiona">' +
+      '<field name="A">pelota</field><field name="B">meta</field>' +
+      '</block></value>' +
+      '<statement name="DO0"><block type="p3d_ir_a">' +
+      '<field name="NOMBRE">pelota</field>' +
+      '<field name="X">-6</field><field name="Y">0</field>' +
+      '<field name="Z">0</field>' +
+      '<next><block type="p3d_sonido">' +
+      '<field name="RUTA">tick.wav</field>' +
+      '<next><block type="p3d_globo">' +
+      '<field name="NOMBRE">pelota</field>' +
+      '<field name="TEXTO">¡gol!</field><field name="SEG">2</field>' +
+      '</block></next></block></next></block></statement>' +
+      '</block></next></block></next></block></next></block></next>' +
+      '</block></statement></block>' +
+      '</xml>',
+  },
 ];
