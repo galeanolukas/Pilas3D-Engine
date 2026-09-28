@@ -2116,6 +2116,18 @@ def test_ejemplos_bloques_validos():
                     (e['nombre'], tipo, f.get('name'))
 
 
+def test_actor_decir_crea_y_reusa_globo():
+    """actor.decir() crea un Globo lazy atado al actor y lo reutiliza."""
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    globo = cubo.decir('hola!', duracion=2)
+    assert type(globo).__name__ == 'Globo'
+    assert globo.actor is cubo
+    assert globo.texto == 'hola!'
+    assert cubo.decir('de nuevo', duracion=1) is globo
+    assert globo.texto == 'de nuevo'
+
+
 def test_ejemplos_selector_en_pagina():
     """index.html expone el selector y carga ejemplos.js; bloques.js
     cablea el onchange que reemplaza el workspace."""

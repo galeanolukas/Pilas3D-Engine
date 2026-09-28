@@ -370,6 +370,22 @@ class Actor(object):
         escena = self.pilas.escena_actual()
         return escena is not None and self in escena.actores
 
+    def decir(self, texto, duracion=3):
+        """Muestra un globo de diálogo sobre el actor.
+
+        Crea (y reutiliza) un ``Globo`` pegado al actor — textos
+        largos se reparten en varios globos que avanzan solos.
+
+        >>> cubo.decir('hola!', duracion=3)
+        """
+        from pilas3d.actores.globo import Globo
+        globo = getattr(self, '_globo', None)
+        if globo is None or not globo.esta_en_escena():
+            globo = Globo(self.pilas, actor=self, texto='')
+            self._globo = globo
+        globo.decir(texto, duracion=duracion)
+        return globo
+
     def eliminar(self):
         self.terminar()
         self.eliminar_habilidades()

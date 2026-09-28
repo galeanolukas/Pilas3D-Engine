@@ -41,13 +41,23 @@ como XML de Blockly — para agregar uno, otra entrada en `EJEMPLOS`.
 | **Eventos** | `al iniciar` (corre una vez), `por siempre` (corre cada frame — es el "por siempre" de Scratch) |
 | **Actores** | `crear <tipo> llamado <nombre>` (cubo, esfera, robot, humanoide, mono, araña, espectro), `crear modelo <ruta.glb>`, `eliminar` |
 | **Movimiento** | `mover <a> en <eje> <n>` (`a.x += 0.05`), `llevar a x y z`, `girar en <eje> <grados>` |
-| **Apariencia** | `poner de color`, `mostrar texto`, `escribir en consola` (print → aparece en "Resultado"), `animar <modelo> con <animación>` |
+| **Apariencia** | `poner de color`, `mostrar texto`, `escribir en consola` (print → aparece en "Resultado"), `hacer que <a> diga <texto>` (globo de diálogo), `animar <modelo>`, `reproducir sonido` |
+| **Tiempo** | `llevar suave a x y z en N s` (interpolación), `esperar N s y hacer`, `cada N s hacer` |
 | **Sensores** | `tecla <dir> pulsada`, `<a> toca a <b>` (colisión en el piso), comparaciones lógicas |
 | **Control** | `si`, `repetir N`, números |
 | **Matemática** | número, operaciones |
 
 El **nombre** que se le da al actor en `crear` es el nombre de la
-variable Python — usado en `mover`, `girar`, `eliminar`, `colisiona`.
+variable Python. Los bloques que usan actores (`mover`, `girar`,
+`decir`…) lo eligen de un **menú** que se llena solo con los actores
+ya creados — no hay que tipear nombres.
+
+### Guardar y abrir proyectos
+
+El editor **guarda solo**: cada cambio queda en `localStorage` y al
+reabrir la página el workspace se restaura. Los botones **Guardar** y
+**Abrir** exportan/importan el programa como `*.bloques.xml` — para
+pasar ejercicios entre alumnos o dejarlos en un pendrive.
 
 ## 3. Ejemplo típico
 
@@ -108,7 +118,6 @@ el generador. Si el bloque crea un actor con nombre, agregarlo a
 - Solo localhost, sin autenticación — no exponer el puerto.
 - Los errores del código generado aparecen en "Resultado", no sobre
   el bloque que falló.
-- No hay bloques de variables/listas todavía (los nombres de actores
-  son campos de texto).
+- No hay bloques de variables/listas todavía.
 - Es v1: el set de bloques está pensado para iterarse con la práctica
   en aula (Pilas Bloques hizo eso durante años).

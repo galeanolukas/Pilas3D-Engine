@@ -55,6 +55,17 @@ var COLORES = [
   ['blanco', 'blanco'], ['gris', 'gris'], ['negro', 'negro'],
 ];
 
+// menú dinámico con los actores ya creados en el workspace — así los
+// bloques no piden tipear el nombre (un error típico de los chicos).
+function actores_opciones() {
+  var campo = this;
+  var bloque = campo && campo.getSourceBlock ?
+      campo.getSourceBlock() : null;
+  var nombres = bloque ? nombres_creados(bloque) : [];
+  if (!nombres.length) return [['(creá un actor primero)', 'actor']];
+  return nombres.map(function (n) { return [n, n]; });
+}
+
 // ------------------------------------------------------------------
 // definición de bloques
 // ------------------------------------------------------------------
@@ -111,7 +122,8 @@ Blockly.defineBlocksWithJsonArray([
   {
     type: 'p3d_eliminar',
     message0: 'eliminar %1',
-    args0: [{ type: 'field_input', name: 'NOMBRE', text: 'cubo' }],
+    args0: [{ type: 'field_dropdown', name: 'NOMBRE',
+              options: actores_opciones }],
     previousStatement: null, nextStatement: null,
     colour: 290,
   },
@@ -121,7 +133,7 @@ Blockly.defineBlocksWithJsonArray([
     type: 'p3d_mover',
     message0: 'mover %1 en %2 %3',
     args0: [
-      { type: 'field_input', name: 'NOMBRE', text: 'cubo' },
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
       { type: 'field_dropdown', name: 'EJE', options: [
         ['x', 'x'], ['y', 'y'], ['z', 'z']] },
       { type: 'field_number', name: 'N', value: 0.05 },
@@ -133,7 +145,7 @@ Blockly.defineBlocksWithJsonArray([
     type: 'p3d_ir_a',
     message0: 'llevar %1 a x %2 y %3 z %4',
     args0: [
-      { type: 'field_input', name: 'NOMBRE', text: 'cubo' },
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
       { type: 'field_number', name: 'X', value: 0 },
       { type: 'field_number', name: 'Y', value: 0 },
       { type: 'field_number', name: 'Z', value: 0 },
@@ -145,7 +157,7 @@ Blockly.defineBlocksWithJsonArray([
     type: 'p3d_girar',
     message0: 'girar %1 en %2 %3 grados',
     args0: [
-      { type: 'field_input', name: 'NOMBRE', text: 'cubo' },
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
       { type: 'field_dropdown', name: 'EJE', options: [
         ['eje x', 'rotacion_x'], ['eje y', 'rotacion_y'],
         ['eje z', 'rotacion_z']] },
@@ -160,7 +172,7 @@ Blockly.defineBlocksWithJsonArray([
     type: 'p3d_color',
     message0: 'poner %1 de color %2',
     args0: [
-      { type: 'field_input', name: 'NOMBRE', text: 'cubo' },
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
       { type: 'field_dropdown', name: 'COLOR', options: COLORES },
     ],
     previousStatement: null, nextStatement: null,
@@ -188,11 +200,66 @@ Blockly.defineBlocksWithJsonArray([
     type: 'p3d_animar',
     message0: 'animar %1 con %2',
     args0: [
-      { type: 'field_input', name: 'NOMBRE', text: 'modelo' },
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
       { type: 'field_input', name: 'ANIM', text: 'Walk' },
     ],
     previousStatement: null, nextStatement: null,
     colour: 200,
+  },
+  {
+    type: 'p3d_globo',
+    message0: 'hacer que %1 diga %2 durante %3 s',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
+      { type: 'field_input', name: 'TEXTO', text: 'hola!' },
+      { type: 'field_number', name: 'SEG', value: 3, min: 0 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 200,
+  },
+  {
+    type: 'p3d_sonido',
+    message0: 'reproducir sonido %1',
+    args0: [
+      { type: 'field_input', name: 'RUTA', text: 'tick.wav' },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 200,
+  },
+
+  // -- tiempo -------------------------------------------------------
+  {
+    type: 'p3d_interpolar',
+    message0: 'llevar %1 suave a x %2 y %3 z %4 en %5 s',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
+      { type: 'field_number', name: 'X', value: 0 },
+      { type: 'field_number', name: 'Y', value: 0 },
+      { type: 'field_number', name: 'Z', value: 0 },
+      { type: 'field_number', name: 'SEG', value: 2, min: 0 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 20,
+  },
+  {
+    type: 'p3d_esperar',
+    message0: 'esperar %1 s y hacer %2',
+    args0: [
+      { type: 'field_number', name: 'SEG', value: 2, min: 0 },
+      { type: 'input_statement', name: 'HACER' },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 20,
+  },
+  {
+    type: 'p3d_cada',
+    message0: 'cada %1 s hacer %2',
+    args0: [
+      { type: 'field_number', name: 'SEG', value: 2, min: 0 },
+      { type: 'input_statement', name: 'HACER' },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 20,
   },
 
   // -- sensores -----------------------------------------------------
@@ -210,8 +277,8 @@ Blockly.defineBlocksWithJsonArray([
     type: 'p3d_colisiona',
     message0: '%1 toca a %2',
     args0: [
-      { type: 'field_input', name: 'A', text: 'cubo' },
-      { type: 'field_input', name: 'B', text: 'esfera' },
+      { type: 'field_dropdown', name: 'A', options: actores_opciones },
+      { type: 'field_dropdown', name: 'B', options: actores_opciones },
     ],
     output: 'Boolean', colour: 210,
   },
@@ -294,6 +361,44 @@ registrar('p3d_animar', function (block) {
          ', ciclica=True)\n';
 });
 
+registrar('p3d_globo', function (block) {
+  return campo_nombre(block) + '.decir(' +
+         GEN.quote_(block.getFieldValue('TEXTO')) +
+         ', duracion=' + block.getFieldValue('SEG') + ')\n';
+});
+
+registrar('p3d_sonido', function (block) {
+  return 'pilas.sonidos.cargar(' +
+         GEN.quote_(block.getFieldValue('RUTA')) + ').reproducir()\n';
+});
+
+registrar('p3d_interpolar', function (block) {
+  var n = campo_nombre(block);
+  var d = block.getFieldValue('SEG');
+  return 'pilas.interpolar(' + n + ", 'x', " +
+         block.getFieldValue('X') + ', duracion=' + d + ')\n' +
+         'pilas.interpolar(' + n + ", 'y', " +
+         block.getFieldValue('Y') + ', duracion=' + d + ')\n' +
+         'pilas.interpolar(' + n + ", 'z', " +
+         block.getFieldValue('Z') + ', duracion=' + d + ')\n';
+});
+
+registrar('p3d_esperar', function (block) {
+  var fn = GEN.nameDB_.getName('esperar',
+                               Blockly.Names.NameType.PROCEDURE);
+  return 'def ' + fn + '():\n' + globales(block) + cuerpo(block) +
+         'pilas.tareas.una_vez(' + block.getFieldValue('SEG') +
+         ', ' + fn + ')\n';
+});
+
+registrar('p3d_cada', function (block) {
+  var fn = GEN.nameDB_.getName('repetir',
+                               Blockly.Names.NameType.PROCEDURE);
+  return 'def ' + fn + '():\n' + globales(block) + cuerpo(block) +
+         'pilas.tareas.siempre(' + block.getFieldValue('SEG') +
+         ', ' + fn + ')\n';
+});
+
 registrar('p3d_tecla', function (block) {
   var tecla = block.getFieldValue('TECLA');
   var expr = tecla === 'ESPACIO' ?
@@ -338,7 +443,15 @@ var TOOLBOX = {
         { kind: 'block', type: 'p3d_color' },
         { kind: 'block', type: 'p3d_texto' },
         { kind: 'block', type: 'p3d_decir' },
+        { kind: 'block', type: 'p3d_globo' },
         { kind: 'block', type: 'p3d_animar' },
+        { kind: 'block', type: 'p3d_sonido' },
+      ] },
+    { kind: 'category', name: 'Tiempo', colour: '20',
+      contents: [
+        { kind: 'block', type: 'p3d_interpolar' },
+        { kind: 'block', type: 'p3d_esperar' },
+        { kind: 'block', type: 'p3d_cada' },
       ] },
     { kind: 'category', name: 'Sensores', colour: '210',
       contents: [
@@ -370,7 +483,22 @@ var ws = Blockly.inject('blockly', {
   zoom: { controls: true, wheel: true, startScale: 0.9 },
 });
 
-// programa inicial de ejemplo
+// -- guardar / abrir proyectos -----------------------------------------
+// autosave en localStorage a cada cambio + botones para exportar el
+// workspace a un archivo .bloques.xml y volver a abrirlo.
+
+var CLAVE_GUARDADO = 'pilas3d_bloques_workspace';
+
+function xml_del_workspace() {
+  return Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(ws));
+}
+
+function cargar_xml(xml) {
+  ws.clear();
+  Blockly.Xml.domToWorkspace(Blockly.Xml.textToDom(xml), ws);
+}
+
+// programa inicial de ejemplo (solo si no hay nada guardado)
 var INICIAL =
   '<xml><block type="p3d_al_iniciar" x="30" y="30">' +
   '<statement name="HACER">' +
@@ -383,7 +511,42 @@ var INICIAL =
   '<field name="NOMBRE">cubo</field>' +
   '<field name="EJE">rotacion_y</field><field name="N">3</field>' +
   '</block></statement></block></xml>';
-Blockly.Xml.domToWorkspace(Blockly.Xml.textToDom(INICIAL), ws);
+
+var guardado = null;
+try { guardado = localStorage.getItem(CLAVE_GUARDADO); } catch (e) {}
+try {
+  cargar_xml(guardado || INICIAL);
+} catch (e) {
+  cargar_xml(INICIAL);              // XML guardado corrupto -> default
+}
+
+document.getElementById('guardar').onclick = function () {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(
+      new Blob([xml_del_workspace()], { type: 'text/xml' }));
+  a.download = 'mi_programa.bloques.xml';
+  a.click();
+};
+
+var inputAbrir = document.getElementById('abrir_archivo');
+document.getElementById('abrir').onclick = function () {
+  inputAbrir.click();
+};
+inputAbrir.onchange = function () {
+  var archivo = inputAbrir.files[0];
+  if (!archivo) return;
+  var lector = new FileReader();
+  lector.onload = function () {
+    try {
+      cargar_xml(lector.result);
+    } catch (e) {
+      spanEstado.className = 'error';
+      spanEstado.textContent = 'ese archivo no es un programa de bloques';
+    }
+  };
+  lector.readAsText(archivo);
+  inputAbrir.value = '';
+};
 
 // -- cargador de ejemplos ---------------------------------------------
 // cada ejemplo es un workspace XML (ver ejemplos.js): se limpia el
@@ -400,9 +563,7 @@ if (typeof EJEMPLOS !== 'undefined') {
 }
 selEjemplos.onchange = function () {
   if (selEjemplos.value === '') return;
-  var e = EJEMPLOS[parseInt(selEjemplos.value, 10)];
-  ws.clear();
-  Blockly.Xml.domToWorkspace(Blockly.Xml.textToDom(e.xml), ws);
+  cargar_xml(EJEMPLOS[parseInt(selEjemplos.value, 10)].xml);
   selEjemplos.value = '';
 };
 
@@ -420,7 +581,12 @@ function regenerar() {
   }
 }
 ws.addChangeListener(function (e) {
-  if (!e.isUiEvent) regenerar();
+  if (!e.isUiEvent) {
+    regenerar();
+    try {
+      localStorage.setItem(CLAVE_GUARDADO, xml_del_workspace());
+    } catch (err) {}
+  }
 });
 regenerar();
 
