@@ -60,7 +60,8 @@ o a mano:
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/pip install -e .   # opcional: habilita los comandos
-                             # `pilas3d` (consola), `pilas3d-editor`
+                             # `pilas3d` (consola), `pilas3d-ide`
+                             # (consola en la ventana), `pilas3d-editor`
                              # y `pilas3d-bloques`
 ```
 
@@ -106,6 +107,14 @@ Sin Ollama el motor funciona igual: `pilas.ayuda()` sigue mostrando la
 guía. Variables de entorno: `PILAS3D_IA_MODELO` (modelo alternativo,
 ej. `qwen2.5-coder:7b` con GPU) y `PILAS3D_IA_GPU=1` (usar GPU en vez
 de CPU). Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
+
+### IDE con consola integrada
+
+`pilas3d-ide` abre una ventana en dos columnas: **vista 3D a la
+izquierda, consola Python a la derecha** — sin terminal flotante.
+Multi-línea (`def`/`for` detectados solos), historial con ↑/↓ y
+`Ctrl+S` guarda la sesión en `sesion_pilas3d.py`. Guía:
+[docs/ide.md](docs/ide.md).
 
 ### Programación por bloques
 
