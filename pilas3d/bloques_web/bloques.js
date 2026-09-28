@@ -44,6 +44,7 @@ var CREA_NOMBRE = {
   'p3d_crear_actor': 'NOMBRE',
   'p3d_crear_modelo': 'NOMBRE',
   'p3d_crear_escenario': 'NOMBRE',
+  'p3d_menu': 'NOMBRE',
 };
 
 function nombres_creados(block) {
@@ -305,17 +306,49 @@ Blockly.defineBlocksWithJsonArray([
     previousStatement: null, nextStatement: null,
     colour: 200,
   },
+  {
+    type: 'p3d_menu',
+    message0: 'crear menú %1 titulado %2 con %3',
+    args0: [
+      { type: 'field_input', name: 'NOMBRE', text: 'menu' },
+      { type: 'field_input', name: 'TITULO', text: 'MI JUEGO' },
+      { type: 'input_statement', name: 'OPCIONES' },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 200,
+    tooltip: 'Menú navegable con flechas+ENTER o mouse',
+  },
+  {
+    type: 'p3d_menu_opcion',
+    message0: 'opción %1 hacer %2',
+    args0: [
+      { type: 'field_input', name: 'TEXTO', text: 'Jugar' },
+      { type: 'input_statement', name: 'HACER' },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 200,
+    tooltip: 'Una opción del menú (solo dentro de "crear menú")',
+  },
 
   // -- tiempo -------------------------------------------------------
   {
     type: 'p3d_interpolar',
-    message0: 'llevar %1 suave a x %2 y %3 z %4 en %5 s',
+    message0: 'llevar %1 suave a x %2 y %3 z %4 en %5 s %6',
     args0: [
       { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
       { type: 'field_number', name: 'X', value: 0 },
       { type: 'field_number', name: 'Y', value: 0 },
       { type: 'field_number', name: 'Z', value: 0 },
       { type: 'field_number', name: 'SEG', value: 2, min: 0 },
+      { type: 'field_dropdown', name: 'TIPO', options: [
+        ['normal', 'Lineal'],
+        ['suave al arrancar', 'AceleracionGradual'],
+        ['suave al frenar', 'DesaceleracionGradual'],
+        ['con rebote al final', 'ReboteFinal'],
+        ['con rebote al inicio', 'ReboteInicial'],
+        ['elástica al final', 'ElasticoFinal'],
+        ['elástica al inicio', 'ElasticoInicial'],
+      ] },
     ],
     previousStatement: null, nextStatement: null,
     colour: 20,
@@ -540,15 +573,43 @@ registrar('p3d_sonido', function (block) {
          GEN.quote_(block.getFieldValue('RUTA')) + ').reproducir()\n';
 });
 
+// la opción sola no emite código: el menú padre la convierte en una
+// función + una entrada ('texto', fn).
+registrar('p3d_menu_opcion', function (block) {
+  return '';
+});
+
+registrar('p3d_menu', function (block) {
+  var fns = '';
+  var ops = [];
+  var b = block.getInputTargetBlock('OPCIONES');
+  while (b) {
+    if (b.type === 'p3d_menu_opcion') {
+      var fn = nombre_unico('opcion');
+      fns += 'def ' + fn + '():\n' + globales(block) +
+             (GEN.statementToCode(b, 'HACER') || GEN.INDENT + 'pass\n');
+      ops.push('(' + GEN.quote_(b.getFieldValue('TEXTO')) +
+               ', ' + fn + ')');
+    }
+    b = b.getNextBlock();
+  }
+  return fns + campo_nombre(block) + ' = pilas.actores.Menu(titulo=' +
+         GEN.quote_(block.getFieldValue('TITULO')) +
+         ', opciones=[' + ops.join(', ') + '])\n';
+});
+
 registrar('p3d_interpolar', function (block) {
   var n = campo_nombre(block);
   var d = block.getFieldValue('SEG');
+  var tipo = block.getFieldValue('TIPO');
+  var t = tipo === 'Lineal' ? '' :
+      ', tipo=pilas.interpolaciones.' + tipo;
   return 'pilas.interpolar(' + n + ", 'x', " +
-         block.getFieldValue('X') + ', duracion=' + d + ')\n' +
+         block.getFieldValue('X') + ', duracion=' + d + t + ')\n' +
          'pilas.interpolar(' + n + ", 'y', " +
-         block.getFieldValue('Y') + ', duracion=' + d + ')\n' +
+         block.getFieldValue('Y') + ', duracion=' + d + t + ')\n' +
          'pilas.interpolar(' + n + ", 'z', " +
-         block.getFieldValue('Z') + ', duracion=' + d + ')\n';
+         block.getFieldValue('Z') + ', duracion=' + d + t + ')\n';
 });
 
 registrar('p3d_esperar', function (block) {
@@ -644,6 +705,8 @@ var TOOLBOX = {
         { kind: 'block', type: 'p3d_globo' },
         { kind: 'block', type: 'p3d_animar' },
         { kind: 'block', type: 'p3d_sonido' },
+        { kind: 'block', type: 'p3d_menu' },
+        { kind: 'block', type: 'p3d_menu_opcion' },
       ] },
     { kind: 'category', name: 'Tiempo', colour: '20',
       contents: [
