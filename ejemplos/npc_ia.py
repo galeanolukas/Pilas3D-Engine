@@ -26,7 +26,6 @@ robi.x = -2
 
 dani = pilas.actores.ActorIA('humanoide', nombre='Dani', voz='mujer')
 dani.x = 2
-dani.subtitulo.y = 40        # su subtítulo va una línea más arriba
 
 robi.decir('1: Robi - 2: Dani - 3: chiste - ENTER: escribir')
 

@@ -185,14 +185,28 @@ primera vez::
     npc = pilas.actores.ActorIA('robot', nombre='Robi')
     npc.preguntar('hola, ¿en qué juego estamos?')
 
-`preguntar` consulta a Ollama en un hilo, muestra la respuesta como
-subtítulo (`npc.subtitulo`) y, si `npc.habla` es True, la sintetiza
-con Piper y la reproduce. `hablar(texto)` dice algo sin consultar;
-`decir(texto)` solo lo muestra. `al_responder = fn` engancha un
-callback con la respuesta.
+`preguntar` consulta a Ollama en un hilo, muestra la respuesta en un
+globo de diálogo (`npc.subtitulo`, un `Globo` que flota sobre el NPC)
+y, si `npc.habla` es True, la sintetiza con Piper y la reproduce.
+`hablar(texto)` dice algo sin consultar; `decir(texto)` solo lo
+muestra. `al_responder = fn` engancha un callback con la respuesta.
+`voz='mujer'`/`'hombre'`/nombre de Piper elige la voz.
 
 Como `personaje` acepta 'robot'/'humanoide'/'mono'/'arania'/
 'espectro' o la ruta a un `.glb`/`.obj` propio.
+
+### Globos de diálogo
+
+`pilas.actores.Globo` es un bocadillo 2D que sigue a cualquier actor
+(el mismo que usa `ActorIA` de subtítulo)::
+
+    npc = pilas.actores.Mono(x=2)
+    globo = pilas.actores.Globo(npc, 'hola!')
+    globo.decir('¿cómo andás?', duracion=3)   # se oculta solo
+    globo.actor = otro                        # reconectar
+    globo.alto = 2.5                          # altura sobre los pies
+
+Se oculta solo si el actor queda detrás de la cámara.
 
 ## 8. Variables de entorno
 

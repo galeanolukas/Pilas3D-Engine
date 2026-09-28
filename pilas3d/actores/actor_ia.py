@@ -31,7 +31,7 @@ class ActorIA(Actor):
     """NPC con IA: ``preguntar`` (Ollama) + ``hablar`` (Piper)."""
 
     def __init__(self, pilas, personaje='robot', x=0, y=0, z=0,
-                 habla=True, nombre=None, voz=None):
+                 habla=True, nombre=None, voz=None, alto_globo=2.4):
         self._pendientes = deque()
         self.al_responder = None
         self.ultima_respuesta = ''
@@ -44,9 +44,9 @@ class ActorIA(Actor):
                                  else 'npc')
         super(ActorIA, self).__init__(pilas, x=x, y=y, z=z)
         self.cuerpo = self._crear_cuerpo(personaje)
-        self.subtitulo = pilas.actores.Texto(
-            '', x=15, y=15, tamano=16)
-        self.subtitulo.color = pilas.colores.blanco
+        #: Bocadillo de diálogo que sigue al NPC (``Globo`` overlay).
+        self.subtitulo = pilas.actores.Globo(
+            actor=self.cuerpo, alto=alto_globo, tamano=14)
 
     # -- cuerpo visible -----------------------------------------------------
 

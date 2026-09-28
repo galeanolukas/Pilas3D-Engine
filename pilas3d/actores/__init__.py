@@ -24,6 +24,7 @@ from pilas3d.actores.mundo import Mundo
 from pilas3d.actores.modelo_json import ModeloJSON
 from pilas3d.actores.modelo_gltf import ModeloGLTF
 from pilas3d.actores.texto import Texto, Puntaje
+from pilas3d.actores.globo import Globo
 from pilas3d.actores.panel import Panel
 from pilas3d.actores.temporizador import Temporizador
 from pilas3d.actores.particulas import Particulas
@@ -180,6 +181,16 @@ class Actores(object):
         return Puntaje(
             self._pilas, x=x, y=y, tamano=tamano, prefijo=prefijo
         )
+
+    def Globo(self, actor=None, texto='', x=0, y=0, alto=2.2,
+              tamano=14, duracion=0.0):
+        """Bocadillo de diálogo que flota sobre un actor (overlay 2D).
+
+        Sigue la posición proyectada de ``actor``; con ``actor=None``
+        queda fijo en el píxel ``(x, y)``. ``duracion`` > 0 lo oculta
+        solo al cabo de esos segundos (ver ``globo.decir``)."""
+        return Globo(self._pilas, actor=actor, texto=texto, x=x, y=y,
+                     alto=alto, tamano=tamano, duracion=duracion)
 
     def Temporizador(self, x=10, y=10, tamano=18, duracion=0,
                      cuando_termina=None, ciclico=False, visible=True,

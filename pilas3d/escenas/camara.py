@@ -77,15 +77,44 @@ class Camara(object):
             alto = ventana.height if ventana is not None else 480
 
         # píxel -> coordenadas de vista (frustum simétrico, fov=60)
+        # ojo: el mouse de pyglet tiene origen abajo-izquierda
         f = math.tan(math.radians(fov) / 2.0)
         nx = (2.0 * x / ancho - 1.0) * f * (ancho / float(alto))
-        ny = (1.0 - 2.0 * y / alto) * f
+        ny = (2.0 * y / alto - 1.0) * f
 
         frente = self.direccion()
         derecha = frente.cross(Vec3(0, 1, 0)).normalize()
         arriba = derecha.cross(frente).normalize()
         dir_mundo = (frente + derecha * nx + arriba * ny).normalize()
         return Vec3(self.x, self.y, self.z), dir_mundo
+
+    def proyectar(self, x, y, z, ancho=None, alto=None, fov=60.0):
+        """Punto de mundo -> píxel de ventana (origen abajo-izquierda).
+
+        Es la inversa de ``rayo_desde_mouse``: sirve para dibujar
+        overlays 2D sobre un actor 3D (globos de diálogo, barras de
+        vida, nombres). Devuelve ``(px, py)`` o ``None`` si el punto
+        queda detrás de la cámara.
+        """
+        pilas = self.escena.pilas
+        ventana = pilas.ventana
+        if ancho is None:
+            ancho = ventana.width if ventana is not None else 640
+        if alto is None:
+            alto = ventana.height if ventana is not None else 480
+        frente = self.direccion()
+        derecha = frente.cross(Vec3(0, 1, 0)).normalize()
+        arriba = derecha.cross(frente).normalize()
+        d = Vec3(x, y, z) - Vec3(self.x, self.y, self.z)
+        profundidad = d.dot(frente)
+        if profundidad <= 0:
+            return None
+        f = math.tan(math.radians(fov) / 2.0)
+        nx = d.dot(derecha) / profundidad
+        ny = d.dot(arriba) / profundidad
+        px = (nx / (f * (ancho / float(alto))) + 1.0) / 2.0 * ancho
+        py = (ny / f + 1.0) / 2.0 * alto
+        return px, py
 
     def _intersectar_rayo(self, origen, direccion, actores, alcance):
         """El actor más cercano alcanzado por el rayo (o None)."""

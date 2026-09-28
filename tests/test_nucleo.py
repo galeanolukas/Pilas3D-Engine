@@ -2103,6 +2103,51 @@ def test_mapas_terreno_se_persiste(tmp_path):
     assert dict(cargado.bloques) == antes
 
 
+# -- globo de diálogo --------------------------------------------------------
+
+def test_camara_proyectar():
+    """proyectar: mundo -> píxel; centro de vista = centro de pantalla."""
+    pilas = crear_pilas()
+    cam = pilas.escena_actual().camara
+    assert cam.proyectar(0, 0, 0, ancho=640, alto=480) == (320.0, 240.0)
+    # arriba en el mundo = mayor y en pantalla (origen abajo)
+    _, py = cam.proyectar(0, 3, 0, ancho=640, alto=480)
+    assert py > 240
+    # detrás de la cámara -> None
+    assert cam.proyectar(0, 5, 20, ancho=640, alto=480) is None
+
+
+def test_globo_sigue_al_actor():
+    """El globo se posiciona sobre la proyección del actor."""
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    globo = pilas.actores.Globo(cubo, 'hola', alto=2.0)
+    globo.actualizar()
+    cam = pilas.escena_actual().camara
+    px, py = cam.proyectar(0, 2.0, 0)
+    assert globo.x == px and globo.y == py
+    # mover el actor mueve el globo
+    cubo.x = 3
+    globo.actualizar()
+    px2, _ = cam.proyectar(3, 2.0, 0)
+    assert globo.x == px2
+    cubo.eliminar(); globo.eliminar()
+
+
+def test_globo_decir_con_duracion():
+    """decir(texto, duracion) oculta el globo al terminar."""
+    pilas = crear_pilas()
+    globo = pilas.actores.Globo(None, x=100, y=100)
+    globo.decir('hola', duracion=1.0)
+    assert globo._visible
+    pilas.dt = 0.6
+    globo.actualizar()
+    assert globo._visible            # todavía
+    globo.actualizar()               # acumula 1.2s
+    assert not globo._visible
+    globo.eliminar()
+
+
 # -- voz (Piper) y ActorIA --------------------------------------------------
 
 def test_voz_url_voz():
