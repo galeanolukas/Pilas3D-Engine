@@ -13,9 +13,13 @@ el resultado del código a la izquierda mientras se escribe.
 Controles de la consola:
 
 - ENTER ejecuta la línea (los bloques ``def``/``for``/``si``
-  multi-línea se detectan solos — ENTER en línea vacía cierra)
+  multi-línea se detectan solos y auto-indentan — ENTER en línea
+  vacía cierra el bloque)
+- TAB autocompleta (con línea vacía indenta 4 espacios)
 - ↑ / ↓ recorren el historial
 - Ctrl+S guarda todo lo ejecutado en ``sesion_pilas3d.py``
+- ``%abrir archivo.py`` carga un archivo y sigue la sesión;
+  ``%run archivo.py`` solo lo ejecuta; ``%ayuda`` lista comandos
 - ESC limpia la línea actual (no cierra la ventana)
 """
 
@@ -113,7 +117,11 @@ class Consola(object):
 
     def _completar(self):
         """TAB: completa el identificador bajo el cursor; TAB de
-        nuevo cicla las opciones y las muestra en el log."""
+        nuevo cicla las opciones y las muestra en el log. Con la
+        línea vacía o solo espacios, TAB inserta indentación."""
+        if not self.linea.strip():
+            self.linea += '    '
+            return
         if self._sugerencias:
             # cicla la sugerencia siguiente
             self._sug_i = (self._sug_i + 1) % len(self._sugerencias)
@@ -143,8 +151,11 @@ class Consola(object):
             self._reemplazar_palabra(comun)
         self._sugerencias = sugs
         self._sug_i = 0
-        self._linea('  '.join(sugs[:12])
-                    + ('  …' if len(sugs) > 12 else ''))
+        # lista limpia: una columna por opción, con contador
+        vista = sugs[:8]
+        self._linea('  '.join(vista)
+                    + ('   +%d más' % (len(sugs) - 8)
+                       if len(sugs) > 8 else ''))
 
     def al_pulsar(self, simbolo, modificadores):
         s = self.pilas.simbolos
@@ -184,11 +195,23 @@ class Consola(object):
             self._pintar()
             return
 
-        self.buffer.append(entrada)
+        if entrada.startswith('%') and not self.buffer:
+            self._comando(entrada.strip())
+            self._pintar()
+            return
+
+        # una línea de solo espacios (el auto-indent) cierra el bloque
+        self.buffer.append(entrada if entrada.strip() else '')
         src = '\n'.join(self.buffer)
         codigo = self._comp(src, '<consola>', 'single')
         if codigo is None:
-            self._pintar()          # bloque incompleto: prompt '...'
+            # bloque incompleto: auto-indentar la línea siguiente
+            ultima = self.buffer[-1]
+            base = len(ultima) - len(ultima.lstrip())
+            if ultima.rstrip().endswith(':'):
+                base += 4
+            self.linea = ' ' * base
+            self._pintar()          # prompt '...'
             return
         self.buffer = []
         self.historial.append(entrada)
@@ -196,6 +219,52 @@ class Consola(object):
         self.script.append(src)
         self._ejecutar(src, codigo)
         self._pintar()
+
+    # -- comandos % -----------------------------------------------------
+
+    def _comando(self, entrada):
+        """%ayuda / %run <archivo> / %abrir <archivo> / %guardar /
+        %limpiar."""
+        partes = entrada.split(None, 1)
+        cmd, arg = partes[0], partes[1].strip() if len(partes) > 1 \
+            else ''
+        if cmd in ('%run', '%abrir', '%cargar'):
+            self._archivo(arg, incorporar=(cmd != '%run'))
+        elif cmd == '%guardar':
+            self.guardar(arg or 'sesion_pilas3d.py')
+        elif cmd == '%limpiar':
+            self.log = []
+        elif cmd == '%ayuda':
+            self._linea('%run f.py ejecuta - %abrir f.py lo abre y '
+                        'sigue la sesión')
+            self._linea('%guardar [f.py] - %limpiar vacía el log')
+        else:
+            self._linea('comando desconocido: ' + cmd +
+                        '  (%ayuda lista)')
+
+    def _archivo(self, ruta, incorporar):
+        """Ejecuta un .py en la consola. Con ``incorporar`` además se
+        agrega al script de la sesión (Ctrl+S lo re-guarda)."""
+        if not ruta:
+            self._linea('falta el archivo: %run juego.py')
+            return
+        try:
+            with open(ruta) as f:
+                src = f.read()
+        except OSError as e:
+            self._linea('no pude abrir %s: %s' % (ruta, e.strerror))
+            return
+        codigo = self._comp(src, ruta, 'exec')
+        if codigo is None:
+            self._linea('el archivo está incompleto o mal formado')
+            return
+        if incorporar:
+            self.script.append(src.rstrip())
+            self._linea("abierto %s — ejecutado y agregado a la sesión"
+                        % ruta)
+        else:
+            self._linea("ejecutado %s" % ruta)
+        self._ejecutar(src, codigo)
 
     def _ejecutar(self, src, codigo):
         salida = io.StringIO()

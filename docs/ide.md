@@ -29,12 +29,27 @@ el cubo aparece al instante a la izquierda.
 | ESC | limpiar la línea (no cierra la ventana) |
 | Ctrl+S | guardar todo lo ejecutado en `sesion_pilas3d.py` |
 
-## Multi-línea
+## Multi-línea y auto-indentación
 
 Los bloques `def`/`for`/`si` se detectan solos con
 `codeop.CommandCompiler` (el mismo mecanismo de la consola estándar
-de Python): si el bloque está incompleto el prompt cambia a `...` y
-ENTER en una línea vacía lo ejecuta.
+de Python): si el bloque está incompleto el prompt cambia a `...`, la
+línea siguiente **ya viene indentada** (y si terminó en `:` suma 4
+espacios), y ENTER en una línea vacía cierra el bloque. Con la línea
+vacía, TAB inserta indentación a mano.
+
+## Comandos `%`
+
+| Comando | Acción |
+|---|---|
+| `%run archivo.py` | ejecuta un `.py` (no entra a la sesión) |
+| `%abrir archivo.py` | ejecuta **y** lo incorpora a la sesión — `Ctrl+S` lo re-guarda con lo nuevo |
+| `%guardar [archivo.py]` | guarda la sesión (default `sesion_pilas3d.py`) |
+| `%limpiar` | vacía el log |
+| `%ayuda` | lista los comandos |
+
+Flujo típico: trabajás en la consola → `Ctrl+S` → `sesion_pilas3d.py`
+→ otro día `%abrir sesion_pilas3d.py` y seguís donde quedaste.
 
 ## Notas
 
