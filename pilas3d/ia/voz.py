@@ -32,6 +32,22 @@ URL_VOZ = ('https://huggingface.co/rhasspy/piper-voices/resolve/'
 #: Voz por defecto (español de España, masculina, ~60 MB).
 VOZ = os.environ.get('PILAS3D_VOZ', 'es_ES-davefx-medium')
 
+#: Nombres amigables -> voz del catálogo. En ``es_AR`` solo hay
+#: mujer (daniela); el hombre latinoamericano más cercano es el
+#: mexicano ``es_MX-ald``.
+VOCES = {
+    'mujer':  'es_AR-daniela-high',
+    'hombre': 'es_MX-ald-medium',
+    'davefx': 'es_ES-davefx-medium',
+    'daniela': 'es_AR-daniela-high',
+    'ald':    'es_MX-ald-medium',
+}
+
+
+def _resolver_voz(voz):
+    """Acepta el nombre completo o uno amigable de ``VOCES``."""
+    return VOCES.get(voz or '', voz) or VOZ
+
 
 def _dir_piper():
     return (pathlib.Path(__file__).parent.parent
@@ -118,7 +134,7 @@ def _url_voz(voz):
 
 def asegurar_voz(voz=None):
     """Devuelve la ruta del .onnx de la voz, bajándola si falta."""
-    voz = voz or VOZ
+    voz = _resolver_voz(voz)
     onnx = _dir_piper() / 'voces' / (voz + '.onnx')
     if onnx.exists():
         return str(onnx)
@@ -128,6 +144,13 @@ def asegurar_voz(voz=None):
     urllib.request.urlretrieve(url_onnx, onnx)
     urllib.request.urlretrieve(url_json, str(onnx) + '.json')
     return str(onnx)
+
+
+def descargar_voces(*voces):
+    """Baja voces del catálogo de una vez (nombre completo o de
+    ``VOCES``). Sin argumentos baja 'mujer' y 'hombre'."""
+    for v in (voces or ('mujer', 'hombre')):
+        asegurar_voz(v)
 
 
 def disponible():

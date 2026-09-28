@@ -31,11 +31,14 @@ class ActorIA(Actor):
     """NPC con IA: ``preguntar`` (Ollama) + ``hablar`` (Piper)."""
 
     def __init__(self, pilas, personaje='robot', x=0, y=0, z=0,
-                 habla=True, nombre=None):
+                 habla=True, nombre=None, voz=None):
         self._pendientes = deque()
         self.al_responder = None
         self.ultima_respuesta = ''
         self.habla = habla
+        #: Voz de Piper del actor (None = ``PILAS3D_VOZ`` o la
+        #: por defecto). Ej. ``'es_AR-daniela-high'``.
+        self.voz = voz
         self.nombre = nombre or (personaje
                                  if isinstance(personaje, str)
                                  else 'npc')
@@ -87,17 +90,19 @@ class ActorIA(Actor):
                 respuesta = asistente.preguntar(texto, modelo=modelo)
                 self._pendientes.append(('decir', respuesta))
                 if self.habla:
-                    self._pendientes.append(('hablar', respuesta))
+                    self._pendientes.append(
+                        ('hablar', (respuesta, self.voz)))
             except Exception as e:
                 self._pendientes.append(('error', e))
         threading.Thread(target=trabajo, daemon=True).start()
 
-    def hablar(self, texto):
+    def hablar(self, texto, voz=None):
         """Sintetiza ``texto`` con Piper y lo reproduce (asíncrono)."""
+        cual = voz or self.voz
         def trabajo():
             try:
-                from pilas3d.ia import voz
-                ruta = voz.sintetizar(texto)
+                from pilas3d.ia import voz as modulo
+                ruta = modulo.sintetizar(texto, voz=cual)
                 self._pendientes.append(('sonido', ruta))
             except Exception as e:
                 self._pendientes.append(('error', e))
@@ -111,7 +116,8 @@ class ActorIA(Actor):
             if tipo == 'decir':
                 self.decir(dato)
             elif tipo == 'hablar':
-                self.hablar(dato)
+                texto, cual = dato
+                self.hablar(texto, voz=cual)
             elif tipo == 'sonido':
                 self.pilas.sonidos.cargar(dato).reproducir()
             elif tipo == 'error':

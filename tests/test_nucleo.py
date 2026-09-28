@@ -2113,6 +2113,15 @@ def test_voz_url_voz():
     assert js == onnx + '.json'
 
 
+def test_voz_resolver_voz():
+    """Nombres amigables → voz del catálogo; desconocidos pasan igual."""
+    from pilas3d.ia import voz
+    assert voz._resolver_voz('mujer') == 'es_AR-daniela-high'
+    assert voz._resolver_voz('hombre') == 'es_MX-ald-medium'
+    assert voz._resolver_voz('es_ES-davefx-medium') == 'es_ES-davefx-medium'
+    assert voz._resolver_voz(None) == voz.VOZ
+
+
 def test_voz_comando():
     """La línea de Piper lleva modelo, salida y espeak-data."""
     from pilas3d.ia import voz
