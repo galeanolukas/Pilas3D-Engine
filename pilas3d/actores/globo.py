@@ -139,7 +139,7 @@ class Globo(Actor):
             from pyglet.text import Label
             from pyglet.shapes import Rectangle, Triangle
             self._label = Label('', font_size=self.tamano,
-                                anchor_x='center', anchor_y='baseline',
+                                anchor_x='center', anchor_y='bottom',
                                 multiline=True, width=4096)
             self._fondo = Rectangle(0, 0, 1, 1, color=(255, 255, 255))
             self._borde = Rectangle(0, 0, 1, 1, color=(30, 30, 30))
@@ -149,6 +149,9 @@ class Globo(Actor):
         self._label.font_size = self.tamano
         ancho = self._label.content_width + 20
         alto = self._label.content_height + 14
+        # con multiline el anchor_x centra la CAJA (width): hay que
+        # ajustarla al ancho real o el texto queda fuera de pantalla
+        self._label.width = ancho
         cx, cy = self._x, self._y + 14   # el pico ocupa 14px abajo
 
         # borde (un poco más grande, detrás del fondo blanco)
@@ -173,7 +176,7 @@ class Globo(Actor):
         self._pico.draw()
 
         self._label.x = cx
-        self._label.y = cy + 6
+        self._label.y = cy + 6   # anchor bottom: el bloque crece hacia arriba
         r, g, b = colores.negro   # Label.color pide enteros 0-255
         self._label.color = (r, g, b, 255)
         self._label.draw()
