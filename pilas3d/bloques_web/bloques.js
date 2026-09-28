@@ -14,6 +14,20 @@
 // registran como funciones asignadas directamente sobre él.
 var GEN = Blockly.Python.pythonGenerator || Blockly.Python;
 
+// contador para nombres de funciones auxiliares (esperar, al_click…)
+// — se resetea al inicio de cada workspaceToCode (GEN.init).
+var _contador_fn = 0;
+var _gen_init_real = GEN.init;
+if (_gen_init_real) {
+  GEN.init = function (workspace) {
+    _contador_fn = 0;
+    _gen_init_real.call(GEN, workspace);
+  };
+}
+function nombre_unico(base) {
+  return base + '_' + (_contador_fn++);
+}
+
 function registrar(tipo, fn) {
   GEN[tipo] = fn;
 }
@@ -29,6 +43,7 @@ function sanea(nombre) {
 var CREA_NOMBRE = {
   'p3d_crear_actor': 'NOMBRE',
   'p3d_crear_modelo': 'NOMBRE',
+  'p3d_crear_escenario': 'NOMBRE',
 };
 
 function nombres_creados(block) {
@@ -66,6 +81,23 @@ function actores_opciones() {
   return nombres.map(function (n) { return [n, n]; });
 }
 
+// igual que actores_opciones pero con "(cualquier lugar)" arriba —
+// para el bloque de click.
+function actores_o_cualquiera() {
+  var ops = actores_opciones.call(this);
+  if (ops.length === 1 && ops[0][1] === 'actor') ops = [];
+  return [['(cualquier lugar)', '*']].concat(ops);
+}
+
+// teclas para "al pulsar la tecla": valor = atributo de pilas.simbolos
+var TECLAS = [
+  ['espacio', 'ESPACIO'], ['enter', 'ENTER'], ['escape', 'ESCAPE'],
+  ['izquierda', 'IZQUIERDA'], ['derecha', 'DERECHA'],
+  ['arriba', 'ARRIBA'], ['abajo', 'ABAJO'],
+].concat('abcdefghijklmnopqrstuvwxyz'.split('').map(function (l) {
+  return [l, l];
+}));
+
 // ------------------------------------------------------------------
 // definición de bloques
 // ------------------------------------------------------------------
@@ -86,6 +118,27 @@ Blockly.defineBlocksWithJsonArray([
     args0: [{ type: 'input_statement', name: 'HACER' }],
     colour: 45,
     tooltip: 'Corre en cada frame, una y otra vez',
+  },
+  {
+    type: 'p3d_al_click',
+    message0: 'al hacer click en %1 hacer %2',
+    args0: [
+      { type: 'field_dropdown', name: 'DONDE',
+        options: actores_o_cualquiera },
+      { type: 'input_statement', name: 'HACER' },
+    ],
+    colour: 45,
+    tooltip: 'Corre una vez al hacer click con el mouse',
+  },
+  {
+    type: 'p3d_al_pulsar',
+    message0: 'al pulsar la tecla %1 hacer %2',
+    args0: [
+      { type: 'field_dropdown', name: 'TECLA', options: TECLAS },
+      { type: 'input_statement', name: 'HACER' },
+    ],
+    colour: 45,
+    tooltip: 'Corre una vez al pulsar esa tecla',
   },
 
   // -- actores ------------------------------------------------------
@@ -118,6 +171,20 @@ Blockly.defineBlocksWithJsonArray([
     ],
     previousStatement: null, nextStatement: null,
     colour: 290,
+  },
+  {
+    type: 'p3d_crear_escenario',
+    message0: 'crear %1 llamado %2',
+    args0: [
+      { type: 'field_dropdown', name: 'TIPO', options: [
+        ['piso', 'Piso'], ['ejes', 'Ejes'], ['plano', 'Plano'],
+        ['pared', 'Pared'], ['cartel', 'Cartel'],
+      ] },
+      { type: 'field_input', name: 'NOMBRE', text: 'piso' },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 290,
+    tooltip: 'Escenario: piso de grilla, ejes, plano, pared o cartel',
   },
   {
     type: 'p3d_eliminar',
@@ -262,6 +329,36 @@ Blockly.defineBlocksWithJsonArray([
     colour: 20,
   },
 
+  // -- cámara -------------------------------------------------------
+  {
+    type: 'p3d_camara_orbital',
+    message0: 'cámara orbital con el mouse',
+    previousStatement: null, nextStatement: null,
+    colour: 60,
+    tooltip: 'El mouse gira alrededor de la escena, la rueda acerca',
+  },
+  {
+    type: 'p3d_camara_seguir',
+    message0: 'la cámara sigue a %1 en %2',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
+      { type: 'field_dropdown', name: 'MODO', options: [
+        ['primera persona', 'primera'],
+        ['de frente', 'segunda'],
+        ['tercera persona', 'tercera'],
+      ] },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 60,
+  },
+  {
+    type: 'p3d_camara_libre',
+    message0: 'soltar la cámara',
+    previousStatement: null, nextStatement: null,
+    colour: 60,
+    tooltip: 'La cámara deja de seguir al actor',
+  },
+
   // -- sensores -----------------------------------------------------
   {
     type: 'p3d_tecla',
@@ -269,8 +366,10 @@ Blockly.defineBlocksWithJsonArray([
     args0: [{ type: 'field_dropdown', name: 'TECLA', options: [
       ['izquierda', 'izquierda'], ['derecha', 'derecha'],
       ['arriba', 'arriba'], ['abajo', 'abajo'],
-      ['espacio', 'ESPACIO'],
-    ] }],
+      ['espacio', 'ESPACIO'], ['enter', 'ENTER'],
+    ].concat('abcdefghijklmnopqrstuvwxyz'.split('').map(function (l) {
+      return [l, l];
+    })) }],
     output: 'Boolean', colour: 210,
   },
   {
@@ -281,6 +380,25 @@ Blockly.defineBlocksWithJsonArray([
       { type: 'field_dropdown', name: 'B', options: actores_opciones },
     ],
     output: 'Boolean', colour: 210,
+  },
+  {
+    type: 'p3d_boton_mouse',
+    message0: 'botón %1 del mouse pulsado',
+    args0: [{ type: 'field_dropdown', name: 'BOTON', options: [
+      ['izquierdo', 'izquierdo'], ['derecho', 'derecho'],
+      ['medio', 'medio'],
+    ] }],
+    output: 'Boolean', colour: 210,
+  },
+  {
+    type: 'p3d_mouse_x',
+    message0: 'posición x del mouse',
+    output: 'Number', colour: 210,
+  },
+  {
+    type: 'p3d_mouse_y',
+    message0: 'posición y del mouse',
+    output: 'Number', colour: 210,
   },
 ]);
 
@@ -303,6 +421,30 @@ registrar('p3d_por_siempre', function (block) {
          'pilas.tareas.siempre(0, siempre)\n\n';
 });
 
+registrar('p3d_al_click', function (block) {
+  var fn = nombre_unico('al_click');
+  var donde = block.getFieldValue('DONDE');
+  var dentro = GEN.statementToCode(block, 'HACER') ||
+      GEN.INDENT + 'pass\n';
+  if (donde !== '*') {
+    dentro = GEN.INDENT + 'if actor is ' + sanea(donde) + ':\n' +
+             GEN.prefixLines(dentro, GEN.INDENT);
+  }
+  return 'def ' + fn + '(actor, punto):\n' + globales(block) +
+         dentro + 'pilas.cuando_hace_click(' + fn + ')\n\n';
+});
+
+registrar('p3d_al_pulsar', function (block) {
+  var fn = nombre_unico('al_pulsar');
+  var dentro = GEN.statementToCode(block, 'HACER') ||
+      GEN.INDENT + 'pass\n';
+  return 'def ' + fn + '(simbolo):\n' + globales(block) +
+         GEN.INDENT + 'if simbolo == pilas.simbolos.' +
+         block.getFieldValue('TECLA') + ':\n' +
+         GEN.prefixLines(dentro, GEN.INDENT) +
+         'pilas.escena_actual().cuando_pulsa_tecla = ' + fn + '\n\n';
+});
+
 registrar('p3d_crear_actor', function (block) {
   var tipo = block.getFieldValue('TIPO');
   var nom = campo_nombre(block);
@@ -315,6 +457,11 @@ registrar('p3d_crear_actor', function (block) {
 registrar('p3d_crear_modelo', function (block) {
   return campo_nombre(block) + ' = pilas.actores.ModeloGLTF(' +
          GEN.quote_(block.getFieldValue('RUTA')) + ')\n';
+});
+
+registrar('p3d_crear_escenario', function (block) {
+  return campo_nombre(block) + ' = pilas.actores.' +
+         block.getFieldValue('TIPO') + '()\n';
 });
 
 registrar('p3d_eliminar', function (block) {
@@ -384,26 +531,39 @@ registrar('p3d_interpolar', function (block) {
 });
 
 registrar('p3d_esperar', function (block) {
-  var fn = GEN.nameDB_.getName('esperar',
-                               Blockly.Names.NameType.PROCEDURE);
+  var fn = nombre_unico('esperar');
   return 'def ' + fn + '():\n' + globales(block) + cuerpo(block) +
          'pilas.tareas.una_vez(' + block.getFieldValue('SEG') +
          ', ' + fn + ')\n';
 });
 
 registrar('p3d_cada', function (block) {
-  var fn = GEN.nameDB_.getName('repetir',
-                               Blockly.Names.NameType.PROCEDURE);
+  var fn = nombre_unico('repetir');
   return 'def ' + fn + '():\n' + globales(block) + cuerpo(block) +
          'pilas.tareas.siempre(' + block.getFieldValue('SEG') +
          ', ' + fn + ')\n';
 });
 
+registrar('p3d_camara_orbital', function (block) {
+  return 'pilas.escena_actual().camara.usar_control_orbital()\n';
+});
+
+registrar('p3d_camara_seguir', function (block) {
+  return 'pilas.escena_actual().camara.seguir_a(' +
+         campo_nombre(block) + ", modo='" +
+         block.getFieldValue('MODO') + "')\n";
+});
+
+registrar('p3d_camara_libre', function (block) {
+  return 'pilas.escena_actual().camara.dejar_de_seguir()\n';
+});
+
 registrar('p3d_tecla', function (block) {
   var tecla = block.getFieldValue('TECLA');
-  var expr = tecla === 'ESPACIO' ?
-    'pilas.control.simbolo(pilas.simbolos.ESPACIO)' :
-    'pilas.control.' + tecla;
+  var flechas = ['izquierda', 'derecha', 'arriba', 'abajo'];
+  var expr = flechas.indexOf(tecla) >= 0 ?
+    'pilas.control.' + tecla :
+    'pilas.control.simbolo(pilas.simbolos.' + tecla + ')';
   return [expr, GEN.ORDER_ATOMIC];
 });
 
@@ -412,6 +572,19 @@ registrar('p3d_colisiona', function (block) {
           '.colisiona_en_plano_con(' +
           sanea(block.getFieldValue('B')) + ')',
           GEN.ORDER_ATOMIC];
+});
+
+registrar('p3d_boton_mouse', function (block) {
+  return ['pilas.control.boton_' + block.getFieldValue('BOTON'),
+          GEN.ORDER_ATOMIC];
+});
+
+registrar('p3d_mouse_x', function (block) {
+  return ['pilas.control.mouse_x', GEN.ORDER_ATOMIC];
+});
+
+registrar('p3d_mouse_y', function (block) {
+  return ['pilas.control.mouse_y', GEN.ORDER_ATOMIC];
 });
 
 // ------------------------------------------------------------------
@@ -425,11 +598,14 @@ var TOOLBOX = {
       contents: [
         { kind: 'block', type: 'p3d_al_iniciar' },
         { kind: 'block', type: 'p3d_por_siempre' },
+        { kind: 'block', type: 'p3d_al_click' },
+        { kind: 'block', type: 'p3d_al_pulsar' },
       ] },
     { kind: 'category', name: 'Actores', colour: '290',
       contents: [
         { kind: 'block', type: 'p3d_crear_actor' },
         { kind: 'block', type: 'p3d_crear_modelo' },
+        { kind: 'block', type: 'p3d_crear_escenario' },
         { kind: 'block', type: 'p3d_eliminar' },
       ] },
     { kind: 'category', name: 'Movimiento', colour: '160',
@@ -453,10 +629,19 @@ var TOOLBOX = {
         { kind: 'block', type: 'p3d_esperar' },
         { kind: 'block', type: 'p3d_cada' },
       ] },
+    { kind: 'category', name: 'Cámara', colour: '60',
+      contents: [
+        { kind: 'block', type: 'p3d_camara_orbital' },
+        { kind: 'block', type: 'p3d_camara_seguir' },
+        { kind: 'block', type: 'p3d_camara_libre' },
+      ] },
     { kind: 'category', name: 'Sensores', colour: '210',
       contents: [
         { kind: 'block', type: 'p3d_tecla' },
+        { kind: 'block', type: 'p3d_boton_mouse' },
         { kind: 'block', type: 'p3d_colisiona' },
+        { kind: 'block', type: 'p3d_mouse_x' },
+        { kind: 'block', type: 'p3d_mouse_y' },
         { kind: 'block', type: 'logic_compare' },
         { kind: 'block', type: 'logic_operation' },
         { kind: 'block', type: 'logic_negate' },

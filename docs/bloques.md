@@ -38,12 +38,13 @@ como XML de Blockly — para agregar uno, otra entrada en `EJEMPLOS`.
 
 | Categoría | Bloques |
 |---|---|
-| **Eventos** | `al iniciar` (corre una vez), `por siempre` (corre cada frame — es el "por siempre" de Scratch) |
-| **Actores** | `crear <tipo> llamado <nombre>` (cubo, esfera, robot, humanoide, mono, araña, espectro), `crear modelo <ruta.glb>`, `eliminar` |
+| **Eventos** | `al iniciar`, `por siempre` (cada frame), `al hacer click en <actor\|cualquier lugar>`, `al pulsar la tecla <t>` (letras, flechas, espacio, enter, escape) |
+| **Actores** | `crear <tipo>` (cubo, esfera, robot, humanoide, mono, araña, espectro), `crear modelo <ruta.glb>`, `crear <escenario>` (piso, ejes, plano, pared, cartel), `eliminar` |
 | **Movimiento** | `mover <a> en <eje> <n>` (`a.x += 0.05`), `llevar a x y z`, `girar en <eje> <grados>` |
 | **Apariencia** | `poner de color`, `mostrar texto`, `escribir en consola` (print → aparece en "Resultado"), `hacer que <a> diga <texto>` (globo de diálogo), `animar <modelo>`, `reproducir sonido` |
 | **Tiempo** | `llevar suave a x y z en N s` (interpolación), `esperar N s y hacer`, `cada N s hacer` |
-| **Sensores** | `tecla <dir> pulsada`, `<a> toca a <b>` (colisión en el piso), comparaciones lógicas |
+| **Cámara** | `cámara orbital con el mouse`, `la cámara sigue a <a>` (primera/de frente/tercera), `soltar la cámara` |
+| **Sensores** | `tecla <t> pulsada`, `botón del mouse pulsado`, `posición x/y del mouse`, `<a> toca a <b>`, comparaciones lógicas |
 | **Control** | `si`, `repetir N`, números |
 | **Matemática** | número, operaciones |
 
