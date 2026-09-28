@@ -169,12 +169,38 @@ y sus actores quedan accesibles en la consola.
 
 ---
 
-## 7. Variables de entorno
+## 7. Voz con Piper + `ActorIA`
+
+`pilas3d.ia.voz` sintetiza texto a audio con **Piper** (TTS local,
+sin internet después de la descarga). Igual que Ollama, el binario
+(~26 MB) y la voz (~60 MB) se bajan a `pilas3d/_vendor/piper/` la
+primera vez::
+
+    from pilas3d.ia import voz
+    ruta = voz.sintetizar("hola chicos")   # -> .wav
+    pilas.sonidos.cargar(ruta).reproducir()
+
+`pilas.actores.ActorIA` junta todo en un NPC conversable::
+
+    npc = pilas.actores.ActorIA('robot', nombre='Robi')
+    npc.preguntar('hola, ¿en qué juego estamos?')
+
+`preguntar` consulta a Ollama en un hilo, muestra la respuesta como
+subtítulo (`npc.subtitulo`) y, si `npc.habla` es True, la sintetiza
+con Piper y la reproduce. `hablar(texto)` dice algo sin consultar;
+`decir(texto)` solo lo muestra. `al_responder = fn` engancha un
+callback con la respuesta.
+
+Como `personaje` acepta 'robot'/'humanoide'/'mono'/'arania'/
+'espectro' o la ruta a un `.glb`/`.obj` propio.
+
+## 8. Variables de entorno
 
 | Variable | Default | Qué hace |
 |---|---|---|
 | `PILAS3D_IA_MODELO` | `qwen2.5-coder:0.5b` | Modelo a usar/descargar |
 | `PILAS3D_IA_GPU` | *(vacío = CPU)* | `=1` deja que Ollama use la GPU |
+| `PILAS3D_VOZ` | `es_ES-davefx-medium` | Voz de Piper (`<locale>-<nombre>-<calidad>`) |
 
 Por defecto se fuerza `num_gpu=0` (CPU): funciona en cualquier equipo,
 incluso sin drivers de GPU. Con `PILAS3D_IA_GPU=1` Ollama autodetecta
@@ -182,7 +208,7 @@ CUDA/Metal/ROCm.
 
 ---
 
-## 8. Resolución de problemas
+## 9. Resolución de problemas
 
 | Síntoma | Causa y arreglo |
 |---|---|
@@ -195,12 +221,14 @@ CUDA/Metal/ROCm.
 
 ---
 
-## 9. Detalles de implementación
+## 10. Detalles de implementación
 
 - **Sin dependencias nuevas**: usa `urllib`, no `requests`.
 - **Licencia**: Ollama es MIT pero su binario no se redistribuye en el
   repo — `pilas3d/_vendor/` está en `.gitignore`.
 - **Privacidad**: después de la descarga inicial no hay llamadas de
-  red; todo corre en `localhost`.
+  red; Ollama corre en `localhost` y Piper es un binario local.
+- **Voz**: Piper (MIT) y las voces se bajan a `_vendor/piper/` —
+  mismo criterio que Ollama: no se redistribuyen en el repo.
 - **Límite conocido**: el timeout de una respuesta es 300 s; en CPU
   una respuesta típica tarda 10–60 s según el equipo.

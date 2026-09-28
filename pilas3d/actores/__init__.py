@@ -31,6 +31,7 @@ from pilas3d.actores.proyectil import Proyectil
 from pilas3d.actores.menu import Menu
 from pilas3d.actores.personajes import (Personaje, Robot, Humanoide,
                                       Mono, Arania, Espectro)
+from pilas3d.actores.actor_ia import ActorIA
 
 
 class Actores(object):
@@ -202,6 +203,15 @@ class Actores(object):
 
     def Robot(self, x=0, y=0, z=0):
         return Robot(self._pilas, x=x, y=y, z=z)
+
+    def ActorIA(self, personaje='robot', x=0, y=0, z=0, habla=True,
+                nombre=None):
+        """NPC que conversa: responde con Ollama y habla con Piper.
+
+        ``personaje`` puede ser 'robot'/'humanoide'/'mono'/'arania'/
+        'espectro' o la ruta a un modelo .glb/.gltf/.obj."""
+        return ActorIA(self._pilas, personaje=personaje, x=x, y=y,
+                       z=z, habla=habla, nombre=nombre)
 
     def Humanoide(self, x=0, y=0, z=0):
         return Humanoide(self._pilas, x=x, y=y, z=z)

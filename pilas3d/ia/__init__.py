@@ -10,7 +10,8 @@ from pilas3d.ia.servidor import (asegurar_servidor, asegurar_modelo,
                                  listar_modelos, borrar_modelo,
                                  disponible, MODELO, MODELOS)
 from pilas3d.ia.asistente import preguntar, explicar_error
+from pilas3d.ia import voz
 
 __all__ = ['preguntar', 'explicar_error', 'asegurar_servidor',
            'asegurar_modelo', 'listar_modelos', 'borrar_modelo',
-           'disponible', 'MODELO', 'MODELOS']
+           'disponible', 'MODELO', 'MODELOS', 'voz']

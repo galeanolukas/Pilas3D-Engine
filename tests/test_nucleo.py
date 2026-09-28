@@ -2101,3 +2101,79 @@ def test_mapas_terreno_se_persiste(tmp_path):
     pilas.mapas.guardar(ruta, mundo)
     cargado = pilas.mapas.cargar(ruta)
     assert dict(cargado.bloques) == antes
+
+
+# -- voz (Piper) y ActorIA --------------------------------------------------
+
+def test_voz_url_voz():
+    """'es_ES-davefx-medium' → rutas onnx/json en huggingface."""
+    from pilas3d.ia import voz
+    onnx, js = voz._url_voz('es_ES-davefx-medium')
+    assert onnx.endswith('/es/es_ES/davefx/medium/es_ES-davefx-medium.onnx')
+    assert js == onnx + '.json'
+
+
+def test_voz_comando():
+    """La línea de Piper lleva modelo, salida y espeak-data."""
+    from pilas3d.ia import voz
+    cmd = voz._comando('/piper/piper', '/voz.onnx', '/out.wav')
+    assert cmd[0] == '/piper/piper'
+    assert '--model' in cmd and '/voz.onnx' in cmd
+    assert '--output_file' in cmd and '/out.wav' in cmd
+    assert 'espeak-ng-data' in cmd[-1]
+
+
+def test_actor_ia_responde_y_dice(monkeypatch):
+    """preguntar: Ollama (mockeado) responde -> subtítulo + callback."""
+    pilas = crear_pilas()
+    npc = pilas.actores.ActorIA('mono', nombre='Mono', habla=False)
+    import pilas3d.ia.asistente as asist
+    monkeypatch.setattr(asist, 'preguntar',
+                        lambda t, modelo=None: 'soy un mono')
+    visto = []
+    npc.al_responder = visto.append
+    npc.preguntar('quien sos?')
+    # el hilo es async: esperar a que llegue la respuesta
+    for _ in range(1000):
+        npc.actualizar()
+        if visto:
+            break
+        import time; time.sleep(0.01)
+    assert visto == ['soy un mono']
+    assert npc.ultima_respuesta == 'soy un mono'
+    assert 'Mono: soy un mono' in npc.subtitulo.texto
+    npc.eliminar()
+
+
+def test_actor_ia_hablar(monkeypatch, tmp_path):
+    """hablar: sintetiza (mockeado) y reproduce con pilas.sonidos."""
+    pilas = crear_pilas()
+    npc = pilas.actores.ActorIA('robot')
+    wav = tmp_path / 'voz.wav'
+    wav.write_bytes(b'RIFF')          # solo tiene que existir
+    from pilas3d.ia import voz
+    from pilas3d.sonidos import Sonido
+    monkeypatch.setattr(voz, 'sintetizar',
+                        lambda t, **k: str(wav))
+    # sin archivo wav real no hay nada que cargar: sonido apagado
+    monkeypatch.setattr(Sonido, 'deshabilitado', True)
+    npc.hablar('hola')
+    for _ in range(1000):
+        npc.actualizar()
+        if not npc._pendientes:
+            break
+        import time; time.sleep(0.01)
+    assert not npc._pendientes   # 'sonido' ya se reprodujo
+    npc.eliminar()
+
+
+def test_actor_ia_cuerpo_sigue_al_actor():
+    """El cuerpo visual toma la posición/rotación del ActorIA."""
+    pilas = crear_pilas()
+    npc = pilas.actores.ActorIA('humanoide')
+    npc.posicion = (2, 0, 3)
+    npc.rotacion_y = 90
+    npc.actualizar()
+    assert npc.cuerpo.posicion == (2, 0, 3)
+    assert npc.cuerpo.rotacion_y == 90
+    npc.eliminar()
