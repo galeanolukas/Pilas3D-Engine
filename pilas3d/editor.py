@@ -319,7 +319,8 @@ def al_pulsar(tecla):
         abrir_explorador()
         return
     if tecla == s.n:
-        cargar_modelo((estado['indice'] + 1) % len(MODELOS))
+        if MODELOS:
+            cargar_modelo((estado['indice'] + 1) % len(MODELOS))
         return
     if not huesos:
         refrescar_ui()
@@ -423,9 +424,6 @@ def main(directorio='modelos', ejecutar=True):
         raiz = os.path.join(os.path.dirname(__file__), '..',
                             directorio)
         encontrados = buscar_modelos(raiz)
-    if not encontrados:
-        raise SystemExit("no hay .glb/.gltf en '%s/' - bajá alguno de "
-                         "KhronosGroup/glTF-Sample-Assets" % directorio)
     MODELOS = encontrados
 
     pilas = pilas3d.iniciar(titulo="pilas3d - editor de personaje")
@@ -463,7 +461,13 @@ def main(directorio='modelos', ejecutar=True):
                                     on_text=_al_texto_overlay)
 
     pilas.escena.cuando_pulsa_tecla = al_pulsar
-    cargar_modelo(0)
+    if MODELOS:
+        cargar_modelo(0)
+    else:
+        # escena vacía: el usuario carga el primero con A
+        info.texto = ("no hay .glb/.gltf en '%s/' - apretá A y "
+                      "buscá un modelo" % directorio)
+        lista.texto = ""
 
     camara = pilas.escena.camara
     camara.posicion = (0, 2.2, 4.5)

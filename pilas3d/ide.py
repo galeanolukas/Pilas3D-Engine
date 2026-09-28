@@ -23,6 +23,8 @@ import codeop
 import contextlib
 import io
 import os
+import re
+import rlcompleter
 import traceback
 
 import pilas3d
@@ -44,6 +46,10 @@ class Consola(object):
         self.script = []            # código ejecutado (Ctrl+S)
         self.log = []
         self._comp = codeop.CommandCompiler()
+        self._completer = rlcompleter.Completer(self.ns)
+        self._sugerencias = []      # candidatos de TAB en curso
+        self._sug_i = 0             # índice para ciclar con TAB
+        self._sug_palabra = ''      # prefijo que se completó
 
         # UI: panel oscuro + log multilínea + línea de entrada
         self.panel = pilas.actores.Panel(color=pilas.colores.negro)
@@ -90,13 +96,64 @@ class Consola(object):
     def al_texto(self, texto):
         if texto >= ' ' and texto != '\r':
             self.linea += texto
+            self._sugerencias = []
             self._pintar()
         return True                 # consume todo: la consola es foco
 
+    # -- autocompletado (TAB) ----------------------------------------------
+
+    def _palabra_final(self):
+        m = re.search(r'[\w.]*$', self.linea)
+        return m.group(0) if m else ''
+
+    def _reemplazar_palabra(self, nueva):
+        self.linea = self.linea[:len(self.linea)
+                                - len(self._sug_palabra)] + nueva
+        self._sug_palabra = nueva
+
+    def _completar(self):
+        """TAB: completa el identificador bajo el cursor; TAB de
+        nuevo cicla las opciones y las muestra en el log."""
+        if self._sugerencias:
+            # cicla la sugerencia siguiente
+            self._sug_i = (self._sug_i + 1) % len(self._sugerencias)
+            self._reemplazar_palabra(self._sugerencias[self._sug_i])
+            return
+        self._sug_palabra = self._palabra_final()
+        if not self._sug_palabra:
+            return
+        sugs = []
+        i = 0
+        while True:
+            s = self._completer.complete(self._sug_palabra, i)
+            if s is None:
+                break
+            sugs.append(s)
+            i += 1
+            if i > 200:
+                break
+        if not sugs:
+            return
+        if len(sugs) == 1:
+            self._reemplazar_palabra(sugs[0])
+            return
+        # prefijo común + candidatos en el log; TAB cicla
+        comun = os.path.commonprefix(sugs)
+        if len(comun) > len(self._sug_palabra):
+            self._reemplazar_palabra(comun)
+        self._sugerencias = sugs
+        self._sug_i = 0
+        self._linea('  '.join(sugs[:12])
+                    + ('  …' if len(sugs) > 12 else ''))
+
     def al_pulsar(self, simbolo, modificadores):
         s = self.pilas.simbolos
+        if simbolo != s.TAB:
+            self._sugerencias = []  # cualquier otra tecla corta el ciclo
         if modificadores & 2 and simbolo == s.s:   # Ctrl+S (MOD_CTRL)
             self.guardar()
+        elif simbolo == s.TAB:
+            self._completar()
         elif simbolo == s.ENTER:
             self._enter()
         elif simbolo == s.BACKSPACE:
