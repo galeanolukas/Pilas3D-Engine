@@ -19,7 +19,8 @@ Controles:
 - S: marcar/quitar el punto de inicio (spawn) bajo el cursor
 - G: guardar (al path actual o pide nombre) - O: guardar como...
 - L: explorador para cargar cualquier .mapa.json
-- R: gira el prop bajo el cursor 45° (paleta props)
+- R: gira el prop 45° - D: agarra/suelta el prop para moverlo
+- F/V: subir/bajar el prop - Z/C: achicar/agrandar (paleta props)
 - N: mapa nuevo (vacío)           - T: terreno procedural de base
 - M: paleta bloques <-> props (modelos .glb/.obj de modelos/props/)
 - Q / E: subir / bajar la columna bajo el cursor (esculpir terreno)
@@ -44,7 +45,7 @@ estado = {'mundo': None, 'tipo': 0, 'prop': 0, 'props': [],
           'paleta': 'bloques',     # 'bloques' | 'props'
           'spawn': None,
           'celda': None, 'golpe': None, 'modo': 'editar',
-          'archivo': None}
+          'archivo': None, 'agarrado': None}
 nombrar = {'texto': 'nivel'}
 exp = {'dir': '.', 'sel': 0, 'entradas': []}
 
@@ -95,6 +96,9 @@ def refrescar_cursor():
         i, j, k = estado['celda']
         marcador.posicion = (i + 0.5, j + 0.5, k + 0.5)
         marcador.transparencia = 0
+        ag = estado['agarrado']
+        if ag is not None:
+            ag.posicion = (i + 0.5, float(j), k + 0.5)
     else:
         marcador.transparencia = 100
 
@@ -114,7 +118,10 @@ def _poner_bloque():
     if celda is None or not _dentro(*celda):
         return
     if estado['paleta'] == 'props':
-        _poner_prop(celda)
+        if estado['agarrado'] is not None:
+            _soltar_prop()
+        else:
+            _poner_prop(celda)
         return
     estado['mundo'].poner_bloque(*celda, TIPOS[estado['tipo']])
     _info_extra()
@@ -151,10 +158,56 @@ def _prop_cercano(celda, radio=1.6):
     return mejor
 
 
+def _prop_objetivo():
+    """El prop agarrado o, si no, el más cercano al cursor."""
+    return estado['agarrado'] or _prop_cercano(estado['celda'], 2.5)
+
+
+def _agarrar_prop():
+    """D: toma el prop bajo el cursor; vuelve a soltar con D/click."""
+    if estado['agarrado'] is not None:
+        _soltar_prop()
+        return
+    prop = _prop_cercano(estado['celda'], 2.5)
+    if prop is None:
+        info.texto = "no hay prop cerca del cursor"
+        return
+    estado['agarrado'] = prop
+    prop.transparencia = 60          # fantasma mientras se arrastra
+    info.texto = "moviendo %s - D/click suelta" % \
+        os.path.basename(getattr(prop, 'ruta', 'prop'))
+
+
+def _soltar_prop():
+    prop = estado['agarrado']
+    if prop is None:
+        return
+    estado['agarrado'] = None
+    prop.transparencia = 0
+    info.texto = "prop soltado en %s" % (prop.posicion,)
+    _info_extra()
+
+
+def _mover_prop_y(delta):
+    prop = _prop_objetivo()
+    if prop is not None:
+        prop.y = prop.y + delta
+        _info_extra()
+
+
+def _escalar_prop(factor):
+    prop = _prop_objetivo()
+    if prop is not None:
+        prop.escala = max(0.05, prop.escala * factor)
+        _info_extra()
+
+
 def _sacar_bloque():
     if estado['paleta'] == 'props':
-        prop = _prop_cercano(estado['celda'])
+        prop = estado['agarrado'] or _prop_cercano(estado['celda'])
         if prop is not None:
+            if prop is estado['agarrado']:
+                estado['agarrado'] = None
             prop.eliminar()
             estado['props'].remove(prop)
             _info_extra()
@@ -279,6 +332,7 @@ def guardar_mapa(nombre):
 
 
 def _vaciar_escena():
+    estado['agarrado'] = None
     for p in estado['props']:
         p.eliminar()
     estado['props'] = []
@@ -444,10 +498,20 @@ def al_pulsar(tecla):
     elif tecla == s.e:
         _esculpir(-1)
     elif tecla == s.r and estado['paleta'] == 'props':
-        prop = _prop_cercano(estado['celda'], radio=2.5)
+        prop = _prop_objetivo()
         if prop is not None:
             prop.rotacion_y = (prop.rotacion_y + 45) % 360
             info.texto = "prop girado a %d°" % prop.rotacion_y
+    elif tecla == s.d and estado['paleta'] == 'props':
+        _agarrar_prop()
+    elif tecla == s.f and estado['paleta'] == 'props':
+        _mover_prop_y(+0.5)
+    elif tecla == s.v and estado['paleta'] == 'props':
+        _mover_prop_y(-0.5)
+    elif tecla == s.z and estado['paleta'] == 'props':
+        _escalar_prop(0.85)
+    elif tecla == s.c and estado['paleta'] == 'props':
+        _escalar_prop(1.18)
     elif tecla == s.x:
         _sacar_bloque()
     elif tecla == s.s:
@@ -518,6 +582,7 @@ def main(directorio='mapas', ejecutar=True):
     pilas.actores.Texto(
         "click: poner - medio/X: sacar - der+drag: orbitar\n"
         "M: paleta bloques/props - <-/->: elegir - R: girar prop\n"
+        "D: agarrar prop - F/V: subir/bajar - Z/C: escala\n"
         "Q/E: columna - S: spawn - T: terreno - N: nuevo\n"
         "G: guardar - O: guardar como - L: cargar (explorador)",
         x=10, y=28, tamano=12)

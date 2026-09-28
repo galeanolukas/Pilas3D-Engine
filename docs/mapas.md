@@ -19,6 +19,9 @@ se guardan en `mapas/<nombre>.mapa.json` y los juegos los cargan con
 | `←` / `→` | cambiar tipo de bloque / prop en la paleta |
 | `M` | alternar paleta: bloques ↔ props (`modelos/props/*.glb/.gltf/.obj`) |
 | `R` | girar el prop bajo el cursor 45° (paleta props) |
+| `D` | agarrar el prop bajo el cursor — sigue al mouse como fantasma; `D` o click suelta |
+| `F` / `V` | subir / bajar el prop en Y (0.5 por pulsación) |
+| `Z` / `C` | achicar / agrandar el prop |
 | `Q` / `E` | subir / bajar la columna bajo el cursor (esculpir terreno) |
 | `S` | marcar/quitar el spawn (punto de inicio) |
 | `T` | terreno procedural de base (pasto/tierra/piedra) |
@@ -62,7 +65,8 @@ for prop in mundo.props:            # modelos estáticos del mapa
 - `props`: modelos `.glb`/`.gltf`/`.obj` posicionados encima del
   terreno (árboles, farolas...). El editor los coloca desde la paleta
   de props (`M`) con click, los saca con `X` y los gira con `R`.
-  Se guardan con `ruta`, `x/y/z`, `escala` y `rotacion_y`.
+  Se guardan con `ruta`, `x/y/z`, `escala` y `rotacion_y`; el
+  prop "objetivo" es el agarrado (`D`) o el más cercano al cursor.
   Las rutas relativas se resuelven junto al `.mapa.json` si no están
   en el cwd — el mapa es portable si copiás los modelos al lado.
 - `spawn`: punto de inicio del jugador (esfera celeste, tecla `S`)
