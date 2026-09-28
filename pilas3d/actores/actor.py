@@ -421,7 +421,21 @@ class Actor(object):
         else:
             from pyglet.image import load
 
-            self._textura = load(self._imagen).get_texture()
+            self._textura = load(
+                self._resolver_imagen(self._imagen)).get_texture()
+
+    @staticmethod
+    def _resolver_imagen(ruta):
+        """Busca la imagen en cwd, en ``pilas3d/data/`` y en el
+        paquete — como hace ``sonidos.cargar`` con el audio."""
+        import os
+        base = os.path.dirname(os.path.dirname(__file__))
+        for candidato in (ruta,
+                          os.path.join(base, 'data', ruta),
+                          os.path.join(base, ruta)):
+            if os.path.exists(candidato):
+                return candidato
+        return ruta        # que pyglet dé su error habitual
         glBindTexture(GL_TEXTURE_2D, self._textura.id)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)

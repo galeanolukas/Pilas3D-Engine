@@ -249,6 +249,22 @@ Blockly.defineBlocksWithJsonArray([
 
   // -- apariencia ---------------------------------------------------
   {
+    type: 'p3d_textura',
+    message0: 'poner textura %1 a %2',
+    args0: [
+      { type: 'field_dropdown', name: 'TEXTURA', options: [
+        ['caja', 'caja.png'], ['pasto', 'pasto.png'],
+        ['piedra', 'piedra_media.png'], ['mapa', 'mapa.png'],
+        ['moneda', 'moneda.png'], ['alien', 'alien.png'],
+        ['fantasma', 'fantasma.png'], ['explosión', 'explosion.png'],
+      ] },
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 200,
+    tooltip: 'Textura del paquete; en Python es actor.imagen = "x.png"',
+  },
+  {
     type: 'p3d_color',
     message0: 'poner %1 de color %2',
     args0: [
@@ -539,6 +555,11 @@ registrar('p3d_girar', function (block) {
          ' += ' + block.getFieldValue('N') + '\n';
 });
 
+registrar('p3d_textura', function (block) {
+  return campo_nombre(block) + '.imagen = ' +
+         GEN.quote_(block.getFieldValue('TEXTURA')) + '\n';
+});
+
 registrar('p3d_color', function (block) {
   return campo_nombre(block) + '.color = pilas.colores.' +
          block.getFieldValue('COLOR') + '\n';
@@ -700,6 +721,7 @@ var TOOLBOX = {
     { kind: 'category', name: 'Apariencia', colour: '200',
       contents: [
         { kind: 'block', type: 'p3d_color' },
+        { kind: 'block', type: 'p3d_textura' },
         { kind: 'block', type: 'p3d_texto' },
         { kind: 'block', type: 'p3d_decir' },
         { kind: 'block', type: 'p3d_globo' },
