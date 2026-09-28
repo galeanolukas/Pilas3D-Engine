@@ -41,7 +41,7 @@ function nombres_creados(block) {
 
 function globales(block) {
   var ns = nombres_creados(block);
-  return ns.length ? 'global ' + ns.join(', ') + '\n' : '';
+  return ns.length ? GEN.INDENT + 'global ' + ns.join(', ') + '\n' : '';
 }
 
 function campo_nombre(block, campo) {
