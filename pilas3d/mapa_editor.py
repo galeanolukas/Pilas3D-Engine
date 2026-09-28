@@ -506,6 +506,10 @@ def main(directorio='mapas', ejecutar=True):
     marca_spawn.color = pilas.colores.celeste
     marca_spawn.transparencia = 100
 
+    # referencias visuales: rejilla 1 celda = 1 línea, ejes de color
+    pilas.actores.Piso(tamano=MITAD * 2, divisiones=MITAD * 2)
+    pilas.actores.Ejes(largo=MITAD)
+
     panel_der = pilas.actores.Panel(color=pilas.colores.negro)
     panel_inf = pilas.actores.Panel(color=pilas.colores.negro)
     lista = pilas.actores.Texto("", tamano=13, ancho=PANEL - 16)
@@ -513,8 +517,9 @@ def main(directorio='mapas', ejecutar=True):
     info.color = pilas.colores.amarillo
     pilas.actores.Texto(
         "click: poner - medio/X: sacar - der+drag: orbitar\n"
-        "1-5 o <-/->: bloque - S: spawn - T: terreno - N: nuevo\n"
-        "G: guardar - L: cargar  →  mapas/<nombre>.mapa.json",
+        "M: paleta bloques/props - <-/->: elegir - R: girar prop\n"
+        "Q/E: columna - S: spawn - T: terreno - N: nuevo\n"
+        "G: guardar - O: guardar como - L: cargar (explorador)",
         x=10, y=28, tamano=12)
 
     organizar_layout()
