@@ -16,12 +16,16 @@ se guardan en `mapas/<nombre>.mapa.json` y los juegos los cargan con
 | click izquierdo | poner bloque en la celda marcada |
 | click medio o `X` | sacar el bloque golpeado |
 | click derecho + drag | orbitar la cámara (rueda: zoom) |
-| `←` / `→` | cambiar tipo de bloque en la paleta |
+| `←` / `→` | cambiar tipo de bloque / prop en la paleta |
+| `M` | alternar paleta: bloques ↔ props (`modelos/props/*.glb/.gltf/.obj`) |
+| `R` | girar el prop bajo el cursor 45° (paleta props) |
+| `Q` / `E` | subir / bajar la columna bajo el cursor (esculpir terreno) |
 | `S` | marcar/quitar el spawn (punto de inicio) |
 | `T` | terreno procedural de base (pasto/tierra/piedra) |
 | `N` | mapa nuevo (vacío) |
-| `G` | guardar — pide nombre → `mapas/<nombre>.mapa.json` |
-| `L` | listar mapas guardados y cargar |
+| `G` | guardar — al path actual si ya existe; si no pide nombre → `mapas/<nombre>.mapa.json` |
+| `O` | "guardar como..." — siempre pide nombre nuevo |
+| `L` | explorador de archivos → carga cualquier `.mapa.json` (navegá dirs con `[dir]` y `..`) |
 
 La esfera roja marca la celda donde caería el bloque (adyacente al
 bloque golpeado por el rayo del mouse, o el piso si no hay bloques).
@@ -55,15 +59,19 @@ for prop in mundo.props:            # modelos estáticos del mapa
 
 - `bloques`: celdas enteras `[i,j,k)` del voxel — las mismas
   coordenadas de `Mundo.poner_bloque`
-- `props`: modelos `.glb`/`.obj` posicionados encima del terreno
-  (árboles, farolas, etc. — el editor todavía no los coloca, pero el
-  formato y el cargador ya los soportan)
+- `props`: modelos `.glb`/`.gltf`/`.obj` posicionados encima del
+  terreno (árboles, farolas...). El editor los coloca desde la paleta
+  de props (`M`) con click, los saca con `X` y los gira con `R`.
+  Se guardan con `ruta`, `x/y/z`, `escala` y `rotacion_y`.
+  Las rutas relativas se resuelven junto al `.mapa.json` si no están
+  en el cwd — el mapa es portable si copiás los modelos al lado.
 - `spawn`: punto de inicio del jugador (esfera celeste, tecla `S`)
 
 ## Límites honestos
 
 - El editor es por mouse sobre la superficie visible — para hacer
   cuevas hay que picar como en Minecraft.
-- Los props se definen en el JSON a mano por ahora.
+- Los props van en `modelos/props/` (para que el editor los liste)
+  o se referencian por ruta en el JSON a mano.
 - Un solo atlas de bloques (`TIPOS_POR_DEFECTO`); más tipos =
   ampliar `TIPOS` en `pilas3d/mapa_editor.py` y el atlas del `Mundo`.

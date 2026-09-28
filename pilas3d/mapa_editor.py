@@ -17,8 +17,12 @@ Controles:
 - click derecho + drag: orbitar   - rueda: acercar/alejar
 - ←/→ o números 1-5: tipo de bloque en la paleta
 - S: marcar/quitar el punto de inicio (spawn) bajo el cursor
-- G: guardar con nombre           - L: lista los mapas de mapas/ y carga
+- G: guardar (al path actual o pide nombre) - O: guardar como...
+- L: explorador para cargar cualquier .mapa.json
+- R: gira el prop bajo el cursor 45° (paleta props)
 - N: mapa nuevo (vacío)           - T: terreno procedural de base
+- M: paleta bloques <-> props (modelos .glb/.obj de modelos/props/)
+- Q / E: subir / bajar la columna bajo el cursor (esculpir terreno)
 """
 
 import glob
@@ -36,10 +40,25 @@ PIE = 90
 
 TIPOS = ['cesped', 'tierra', 'piedra', 'ladrillo', 'arena']
 
-estado = {'mundo': None, 'tipo': 0, 'spawn': None, 'props': [],
+estado = {'mundo': None, 'tipo': 0, 'prop': 0, 'props': [],
+          'paleta': 'bloques',     # 'bloques' | 'props'
+          'spawn': None,
           'celda': None, 'golpe': None, 'modo': 'editar',
-          'mapas': [], 'mapa_sel': 0, 'archivo': None}
+          'archivo': None}
 nombrar = {'texto': 'nivel'}
+exp = {'dir': '.', 'sel': 0, 'entradas': []}
+
+
+def buscar_props():
+    """Modelos estáticos .glb/.gltf/.obj bajo modelos/props/."""
+    out = []
+    for ext in ('glb', 'gltf', 'obj'):
+        out += glob.glob(os.path.join('modelos', 'props', '**',
+                                      '*.' + ext), recursive=True)
+    return sorted(out)
+
+
+PROPS = buscar_props()
 
 marcador = marca_spawn = lista = info = panel_der = panel_inf = None
 
@@ -80,18 +99,87 @@ def refrescar_cursor():
         marcador.transparencia = 100
 
 
+def _autoescala_prop(actor, objetivo=1.6):
+    """Normaliza el prop a ~``objetivo`` unidades de alto."""
+    pos = getattr(actor, '_pos', None)
+    if pos:
+        ys = pos[1::3]
+        alto = max(ys) - min(ys)
+        if alto:
+            actor.escala = objetivo / alto
+
+
 def _poner_bloque():
     celda = estado['celda']
-    if celda and _dentro(*celda):
-        estado['mundo'].poner_bloque(*celda, TIPOS[estado['tipo']])
-        _info_extra()
+    if celda is None or not _dentro(*celda):
+        return
+    if estado['paleta'] == 'props':
+        _poner_prop(celda)
+        return
+    estado['mundo'].poner_bloque(*celda, TIPOS[estado['tipo']])
+    _info_extra()
+
+
+def _poner_prop(celda):
+    """Coloca el prop elegido parado sobre la celda (centro)."""
+    if not PROPS:
+        info.texto = "no hay props en modelos/props/"
+        return
+    ruta = PROPS[estado['prop']]
+    i, j, k = celda
+    if ruta.lower().endswith(('.glb', '.gltf')):
+        actor = pilas.actores.ModeloGLTF(ruta)
+    else:
+        actor = pilas.actores.Modelo(ruta)
+    actor.posicion = (i + 0.5, float(j), k + 0.5)
+    _autoescala_prop(actor)
+    estado['props'].append(actor)
+    _info_extra()
+
+
+def _prop_cercano(celda, radio=1.6):
+    """El prop más cercano al centro de la celda (o None)."""
+    if celda is None:
+        return None
+    i, j, k = celda
+    cx, cy, cz = i + 0.5, j + 0.5, k + 0.5
+    mejor, dist2 = None, radio * radio
+    for p in estado['props']:
+        d = (p.x - cx) ** 2 + (p.y - cy) ** 2 + (p.z - cz) ** 2
+        if d < dist2:
+            mejor, dist2 = p, d
+    return mejor
 
 
 def _sacar_bloque():
+    if estado['paleta'] == 'props':
+        prop = _prop_cercano(estado['celda'])
+        if prop is not None:
+            prop.eliminar()
+            estado['props'].remove(prop)
+            _info_extra()
+            return
     golpe = estado['golpe']
     if golpe:
         estado['mundo'].sacar_bloque(*golpe)
         _info_extra()
+
+
+def _esculpir(delta):
+    """Sube (delta>0) o baja (delta<0) la columna bajo el cursor —
+    terraformar rápido sin picar bloque por bloque."""
+    celda = estado['celda']
+    if celda is None:
+        return
+    mundo = estado['mundo']
+    i, _, k = celda
+    techo = mundo._columnas.get((i, k), 0)
+    if delta > 0:
+        if _dentro(i, techo, k):
+            mundo.poner_bloque(i, techo, k, TIPOS[estado['tipo']])
+    elif techo > 0:
+        mundo.sacar_bloque(i, techo - 1, k)
+    _info_extra()
 
 
 def al_click(x, y, boton, _mod):
@@ -128,13 +216,23 @@ def organizar_layout():
 
 
 def refrescar_ui():
-    lineas = ['paleta de bloques', '']
-    for n, tipo in enumerate(TIPOS):
-        marca = '>> ' if n == estado['tipo'] else '   '
-        lineas.append('%s%s' % (marca, tipo))
+    if estado['paleta'] == 'props':
+        lineas = ['paleta de PROPS (M bloques)', '']
+        if not PROPS:
+            lineas.append('   (sin modelos en modelos/props/)')
+        for n, ruta in enumerate(PROPS):
+            marca = '>> ' if n == estado['prop'] else '   '
+            nom = os.path.basename(ruta)[:24]
+            lineas.append('%s%s' % (marca, nom))
+    else:
+        lineas = ['paleta de bloques (M props)', '']
+        for n, tipo in enumerate(TIPOS):
+            marca = '>> ' if n == estado['tipo'] else '   '
+            lineas.append('%s%s' % (marca, tipo))
     lineas.append('')
     nspawn = 'sí' if estado['spawn'] else 'no'
-    lineas.append('spawn: %s' % nspawn)
+    lineas.append('spawn: %s | props: %d' % (nspawn,
+                                           len(estado['props'])))
     lista.texto = '\n'.join(lineas)
     _info_extra()
 
@@ -143,8 +241,13 @@ def _info_extra():
     celda = estado['celda']
     nb = len(estado['mundo'].bloques) if estado['mundo'] else 0
     archivo = estado['archivo'] or '(sin guardar)'
-    info.texto = "%s | tipo: %s | celda: %s | bloques: %d" % (
-        archivo, TIPOS[estado['tipo']], celda, nb)
+    if estado['paleta'] == 'props':
+        sel = os.path.basename(PROPS[estado['prop']]) if PROPS \
+            else '(sin props)'
+    else:
+        sel = TIPOS[estado['tipo']]
+    info.texto = "%s | %s | celda: %s | bloques: %d" % (
+        archivo, sel, celda, nb)
 
 
 # -- guardar / cargar -----------------------------------------------------
@@ -155,17 +258,24 @@ def _dir_mapas():
     return d
 
 
-def guardar_mapa(nombre):
-    ruta = os.path.join(_dir_mapas(), nombre + '.mapa.json')
+def _guardar_en(ruta, nombre=None):
+    """Escribe el mapa en el path dado (cualquier directorio)."""
     props = []
     for p in estado['props']:
         props.append({'ruta': getattr(p, 'ruta', ''),
                       'x': p.x, 'y': p.y, 'z': p.z,
-                      'escala': getattr(p, 'escala', 1.0)})
+                      'escala': getattr(p, 'escala', 1.0),
+                      'rotacion_y': getattr(p, 'rotacion_y', 0)})
     pilas.mapas.guardar(ruta, estado['mundo'], nombre=nombre,
                         spawn=estado['spawn'], props=props)
     estado['archivo'] = ruta
     return ruta
+
+
+def guardar_mapa(nombre):
+    """Guarda con nombre en ``mapas/`` (el caso típico)."""
+    return _guardar_en(os.path.join(_dir_mapas(),
+                                    nombre + '.mapa.json'), nombre)
 
 
 def _vaciar_escena():
@@ -220,25 +330,34 @@ def _pintar_nombre():
     lista.texto = '>> %s_' % nombrar['texto']
 
 
-def _pintar_mapas():
-    info.texto = "elegir mapa de mapas/ (ENTER carga, ESC cancela)"
-    ini = max(0, min(estado['mapa_sel'] - 7,
-                     len(estado['mapas']) - 14))
+def _listar_dir():
+    """Entradas del explorador: '..', dirs y *.mapa.json."""
+    try:
+        ent = sorted(os.listdir(exp['dir']))
+    except OSError:
+        ent = []
+    dirs = ['[%s]' % d for d in ent
+            if os.path.isdir(os.path.join(exp['dir'], d))]
+    mapas = [f for f in ent if f.endswith('.mapa.json')]
+    exp['entradas'] = ['..'] + dirs + mapas
+    exp['sel'] = min(exp['sel'], len(exp['entradas']) - 1)
+
+
+def _pintar_explorador():
+    info.texto = "cargar mapa - dir: %s (ESC cancela)" \
+        % os.path.abspath(exp['dir'])
+    ini = max(0, min(exp['sel'] - 7, len(exp['entradas']) - 14))
     lista.texto = '\n'.join(
-        ('>> ' if ini + k == estado['mapa_sel'] else '   ') +
-        os.path.basename(m)
-        for k, m in enumerate(estado['mapas'][ini:ini + 14]))
+        ('>> ' if ini + k == exp['sel'] else '   ') + e
+        for k, e in enumerate(exp['entradas'][ini:ini + 14]))
 
 
 def _abrir_lista_mapas():
-    estado['mapas'] = sorted(glob.glob(
-        os.path.join(_dir_mapas(), '*.mapa.json')))
-    if not estado['mapas']:
-        info.texto = "no hay mapas guardados en mapas/"
-        return
-    estado['mapa_sel'] = 0
+    exp['dir'] = _dir_mapas() if os.path.isdir('mapas') else '.'
+    exp['sel'] = 0
+    _listar_dir()
     estado['modo'] = 'mapas'
-    _pintar_mapas()
+    _pintar_explorador()
 
 
 def _tecla_nombre(t):
@@ -262,19 +381,28 @@ def _tecla_mapas(t):
     if t == s.ESCAPE:
         estado['modo'] = 'editar'
         refrescar_ui()
-    elif t == s.ARRIBA:
-        estado['mapa_sel'] = (estado['mapa_sel'] - 1) \
-            % len(estado['mapas'])
-        _pintar_mapas()
+        return
+    if t == s.ARRIBA:
+        exp['sel'] = (exp['sel'] - 1) % len(exp['entradas'])
     elif t == s.ABAJO:
-        estado['mapa_sel'] = (estado['mapa_sel'] + 1) \
-            % len(estado['mapas'])
-        _pintar_mapas()
+        exp['sel'] = (exp['sel'] + 1) % len(exp['entradas'])
     elif t == s.ENTER:
-        estado['modo'] = 'editar'
-        cargar_mapa(estado['mapas'][estado['mapa_sel']])
-        info.texto = "mapa cargado: " + \
-            os.path.basename(estado['archivo'])
+        e = exp['entradas'][exp['sel']]
+        if e == '..':
+            exp['dir'] = os.path.dirname(
+                os.path.abspath(exp['dir']))
+            exp['sel'] = 0
+        elif e.startswith('['):
+            exp['dir'] = os.path.join(exp['dir'], e[1:-1])
+            exp['sel'] = 0
+        else:
+            estado['modo'] = 'editar'
+            cargar_mapa(os.path.join(exp['dir'], e))
+            info.texto = "mapa cargado: " + \
+                os.path.basename(estado['archivo'])
+            return
+    _listar_dir()
+    _pintar_explorador()
 
 
 def _al_pulsar_overlay(simbolo, _mod):
@@ -300,17 +428,43 @@ def al_pulsar(tecla):
     s = pilas.simbolos
     if estado['modo'] != 'editar':
         return
-    if tecla == s.IZQUIERDA:
-        estado['tipo'] = (estado['tipo'] - 1) % len(TIPOS)
+    if tecla == s.IZQUIERDA or tecla == s.DERECHA:
+        d = -1 if tecla == s.IZQUIERDA else 1
+        if estado['paleta'] == 'props' and PROPS:
+            estado['prop'] = (estado['prop'] + d) % len(PROPS)
+        else:
+            estado['tipo'] = (estado['tipo'] + d) % len(TIPOS)
         refrescar_ui()
-    elif tecla == s.DERECHA:
-        estado['tipo'] = (estado['tipo'] + 1) % len(TIPOS)
+    elif tecla == s.m:
+        estado['paleta'] = 'props' if estado['paleta'] == 'bloques' \
+            else 'bloques'
         refrescar_ui()
+    elif tecla == s.q:
+        _esculpir(+1)
+    elif tecla == s.e:
+        _esculpir(-1)
+    elif tecla == s.r and estado['paleta'] == 'props':
+        prop = _prop_cercano(estado['celda'], radio=2.5)
+        if prop is not None:
+            prop.rotacion_y = (prop.rotacion_y + 45) % 360
+            info.texto = "prop girado a %d°" % prop.rotacion_y
     elif tecla == s.x:
         _sacar_bloque()
     elif tecla == s.s:
         _marcar_spawn()
     elif tecla == s.g:
+        if estado['archivo']:
+            # ya tiene path -> guarda directo (seguir editando después)
+            _guardar_en(estado['archivo'])
+            info.texto = "guardado en %s" % estado['archivo']
+        else:
+            estado['modo'] = 'nombre'
+            _pintar_nombre()
+    elif tecla == s.o:
+        # "guardar como..." -> siempre pide nombre nuevo
+        nombrar['texto'] = os.path.splitext(os.path.splitext(
+            os.path.basename(
+                estado['archivo'] or 'nivel.mapa.json'))[0])[0]
         estado['modo'] = 'nombre'
         _pintar_nombre()
     elif tecla == s.l:

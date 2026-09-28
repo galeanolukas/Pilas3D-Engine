@@ -18,7 +18,8 @@ Formato del archivo::
       "spawn": [0.5, 1.0, 0.5],
       "bloques": [[i, j, k, "tipo"], ...],
       "props":  [{"ruta": "modelos/props/arbol.glb",
-                  "x": 0, "y": 1, "z": 0, "escala": 1.0}]
+                  "x": 0, "y": 1, "z": 0, "escala": 1.0,
+                  "rotacion_y": 0}]
     }
 """
 
@@ -43,18 +44,28 @@ class Mapas(object):
             mundo.poner_bloque(int(i), int(j), int(k), tipo)
         mundo._sucio = True
 
+        dir_mapa = os.path.dirname(os.path.abspath(ruta))
         mundo.props = []
         for p in datos.get('props', []):
             ruta_prop = p.get('ruta', '')
-            if not os.path.exists(ruta_prop):
+            # relativa: primero tal cual (cwd), luego junto al .mapa.json
+            ruta_real = ruta_prop
+            if not os.path.isabs(ruta_real) \
+                    and not os.path.exists(ruta_real):
+                ruta_real = os.path.join(dir_mapa, ruta_prop)
+            if not os.path.exists(ruta_real):
                 continue
-            if ruta_prop.lower().endswith(('.glb', '.gltf')):
-                actor = self.pilas.actores.ModeloGLTF(ruta_prop)
+            if ruta_real.lower().endswith(('.glb', '.gltf')):
+                actor = self.pilas.actores.ModeloGLTF(ruta_real)
             else:
-                actor = self.pilas.actores.Modelo(ruta_prop)
+                actor = self.pilas.actores.Modelo(ruta_real)
+            actor.ruta = ruta_prop     # conserva la ruta original al re-guardar
             actor.posicion = (p.get('x', 0), p.get('y', 0),
                               p.get('z', 0))
             actor.escala = p.get('escala', 1.0)
+            actor.rotacion_x = p.get('rotacion_x', 0)
+            actor.rotacion_y = p.get('rotacion_y', 0)
+            actor.rotacion_z = p.get('rotacion_z', 0)
             mundo.props.append(actor)
 
         spawn = datos.get('spawn')

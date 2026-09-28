@@ -2049,3 +2049,55 @@ def test_mapas_guardar_cargar(tmp_path):
                        'y': 0, 'z': 0}]
     json.dump(datos, open(ruta, 'w'))
     assert pilas.mapas.cargar(ruta).props == []
+
+
+def test_mapas_props_estaticos(tmp_path):
+    """Props .obj en el mapa: ruta relativa al archivo, transform y
+    re-guardado conservando la ruta original."""
+    import json
+    pilas = crear_pilas()
+    niveles = tmp_path / 'niveles'
+    niveles.mkdir()
+    (niveles / 'arbol.obj').write_text(
+        'v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n')
+    ruta = str(niveles / 'bosque.mapa.json')
+
+    mundo = pilas.actores.Mundo()
+    mundo.poner_bloque(0, 0, 0, 'cesped')
+    props = [{'ruta': 'arbol.obj', 'x': 2, 'y': 0, 'z': 2,
+              'escala': 2.0, 'rotacion_y': 90}]
+    pilas.mapas.guardar(ruta, mundo, nombre='bosque',
+                        spawn=(0.5, 1.0, 0.5), props=props)
+
+    # 'arbol.obj' no existe en el cwd -> se resuelve junto al .mapa.json
+    cargado = pilas.mapas.cargar(ruta)
+    assert len(cargado.props) == 1
+    prop = cargado.props[0]
+    assert prop.ruta == 'arbol.obj'      # ruta original, no la resuelta
+    assert prop.posicion == (2, 0, 2)
+    assert prop.escala == 2.0
+    assert prop.rotacion_y == 90
+
+    # seguir editando: el mundo cargado acepta bloques y re-guarda
+    cargado.poner_bloque(1, 0, 0, 'ladrillo')
+    pilas.mapas.guardar(
+        ruta, cargado, nombre='bosque', spawn=cargado.spawn,
+        props=[{'ruta': p.ruta, 'x': p.x, 'y': p.y, 'z': p.z,
+                'escala': p.escala, 'rotacion_y': p.rotacion_y}
+               for p in cargado.props])
+    datos = json.load(open(ruta))
+    assert len(datos['bloques']) == 2
+    assert datos['props'][0]['ruta'] == 'arbol.obj'
+    assert datos['props'][0]['rotacion_y'] == 90
+
+
+def test_mapas_terreno_se_persiste(tmp_path):
+    """generar_terreno -> guardar -> cargar: alturas sobreviven."""
+    pilas = crear_pilas()
+    mundo = pilas.actores.Mundo()
+    mundo.generar_terreno(ancho=8, profundidad=8, altura=3, semilla=7)
+    antes = dict(mundo.bloques)
+    ruta = str(tmp_path / 'terreno.mapa.json')
+    pilas.mapas.guardar(ruta, mundo)
+    cargado = pilas.mapas.cargar(ruta)
+    assert dict(cargado.bloques) == antes
