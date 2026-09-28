@@ -63,6 +63,7 @@ def buscar_props():
 PROPS = buscar_props()
 
 marcador = marca_spawn = lista = info = panel_der = panel_inf = None
+guias = []
 
 
 # -- cursor / picking ---------------------------------------------------
@@ -280,6 +281,11 @@ def organizar_layout():
     lista.ancho = PANEL - 16
     info.x = 10
     info.y = 70
+    # guia de controles: columnas repartidas por todo el panel
+    paso = (w - 20) / float(len(guias))
+    for n, g in enumerate(guias):
+        g.x = 10 + n * paso
+        g.y = 40
 
 
 def refrescar_ui():
@@ -576,7 +582,7 @@ def _marcar_spawn():
 def main(directorio='mapas', ejecutar=True):
     """Abre el editor de mapas. Devuelve ``pilas``."""
     global pilas, marcador, marca_spawn, lista, info
-    global panel_der, panel_inf
+    global panel_der, panel_inf, guias
 
     pilas = pilas3d.iniciar(titulo="pilas3d - editor de mapas")
     pilas.escena.fondo = pilas.colores.gris_oscuro
@@ -597,12 +603,17 @@ def main(directorio='mapas', ejecutar=True):
     lista = pilas.actores.Texto("", tamano=13, ancho=PANEL - 16)
     info = pilas.actores.Texto("", tamano=15)
     info.color = pilas.colores.amarillo
-    pilas.actores.Texto(
-        "click: poner - medio/X: sacar - espacio+mouse: orbitar - rueda\n"
-        "1-5 o <-/->: elegir - M: bloques/props - R: girar - D: agarrar\n"
-        "F/V: subir/bajar prop - Z/C: escala - Q/E: columna - S: spawn\n"
-        "T: terreno - N: nuevo - G: guardar - O: como - L: cargar - ESC",
-        x=10, y=52, tamano=12)
+    del guias[:]
+    for txt in (
+            "click: poner - X: sacar\n"
+            "espacio+mouse: orbitar",
+            "M: paleta - 1-5: elegir\n"
+            "R: girar - D: agarrar",
+            "F/V Z/C: alto/escala\n"
+            "Q/E: columna - S: spawn",
+            "T: terreno - N: nuevo\n"
+            "G/O: guardar - L: cargar"):
+        guias.append(pilas.actores.Texto(txt, tamano=10))
 
     organizar_layout()
     pilas.tareas.siempre(0.5, organizar_layout)
