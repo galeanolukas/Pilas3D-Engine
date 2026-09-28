@@ -15,7 +15,7 @@ se guardan en `mapas/<nombre>.mapa.json` y los juegos los cargan con
 |---|---|
 | click izquierdo | poner bloque en la celda marcada |
 | click medio o `X` | sacar el bloque golpeado |
-| click derecho + drag | orbitar la cámara (rueda: zoom) |
+| `ESPACIO` + mover mouse | orbitar la cámara (rueda: zoom; click derecho + drag también funciona) |
 | `←` / `→` | cambiar tipo de bloque / prop en la paleta |
 | `M` | alternar paleta: bloques ↔ props (`modelos/props/*.glb/.gltf/.obj`) |
 | `R` | girar el prop bajo el cursor 45° (paleta props) |

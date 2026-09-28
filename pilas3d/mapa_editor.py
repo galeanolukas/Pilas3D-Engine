@@ -14,7 +14,8 @@ en ``mapas/<nombre>.mapa.json`` y los juegos lo cargan con
 Controles:
 
 - click izquierdo: poner bloque   - click medio o X: sacar bloque
-- click derecho + drag: orbitar   - rueda: acercar/alejar
+- espacio + mover mouse: orbitar (click derecho + drag también)
+  rueda: acercar/alejar
 - ←/→ o números 1-5: tipo de bloque en la paleta
 - S: marcar/quitar el punto de inicio (spawn) bajo el cursor
 - G: guardar (al path actual o pide nombre) - O: guardar como...
@@ -590,7 +591,7 @@ def main(directorio='mapas', ejecutar=True):
     info = pilas.actores.Texto("", tamano=15)
     info.color = pilas.colores.amarillo
     pilas.actores.Texto(
-        "click: poner - medio/X: sacar - der: orbitar - rueda: zoom\n"
+        "click: poner - medio/X: sacar - espacio+mouse: orbitar - rueda\n"
         "1-5 o <-/->: elegir - M: bloques/props - R: girar - D: agarrar\n"
         "F/V: subir/bajar prop - Z/C: escala - Q/E: columna - S: spawn\n"
         "T: terreno - N: nuevo - G: guardar - O: como - L: cargar - ESC",
@@ -613,7 +614,8 @@ def main(directorio='mapas', ejecutar=True):
     camara = pilas.escena.camara
     camara.posicion = (18, 14, 18)
     camara.objetivo = (0, 0, 0)
-    camara.usar_control_orbital(boton=pilas.simbolos.BOTON_DERECHO)
+    camara.usar_control_orbital(boton=pilas.simbolos.BOTON_DERECHO,
+                                tecla=pilas.simbolos.ESPACIO)
 
     if ejecutar:
         pilas.ejecutar()

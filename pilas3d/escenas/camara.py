@@ -204,14 +204,17 @@ class Camara(object):
 
     # -- control orbital con el mouse -------------------------------------
 
-    def usar_control_orbital(self, boton=mouse.LEFT):
-        """Activa órbita con ``boton`` + drag y zoom con la rueda.
+    def usar_control_orbital(self, boton=mouse.LEFT, tecla=None):
+        """Activa órbita con ``boton`` + drag, o con ``tecla`` +
+        mover el mouse (sin click), y zoom con la rueda.
 
         La cámara gira siempre alrededor de ``self.objetivo``. Con
         ``boton=mouse.RIGHT`` queda el izquierdo libre para habilidades
-        como ``Arrastrable``.
+        como ``Arrastrable``. Con ``tecla=simbolos.ESPACIO`` se orbita
+        manteniendo espacio y moviendo el mouse.
         """
         self._orbital_boton = boton
+        self._orbital_tecla = tecla
         ox, oy, oz = self.objetivo
         dx, dy, dz = self.x - ox, self.y - oy, self.z - oz
         d = math.sqrt(dx * dx + dy * dy + dz * dz)
@@ -225,11 +228,27 @@ class Camara(object):
             ventana.push_handlers(
                 on_mouse_drag=self._on_mouse_drag,
                 on_mouse_scroll=self._on_mouse_scroll,
+                on_mouse_motion=self._on_mouse_motion,
             )
 
     def _on_mouse_drag(self, x, y, dx, dy, botones, modificadores):
-        if not (botones & self._orbital_boton):
+        if self._orbital_boton is None or \
+                not (botones & self._orbital_boton):
             return
+        self._orbitar(dx, dy)
+
+    def _on_mouse_motion(self, x, y, dx, dy):
+        """Órbita sin click: se activa mientras ``tecla`` está
+        pulsada (modo espacio + mouse)."""
+        tecla = self._orbital_tecla
+        ventana = self.escena.pilas.ventana
+        if tecla is None or ventana is None:
+            return
+        if not ventana.teclas[tecla]:
+            return
+        self._orbitar(dx, dy)
+
+    def _orbitar(self, dx, dy):
         self._orbital_yaw += dx * 0.4
         self._orbital_pitch = max(
             -89.0, min(89.0, self._orbital_pitch + dy * 0.4))
