@@ -186,7 +186,7 @@ Blockly.defineBlocksWithJsonArray([
     args0: [
       { type: 'field_dropdown', name: 'TIPO', options: [
         ['piso', 'Piso'], ['ejes', 'Ejes'], ['plano', 'Plano'],
-        ['pared', 'Pared'], ['cartel', 'Cartel'],
+        ['pared', 'Pared'], ['cartel', 'Cartel'], ['cielo', 'Cielo'],
       ] },
       { type: 'field_input', name: 'NOMBRE', text: 'piso' },
     ],
