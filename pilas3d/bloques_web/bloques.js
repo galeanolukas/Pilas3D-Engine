@@ -90,6 +90,13 @@ function actores_o_cualquiera() {
   return [['(cualquier lugar)', '*']].concat(ops);
 }
 
+// idem pero "(nadie)" — para el objetivo opcional del cerebro.
+function actores_o_nadie() {
+  var ops = actores_opciones.call(this);
+  if (ops.length === 1 && ops[0][1] === 'actor') ops = [];
+  return [['(nadie)', '*']].concat(ops);
+}
+
 // teclas para "al pulsar la tecla": valor = atributo de pilas.simbolos
 var TECLAS = [
   ['espacio', 'ESPACIO'], ['enter', 'ENTER'], ['escape', 'ESCAPE'],
@@ -312,6 +319,20 @@ Blockly.defineBlocksWithJsonArray([
     ],
     previousStatement: null, nextStatement: null,
     colour: 200,
+  },
+  {
+    type: 'p3d_cerebro',
+    message0: 'darle cerebro a %1 que piensa cada %2 s ' +
+             'con personalidad %3 y de objetivo %4',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
+      { type: 'field_number', name: 'CADA', value: 3, min: 0.5 },
+      { type: 'field_input', name: 'PERSONA',
+        text: 'sos un npc amigable' },
+      { type: 'field_dropdown', name: 'OBJ', options: actores_o_nadie },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 330,
   },
   {
     type: 'p3d_sonido',
@@ -589,6 +610,17 @@ registrar('p3d_globo', function (block) {
          ', duracion=' + block.getFieldValue('SEG') + ')\n';
 });
 
+registrar('p3d_cerebro', function (block) {
+  var obj = block.getFieldValue('OBJ');
+  var args = 'cada=' + (block.getFieldValue('CADA') || 3) +
+             ', personalidad=' +
+             GEN.quote_(block.getFieldValue('PERSONA'));
+  if (obj && obj !== '*')
+    args += ', objetivo=' + sanea(obj);
+  return campo_nombre(block) +
+         '.aprender(pilas.habilidades.Cerebro, ' + args + ')\n';
+});
+
 registrar('p3d_sonido', function (block) {
   return 'pilas.sonidos.cargar(' +
          GEN.quote_(block.getFieldValue('RUTA')) + ').reproducir()\n';
@@ -741,6 +773,10 @@ var TOOLBOX = {
         { kind: 'block', type: 'p3d_camara_orbital' },
         { kind: 'block', type: 'p3d_camara_seguir' },
         { kind: 'block', type: 'p3d_camara_libre' },
+      ] },
+    { kind: 'category', name: 'IA', colour: '330',
+      contents: [
+        { kind: 'block', type: 'p3d_cerebro' },
       ] },
     { kind: 'category', name: 'Sensores', colour: '210',
       contents: [
