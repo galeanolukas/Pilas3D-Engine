@@ -22,7 +22,7 @@ pilas3d-mapas = "pilas3d.mapa_editor:cli"
 include = ["pilas3d*"]
 
 [tool.setuptools.package-data]
-pilas3d = ["bloques_web/**/*", "bloques_web/**/**/*"]
+pilas3d = ["bloques_web/**/*", "bloques_web/**/**/*", "data/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

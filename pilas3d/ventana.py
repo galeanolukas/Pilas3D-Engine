@@ -29,6 +29,7 @@ class Ventana(pyglet.window.Window):
         )
         self.pilas = pilas
         self.set_minimum_size(160, 120)
+        self._poner_icono()
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -46,6 +47,15 @@ class Ventana(pyglet.window.Window):
         #: ventana. Sirve para dejar zonas libres para paneles de
         #: interfaz (ver ``actores.Panel``).
         self.area_3d = None
+
+    def _poner_icono(self):
+        """Icono de la ventana: el logo del motor (data/logo.png)."""
+        import os
+        from pyglet.image import load
+        ruta = os.path.join(os.path.dirname(__file__), 'data',
+                            'logo.png')
+        if os.path.exists(ruta):
+            self.set_icon(load(ruta))
 
     def on_key_press(self, simbolo, modificadores):
         """Atajos globales de la ventana.

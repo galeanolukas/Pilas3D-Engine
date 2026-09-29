@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="PilasLogo.png" width="220" alt="Pilas3D">
+</p>
+
 # Pilas3D-Engine
 
 Motor de videojuegos 3D simple y en español, inspirado en
@@ -9,22 +13,70 @@ render 2D (QPainter/PyQt4) por OpenGL 3D usando **pyglet**.
 
 ```python
 import pilas3d
-from pilas3d.actores.actor import Actor
-from pilas3d import mallas
 
 pilas = pilas3d.iniciar()
 
-class CuboGiratorio(Actor):
-    def _generar_geometria(self):
-        return mallas.cubo(2.0)
-
-    def actualizar(self):
-        self.rotacion_y += 60 * self.pilas.dt
-
-CuboGiratorio(pilas, y=1)
+mono = pilas.actores.Mono()
+mono.aprender(pilas.habilidades.MoverseConElTeclado)
 pilas.actores.Piso()
-pilas.actores.Ejes()
+pilas.actores.Cielo()
 pilas.ejecutar()
+```
+
+## Herramientas
+
+Todo se instala con `pip install -e .` (o el instalador) y queda como
+comando:
+
+| Comando | Herramienta | |
+|---|---|---|
+| `pilas3d` | **Consola interactiva**: ventana 3D + IPython — cada línea refresca la escena | `%ejemplo`, `%ia`, `%make_game` |
+| `pilas3d-ide` | **IDE integrado**: vista 3D + consola Python en la misma ventana | multilínea, historial, `Ctrl+S` guarda |
+| `pilas3d-editor` | **Editor de personajes**: posar huesos `.glb`, keyframes, animar | guarda `.anim.json` |
+| `pilas3d-bloques` | **Blockly web**: bloques tipo Scratch → Python real | ejemplos precargados, Run/Stop |
+| `pilas3d-mapas` | **Editor de mapas voxel**: click pone bloques, paleta, spawn | guarda `.mapa.json` |
+
+### Editor de personajes (`pilas3d-editor`)
+
+| Huesos y pose | Modelo Fox | Explorador de .glb |
+|---|---|---|
+| ![editor](capturas/pilas3d_editor.png) | ![fox](capturas/editor_fox.png) | ![explorador](capturas/editor_explorador.png) |
+
+Carga modelos `.glb` riggeados: rotar/mover huesos, capturar
+keyframes, crear animaciones propias guardadas como `.anim.json`
+junto al modelo — sin Blender. Guía:
+[docs/editor-personaje.md](docs/editor-personaje.md).
+
+### Programación por bloques (`pilas3d-bloques`)
+
+![bloques](capturas/pilas3d_bloques.png)
+
+Arrastrar bloques tipo Scratch genera **código Python real** en el
+panel lateral, que corre en la escena al apretar Ejecutar: actores,
+eventos (click, tecla, colisión, entrar a zona), movimiento,
+interpolaciones, menús, variables, IA (`Cerebro`, `Chat`), vida,
+zonas, patrullas. Puente de bloques a código. Guía:
+[docs/bloques.md](docs/bloques.md).
+
+### Editor de mapas (`pilas3d-mapas`)
+
+![mapas](capturas/pilas3d_mapas.png)
+
+Editor voxel con paleta de bloques y spawn del jugador. Los juegos
+cargan los `.mapa.json` con `pilas.mapas.cargar()`. Guía:
+[docs/mapas.md](docs/mapas.md).
+
+### Consola interactiva (`pilas3d`)
+
+Ventana 3D + consola IPython (autocompletado, historial) donde
+`pilas` ya está iniciada y **cada línea refresca la escena**:
+
+```
+In [1]: cubo = pilas.actores.Cubo()        # aparece al instante
+In [2]: cubo.color = pilas.colores.rojo    # se vuelve rojo
+In [3]: %ejemplo templo                    # corre un ejemplo acá mismo
+In [4]: %ia ¿cómo pongo gravedad?          # asistente (opcional)
+In [5]: %ia make_game un cubo que salta    # genera un juego entero
 ```
 
 ## Capturas
@@ -41,10 +93,6 @@ pilas.ejecutar()
 |---|---|---|
 | ![multijugador](capturas/multijugador.png) | ![modelos](capturas/modelos_minecraft.png) | ![particulas](capturas/particulas.png) |
 
-| Editor (lobo) | Editor (Fox) | Explorador de .glb |
-|---|---|---|
-| ![editor](capturas/editor_personaje.png) | ![editor fox](capturas/editor_fox.png) | ![explorador](capturas/editor_explorador.png) |
-
 Más en [`capturas/`](capturas/).
 
 ## Instalación
@@ -59,10 +107,7 @@ o a mano:
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-.venv/bin/pip install -e .   # opcional: habilita los comandos
-                             # `pilas3d` (consola), `pilas3d-ide`
-                             # (consola en la ventana), `pilas3d-editor`,
-                             # `pilas3d-bloques` y `pilas3d-mapas`
+.venv/bin/pip install -e .
 ```
 
 Para **actualizar** a la última versión:
@@ -98,122 +143,42 @@ PILAS3D_IA_MODELO=qwen2.5-coder:7b .venv/bin/pilas3d   # usarlo
 ```python
 pilas.ayuda()                                   # chuleta clásica
 pilas.ayuda("¿cómo hago un enemigo que me persiga?")
+pilas.ia.preguntar("¿y si le agrego una lámpara?")
 # en la consola interactiva:
 In [1]: %ia ¿cómo pongo gravedad?
 In [2]: %explicar        # explica el último error
 ```
 
-Sin Ollama el motor funciona igual: `pilas.ayuda()` sigue mostrando la
-guía. Variables de entorno: `PILAS3D_IA_MODELO` (modelo alternativo,
-ej. `qwen2.5-coder:7b` con GPU) y `PILAS3D_IA_GPU=1` (usar GPU en vez
-de CPU). Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
-
-### Editor de mapas
-
-`pilas3d-mapas` abre un editor voxel (misma GUI que el de
-personajes): click pone bloques, paleta de tipos, spawn del jugador
-y terreno procedural de base. Guarda `mapas/<nombre>.mapa.json` y
-los juegos lo cargan con `pilas.mapas.cargar()`. Guía:
-[docs/mapas.md](docs/mapas.md).
-
-### IDE con consola integrada
-
-`pilas3d-ide` abre una ventana en dos columnas: **vista 3D a la
-izquierda, consola Python a la derecha** — sin terminal flotante.
-Multi-línea (`def`/`for` detectados solos), historial con ↑/↓ y
-`Ctrl+S` guarda la sesión en `sesion_pilas3d.py`. Guía:
-[docs/ide.md](docs/ide.md).
-
-### Programación por bloques
-
-`pilas3d-bloques` abre la ventana 3D y una página web con **bloques
-tipo Scratch** (Blockly): los chicos arrastran "crear cubo", "mover",
-"si tecla", "por siempre"... y el panel lateral muestra el **código
-Python real** que generan — se ejecuta en la escena al apretar
-Ejecutar. Es el puente de bloques a código (idea de Pilas Bloques).
-Guía: [docs/bloques.md](docs/bloques.md).
-
-### Editor de personajes
-
-Se abre con `pilas3d-editor` (o `python3 ejemplos/editor_personaje.py`,
-o `pilas3d.editor.main()` desde la consola interactiva). Carga modelos
-`.glb` riggeados y deja
-**posar huesos, capturar keyframes y crear animaciones propias** que
-se guardan en JSON — sin Blender. Trae explorador de archivos para
-cargar `.glb` de cualquier carpeta, paneles laterales/inferior y
-órbita de cámara. Guía completa:
-[docs/editor-personaje.md](docs/editor-personaje.md).
+El NPC con habilidad `Cerebro` decide sus acciones con el LLM local
+(`acercarse`, `decir`, `ir_a`…) y el actor `Chat` le habla con una
+tecla. Sin Ollama el motor funciona igual: `pilas.ayuda()` sigue
+mostrando la guía. Variables: `PILAS3D_IA_MODELO`, `PILAS3D_IA_GPU=1`.
+Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 
 ## Ejemplos
 
 ```bash
 .venv/bin/python ejemplos/hola_cubo.py
-.venv/bin/python ejemplos/mover_con_teclado.py   # flechas o WASD
+.venv/bin/python ejemplos/templo.py             # juego completo: vida, enemigos, zonas, monedas, guardar
+.venv/bin/python ejemplos/mover_con_teclado.py  # flechas o WASD
 .venv/bin/python ejemplos/juego_recolectar.py   # mini-juego completo
 .venv/bin/python ejemplos/camara_orbital.py     # órbita con mouse + debug
 .venv/bin/python ejemplos/juego_doom.py         # mini-FPS: WASD + mouse + click
+.venv/bin/python ejemplos/antorchas.py          # noche con lámparas parpadeantes
 .venv/bin/python ejemplos/sonido.py             # efectos de audio
 .venv/bin/python ejemplos/modelo_animado.py     # modelos .obj animados
 .venv/bin/python ejemplos/escenas.py            # menu -> juego (escenas)
-.venv/bin/python ejemplos/pilascraft.py         # PilasCraft: mundo voxel infinito, picar/colocar, niebla y escombros
-.venv/bin/python ejemplos/pilascraft_red.py     # PilasCraft multijugador (host; otros: `... <ip>`)
+.venv/bin/python ejemplos/pilascraft.py         # mundo voxel infinito, picar/colocar
+.venv/bin/python ejemplos/pilascraft_red.py     # PilasCraft multijugador
 .venv/bin/python ejemplos/juego_modelos.py      # recolectar gemas con modelos .obj
 .venv/bin/python ejemplos/plataformas.py        # plataformero: PisaPlataformas + salto
 .venv/bin/python ejemplos/particulas.py         # fuego, humo, lluvia, explosión
 .venv/bin/python ejemplos/personajes.py         # galería: Robot, Humanoide, Mono, Arania, Espectro
-.venv/bin/python ejemplos/editor_personaje.py   # editor: posar huesos glTF + animar por keyframes
-.venv/bin/python ejemplos/bots.py               # NPCs: patrullan, te persiguen (SerBot) y vuelven
-.venv/bin/python ejemplos/niebla.py             # escena.niebla: abierta/cerrada/noche con linterna
+.venv/bin/python ejemplos/bots.py               # NPCs: patrullan, te persiguen (SerBot)
+.venv/bin/python ejemplos/cerebro.py            # NPC con Cerebro: decide con el LLM local
+.venv/bin/python ejemplos/niebla.py             # escena.niebla: abierta/cerrada/noche
+.venv/bin/python ejemplos/vida_y_zonas.py       # Vida + Zona + máquina de estados + Barra
 ```
-
-## Consola interactiva (con autocompletado)
-
-Tras `pip install -e .` queda disponible el comando `pilas3d`, que abre
-la ventana junto con una consola IPython (autocompletado, historial,
-colores) donde `pilas` ya está iniciada. **Cada línea que ejecutás
-refresca la escena automáticamente** con `pilas.paso()`:
-
-```bash
-pilas3d                       # o: python3 -m pilas3d
-```
-
-```
-In [1]: cubo = pilas.actores.Cubo()        # aparece al instante
-In [2]: cubo.color = pilas.colores.rojo    # se vuelve rojo
-In [3]: pilas.ayuda()                      # guía de la API
-In [4]: %ejemplo juego_recolectar          # corre un ejemplo acá mismo
-In [5]: %ia ¿cómo pongo gravedad?          # asistente (opcional)
-In [6]: %explicar                          # explica el último error
-```
-
-Con el asistente de IA también podés **generar juegos enteros**:
-
-```
-In [7]: %ia make_game un cubo que recolecta esferas
-In [8]: %ia run juegos/un_cubo_que_recolecta_esferas.py
-In [9]: %ia edit juegos/un_cubo_que_recolecta_esferas.py "agregá puntaje"
-In [10]: %ia list                        # juegos guardados en ./juegos
-```
-
-`make_game` genera el juego desde un template validado (el modelo solo
-rellena la lógica), lo prueba en modo headless y reintenta con el
-error si falla. `run` lo ejecuta en la ventana abierta. Los juegos
-quedan en `./juegos/` (en `.gitignore`).
-
-`%ejemplo <nombre>` ejecuta un archivo de `ejemplos/` dentro de la
-ventana ya abierta: el `iniciar()` del ejemplo devuelve la `pilas`
-viva y su `ejecutar()` se omite — el auto-refresco la sigue animando
-y podés seguir tocando los actores que creó. `%ejemplo` sin nombre
-lista los disponibles.
-
-La consola activa el *inputhook* de pyglet de IPython
-(`shell.enable_gui('pyglet')`): la ventana sigue procesando eventos
-mientras la consola espera input, así que **se redimensiona, se
-repinta y responde al mouse** como si corriera un script. Si usás
-`ipython` a mano (no `pilas3d`), hacé lo mismo con `%gui pyglet`.
-
-Sin IPython instalado cae a la consola estándar de Python con
-autocompletado por tabulador (ahí hay que llamar `pilas.paso()` a mano).
 
 ## Modo interactivo manual
 
@@ -229,10 +194,7 @@ bloquear con `ejecutar()`:
 >>> for i in range(180):             # anima ~3 segundos
 ...     cubo.rotacion_y += 2
 ...     pilas.paso()
->>> pilas.ayuda()                    # guía rápida de toda la API
 ```
-
-`pilas.ayuda()` imprime una chuleta con toda la API disponible.
 
 ## Tests
 
@@ -251,42 +213,36 @@ bloquear con `ejecutar()`:
 | `pilas.escenas.Normal()`      | igual + `escenas.vincular(Clase)`, hooks `iniciar`/`terminar`/`cuando_pulsa_tecla`, `pilas.escena`, `pilas.cambiar_escena` |
 | `escena.camara.x/y`           | `camara.x/y/z` + `camara.objetivo`   |
 | `pilas.control.izquierda`…    | igual (flechas + WASD)               |
-| `pilas.actores.Texto/Puntaje` | `pilas.actores.Texto()` / `Puntaje()` (overlay 2D, multilínea con `\n` y `ancho=px`) |
-| —                             | `pilas.actores.Panel()` — rectángulo overlay para HUD/paneles; con `pilas.ventana.area_3d=(x,y,w,h)` dividís la ventana en vista 3D + zonas de interfaz |
-| `actor.colisiona_con(otro)`   | igual (esfera-esfera 3D con `radio_de_colision`) + `colisiona_en_plano_con` (solo XZ) |
+| `pilas.actores.Texto/Puntaje` | `pilas.actores.Texto()` / `Puntaje()` (overlay 2D, multilínea) |
+| —                             | `pilas.actores.Panel()` + `pilas.ventana.area_3d` (HUD/paneles) |
+| `actor.colisiona_con(otro)`   | igual (esfera-esfera 3D) + `colisiona_en_plano_con` (XZ) |
+| —                             | `pilas.colisiones.cuando_colisionan(a, b, fn)` — evento de colisión |
 | `pilas.tareas.siempre(s, f)`  | igual (`una_vez`, `siempre`, `condicional`)  |
-| `actor.x = [100]`             | igual — interpolación; `actor.x = ([a,b], dur)` u `Objeto` (`pilas.interpolaciones.Lineal`, `ReboteFinal`, `ElasticoInicial`…) + `pilas.interpolar(actor, 'x', v, duracion)` |
-| `actor.aprender(pilas.habilidades.X)` | igual — `MoverseConElTeclado`, `RebotarComoPelota` (3D), `GirarConstantemente`, `SeguirAlActor`, `MirarAlActor`, `MoverseEnCirculo`, `MoverseComoCoche`, `Imitar`, `AumentarConRueda`, `RotarConMouse`, `PuedeExplotar`, `PisaPlataformas`, `PerseguirAOtroActor` (A* esquivando obstáculos) |
+| `actor.x = [100]`             | igual — interpolación + `pilas.interpolar(actor, 'x', v, duracion, tipo=…)` |
+| `actor.aprender(habilidades.X)` | igual — `MoverseConElTeclado`, `SerBot`, `PerseguirAOtroActor` (A*), `Patrullar`, `HuirDe`, `Vida`, `MaquinaDeEstados`, `PisaPlataformas` (salto+gravedad), `RebotaEnParedes`, `Parpadear`, `Cerebro` (LLM)… |
 | `pilas.depurador.definir_modos` | `fps`, `ejes`, `radios_de_colision`, `puntos_de_control` |
 | `pilas.fps.ver()`             | igual                                |
-| —                             | `camara.usar_control_orbital()` (mouse: orbitar + zoom) |
-| —                             | `camara.seguir_a(actor, modo)` — 1ra/2da/3ra persona ('primera','segunda','tercera'), `dejar_de_seguir()` |
+| —                             | `pilas.camara.seguir_a(actor, modo)` 1ra/2da/3ra persona, `usar_control_orbital()`, `temblor()` |
 | —                             | `habilidades.CaminarEnPrimeraPersona` (FPS: mouse look + WASD) |
-| —                             | `camara.disparar_rayo(actores)` (rayo-esfera, para disparos) |
 | —                             | `pilas.actores.Pared()` + `escena.obstaculos` (bloquean el paso) |
-| `pilas.control.mouse_x/y`     | posición y botones del mouse + `pilas.cuando_hace_click(f)` → `f(actor, punto)`, `cuando_suelta_click(f)`, `cuando_mueve_mouse(f)` |
-| `habilidades.Arrastrable`…    | `Arrastrable` (drag en 3D) y `SeguirAlMouse` (camina al puntero) — usan `camara.rayo_desde_mouse` / `actor_bajo_mouse` / `punto_bajo_mouse` |
-| `habilidades.Disparar`        | igual — `actor.disparar()` crea un `Proyectil` que viaja recto, choca con `objetivos` y avisa con `cuando_impacta(p, actor)`; `con_click`, `tecla`, `cadencia`, `desde_camara` |
-| —                             | `pilas.actores.Menu(opciones, titulo)` — menú overlay navegable (flechas+ENTER o mouse); acciones, `('X','check',bool,fn)` checkbox, `('X','input',ini,fn)` entrada de texto, ciclo si devuelve texto |
-| —                             | `pilas.sonidos.volumen` / `pilas.sonidos.mute` — volumen maestro y silencio global |
-| `pilas.actores.Temporizador`  | igual — `ajustar(s, fn)`, `iniciar/detener/reiniciar`, `avisar(s, fn)`; extras: `ciclico`, `visible=False`, `autoeliminar`, cronómetro (`duracion=0`), `formato` propio |
-| `pilas.sonidos.cargar()`      | igual (`reproducir`, `detener`, `pausar`, `continuar`, `volumen`) |
-| `pilas.musica.cargar()`       | igual (streaming, bucle por defecto, `detener_gradualmente`) |
-| `Grilla`/`Animacion`          | `pilas.actores.Animacion(img, columnas, filas, velocidad)` (billboard animado) |
-| —                             | `pilas.actores.Cartel()` (sprite que siempre mira a la cámara) |
-| —                             | `pilas.actores.Modelo('x.obj')` (carga modelos Wavefront .obj) |
-| —                             | `pilas.actores.ModeloAnimado('run/f*.obj')` (secuencia .obj estilo MD2, `suavizar=True` interpola vértices) |
-| —                             | `pilas.actores.ModeloGLTF('x.glb')` — glTF 2.0 con animación esquelética por CPU (`.animar(nombre)`, `.animaciones()`), texturas, pose (`rotar_hueso`, `guardar_pose`) y keyframes propios (`crear_animacion`, `guardar_animacion`) |
-| —                             | `pilas.actores.Mundo()` — voxels tipo Minecraft: `generar_terreno`, `poner/sacar_bloque`, `disparar_bloque` (rayo DDA) |
-| —                             | `pilas.actores.ModeloJSON('x.json')` — modelos de bloque Minecraft (formato elements/faces) |
-| —                             | `mundo.armar_atlas([pngs])` — atlas de bloques desde texturas propias |
-| —                             | `pilas.luces` — sol + hasta 8 puntuales con atenuación |
-| —                             | `escena.niebla = (color, inicio, fin)` — niebla lineal (None la apaga) |
-| —                             | `pilas.red.hospedar/conectar` — multijugador simple: `enviar(tipo, **datos)`, `cuando_reciba(tipo, fn)` |
-| —                             | `pilas.actores.Sombra(actor)` (sombra falsa tipo blob) |
-| `Mono`/`Robot`/...            | `pilas.actores.Robot`/`Humanoide`/`Mono`/`Arania`/`Espectro` — personajes predefinidos (combinar primitivas, color por vértice, alambrado) |
-| —                             | `pilas.actores.Bot(personaje, mundo, objetivo)` — NPC listo; o `actor.aprender(pilas.habilidades.SerBot)` en cualquier actor |
-| —                             | `pilas.actores.Cielo()` — cielo estrellado (o `Cielo('fondo.png')`) |
+| `pilas.control.mouse_x/y`     | posición y botones + `pilas.cuando_hace_click(f)` → `f(actor, punto)` |
+| `habilidades.Arrastrable`…    | `Arrastrable` (drag 3D), `SeguirAlMouse` |
+| `habilidades.Disparar`        | igual — `actor.disparar()`, `con_click`, `cuando_impacta` |
+| —                             | `pilas.actores.Menu()` — menú overlay navegable |
+| —                             | `pilas.actores.Lampara()` — luz puntual que sigue al actor |
+| —                             | `pilas.actores.Zona()` — trigger: `cuando_entra`/`cuando_sale` |
+| —                             | `pilas.actores.Barra(de=actor)` — barra de vida del HUD |
+| —                             | `pilas.eventos.cuando/emitir` — bus de eventos propios |
+| —                             | `pilas.guardar_partida`/`cargar_partida` — JSON |
+| `pilas.sonidos.cargar()`      | igual + `pilas.sonidos.volumen`/`.mute` |
+| `pilas.musica.cargar()`       | igual (streaming, bucle por defecto) |
+| `Grilla`/`Animacion`          | `pilas.actores.Animacion(img, columnas, filas)` (billboard) |
+| —                             | `Cartel()`, `Sombra()`, `Cielo()`, `Globo()`, `Chat()` |
+| —                             | `ModeloGLTF('x.glb')` — glTF 2.0 con skinning por CPU, `.animar()`, poses y keyframes propios (ver [docs/modelos-rendimiento.md](docs/modelos-rendimiento.md)) |
+| —                             | `Mundo()` — voxels tipo Minecraft; `ModeloJSON()` bloques |
+| —                             | `pilas.luces` — sol + hasta 8 puntuales; `escena.niebla` |
+| —                             | `pilas.red.hospedar/conectar` — multijugador simple |
+| `Mono`/`Robot`/...            | `Robot`/`Humanoide`/`Mono`/`Arania`/`Espectro` + `Bot()` |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
 
 ## Colaborar
@@ -297,9 +253,7 @@ bloquear con `ejecutar()`:
   mejorá ejemplos o documentación.
 - **Ideas pendientes**: transiciones con fade entre escenas, lanzador
   gráfico de ejemplos, shadow mapping real (hoy `Sombra` es un blob),
-  materiales glTF completos (hoy `baseColorFactor` + 1 `baseColorTexture`), skinning
-  en GPU, más habilidades de pilas (`PuedeExplotar` con radio,
-  `SeMantieneEnEscena`…).
+  materiales glTF completos, skinning en GPU, más habilidades de pilas.
 - **Ejemplos**: un nuevo juego o demo usando la API es una gran
   contribución — mirá `ejemplos/` para el estilo.
 
