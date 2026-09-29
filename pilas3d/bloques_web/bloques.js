@@ -1034,9 +1034,13 @@ registrar('p3d_sonido', function (block) {
 });
 
 // la opción sola no emite código: el menú padre la convierte en una
-// función + una entrada ('texto', fn).
+// función + una entrada ('texto', fn). Lo mismo el bloque de estilo.
 registrar('p3d_menu_opcion', function (block) {
   return '';
+});
+
+registrar('p3d_menu_estilo', function (block) {
+  return '# el bloque "estilo" va dentro de "crear menú"\n';
 });
 
 registrar('p3d_menu', function (block) {
