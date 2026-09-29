@@ -40,6 +40,16 @@ Fondo y presentación:
   menú se centra — pensado para pantallas de título.
 - ``centrado=True``: centra el panel en la ventana sin cubrirla.
 - ``margen``: relleno del panel alrededor del texto (píxeles).
+
+Efectos de audio: ``sonido_mover`` y ``sonido_elegir`` aceptan una
+ruta ('tick.wav' se resuelve en ``pilas3d/data``) o ``True`` para el
+sonido empaquetado por defecto::
+
+    pilas.actores.Menu(opciones=[...], sonido_mover=True,
+                       sonido_elegir=True)
+
+``mover`` suena al cambiar de opción (teclado y mouse), ``elegir``
+al activarla.
 """
 
 import json
@@ -60,7 +70,8 @@ class Menu(Actor):
     def __init__(self, pilas, opciones, x=200, y=300, separacion=38,
                  tamano=22, color=None, seleccionado=None, titulo=None,
                  guardar_en=None, fondo=None, fondo_imagen=None,
-                 pantalla_completa=False, centrado=False, margen=24):
+                 pantalla_completa=False, centrado=False, margen=24,
+                 sonido_mover=None, sonido_elegir=None):
         super(Menu, self).__init__(pilas)
         self.radio_de_colision = 0.0
         self.color_base = color or colores.blanco
@@ -87,6 +98,9 @@ class Menu(Actor):
                 self._imagen = pyglet.image.load(fondo_imagen)
             except Exception:
                 self._imagen = None
+        self._snd_mover = self._cargar_efecto(sonido_mover, 'tick.wav')
+        self._snd_elegir = self._cargar_efecto(sonido_elegir,
+                                              'smile.wav')
 
         y0 = y
         if titulo:
@@ -121,6 +135,16 @@ class Menu(Actor):
 
     def _generar_geometria(self):
         return [], [], 0
+
+    def _cargar_efecto(self, valor, defecto):
+        """``valor`` es None/True/ruta; True usa el wav del paquete."""
+        if not valor:
+            return None
+        try:
+            return self.pilas.sonidos.cargar(
+                defecto if valor is True else valor)
+        except Exception:
+            return None
 
     @staticmethod
     def _normalizar(op):
@@ -228,6 +252,8 @@ class Menu(Actor):
         else:
             self._sel = (self._sel + 1) % len(self._opciones)
         self._pintar()
+        if self._snd_mover is not None:
+            self._snd_mover.reproducir()
 
     def elegir(self):
         """Activa la opción seleccionada según su tipo.
@@ -237,6 +263,8 @@ class Menu(Actor):
         - check: alterna el valor y llama ``fn(valor)``.
         - input: entra en modo edición (ver ``escribir``).
         """
+        if self._snd_elegir is not None:
+            self._snd_elegir.reproducir()
         texto, tipo, valor, fn = self._opciones[self._sel]
         if tipo == 'check':
             valor = not valor
@@ -396,6 +424,8 @@ class Menu(Actor):
         if i is not None and i != self._sel:
             self._sel = i
             self._pintar()
+            if self._snd_mover is not None:
+                self._snd_mover.reproducir()
 
     def _al_click_mouse(self, x, y, button, modifiers):
         if not self.esta_en_escena() or self._editando is not None:

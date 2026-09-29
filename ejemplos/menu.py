@@ -97,6 +97,8 @@ pilas.actores.Menu(
     tamano=20,
     centrado=True,                  # panel centrado en la ventana
     fondo=(0, 0, 0, 150),           # panel oscuro semitransparente
+    sonido_mover=True,              # 'tick.wav' del paquete al navegar
+    sonido_elegir=True,             # 'smile.wav' al activar una opción
     color=pilas.colores.blanco,
     seleccionado=pilas.colores.amarillo)
 

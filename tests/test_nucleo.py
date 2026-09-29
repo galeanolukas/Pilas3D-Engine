@@ -1645,6 +1645,26 @@ def test_menu_fondo_y_centrado():
     menu.dibujar()                          # no falla en headless
 
 
+def test_menu_sonidos_de_navegacion():
+    """sonido_mover/elegir cargan un efecto y lo suenan al usarlo."""
+    pilas = crear_pilas()
+    menu = pilas.actores.Menu(opciones=[("A", None), ("B", None)],
+                              sonido_mover=True, sonido_elegir=True)
+    assert menu._snd_mover is not None
+    assert menu._snd_elegir is not None
+    tocados = []
+    menu._snd_mover.reproducir = lambda: tocados.append('mover')
+    menu._snd_elegir.reproducir = lambda: tocados.append('elegir')
+    menu.mover('abajo')
+    menu.elegir()
+    assert tocados == ['mover', 'elegir']
+    # sonido_mover con ruta propia
+    menu2 = pilas.actores.Menu(opciones=[("A", None)],
+                               sonido_mover='tick.wav')
+    assert menu2._snd_mover is not None
+    assert menu2._snd_elegir is None
+
+
 def test_menu_limpia_sus_textos():
     pilas = crear_pilas()
     menu = pilas.actores.Menu(opciones=[("A", None), ("B", None)],
