@@ -256,4 +256,24 @@ var EJEMPLOS = [
       '</block></statement></block>' +
       '</xml>',
   },
+  {
+    nombre: 'NPC con cerebro (IA)',
+    xml:
+      '<xml><block type="p3d_al_iniciar" x="30" y="30"><statement name="HACER"><block type="p3d_c' +
+      'rear_escenario"><field name="TIPO">Piso</field><field name="NOMBRE">piso</field><next><blo' +
+      'ck type="p3d_crear_escenario"><field name="TIPO">Cielo</field><field name="NOMBRE">cielo</' +
+      'field><next><block type="p3d_cielo"><field name="NOMBRE">cielo</field><field name="TIPO">d' +
+      'ia</field><next><block type="p3d_crear_actor"><field name="TIPO">Mono</field><field name="' +
+      'NOMBRE">mono</field><field name="X">4</field><field name="Y">0</field><field name="Z">0</f' +
+      'ield><next><block type="p3d_crear_actor"><field name="TIPO">Robot</field><field name="NOMB' +
+      'RE">robi</field><field name="X">0</field><field name="Y">0</field><field name="Z">3</field' +
+      '><next><block type="p3d_cerebro"><field name="NOMBRE">mono</field><field name="CADA">3</fi' +
+      'eld><field name="PERSONA">sos un mono charlatan y jugueton; te gusta saludar y acercarte</' +
+      'field><field name="OBJ">robi</field><next><block type="p3d_chat"><field name="NOMBRE">mono' +
+      '</field><field name="TECLA">t</field><next><block type="p3d_texto"><field name="TEXTO">pul' +
+      'sa T y hablale al mono</field><field name="X">10</field><field name="Y">30</field><next><b' +
+      'lock type="p3d_camara_orbital"></block></next></block></next></block></next></block></next' +
+      '></block></next></block></next></block></next></block></next></block></statement></block><' +
+      '/xml>',
+  },
 ];

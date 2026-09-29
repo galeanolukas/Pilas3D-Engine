@@ -2495,3 +2495,60 @@ def test_cerebro_piensa_en_hilo_y_actua(monkeypatch):
     c._pensar()
     assert c._ocupado is False
     c.actualizar()
+
+
+def test_chat_sin_cerebro_responde_con_globo(monkeypatch):
+    """Chat.decir_a con actor común: la respuesta va a su globo."""
+    from pilas3d.ia import asistente
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    chat = pilas.actores.Chat(cubo, tecla='t')
+    monkeypatch.setattr(asistente, 'preguntar',
+                        lambda *a, **k: 'hola desde el cubo')
+    chat.decir_a('hola?')
+    for _ in range(200):
+        chat.actualizar()
+        if getattr(cubo, '_globo', None) and \
+                cubo._globo.texto:
+            break
+        import time; time.sleep(0.01)
+    assert cubo._globo.texto == 'hola desde el cubo'
+
+
+def test_chat_con_cerebro_aplica_la_accion(monkeypatch):
+    """Con Cerebro la respuesta se parsea como acción y se aplica."""
+    from pilas3d.ia import asistente
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    cubo.aprender(pilas.habilidades.Cerebro, cada=99)
+    chat = pilas.actores.Chat(cubo, tecla='t')
+    monkeypatch.setattr(
+        asistente, 'llamar_ollama',
+        lambda *a, **k: '{"accion":"mover","dx":3,"dz":0}')
+    chat.decir_a('movete')
+    for _ in range(200):
+        chat.actualizar()
+        if cubo.x == 3:
+            break
+        import time; time.sleep(0.01)
+    assert cubo.x == 3
+
+
+def test_chat_con_actoria_delega_preguntar():
+    """Si el npc es ActorIA (sin cerebro) se usa su preguntar."""
+    pilas = crear_pilas()
+    npc = pilas.actores.ActorIA('mono', habla=False)
+    chat = pilas.actores.Chat(npc, tecla='t')
+    pedidos = []
+    npc.preguntar = pedidos.append          # espía
+    chat.decir_a('hola npc')
+    assert pedidos == ['hola npc']
+
+
+def test_chat_ignora_mensaje_vacio():
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    chat = pilas.actores.Chat(cubo, tecla='t')
+    chat.decir_a('   ')
+    chat.actualizar()
+    assert not getattr(cubo, '_globo', None)

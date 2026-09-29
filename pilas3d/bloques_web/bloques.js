@@ -97,6 +97,13 @@ function actores_o_nadie() {
   return [['(nadie)', '*']].concat(ops);
 }
 
+// tipos de cielo: 'estrellas'/'dia' son generados; el resto son
+// texturas del paquete (pilas3d/data) que Cielo acepta como ruta.
+var CIELOS = [
+  ['estrellas (noche)', 'estrellas'], ['día con nubes', 'dia'],
+  ['imagen mapa.png', 'mapa.png'], ['imagen piedra.png', 'piedra.png'],
+];
+
 // teclas para "al pulsar la tecla": valor = atributo de pilas.simbolos
 var TECLAS = [
   ['espacio', 'ESPACIO'], ['enter', 'ENTER'], ['escape', 'ESCAPE'],
@@ -316,6 +323,29 @@ Blockly.defineBlocksWithJsonArray([
       { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
       { type: 'field_input', name: 'TEXTO', text: 'hola!' },
       { type: 'field_number', name: 'SEG', value: 3, min: 0 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 200,
+  },
+  {
+    type: 'p3d_chat',
+    message0: 'crear chat para hablar con %1 al pulsar %2',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
+      { type: 'field_dropdown', name: 'TECLA', options: [
+        ['t', 't'], ['e', 'e'], ['q', 'q'],
+        ['espacio', 'ESPACIO'], ['enter', 'ENTER'],
+      ] },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 330,
+  },
+  {
+    type: 'p3d_cielo',
+    message0: 'poner el cielo %1 de %2',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
+      { type: 'field_dropdown', name: 'TIPO', options: CIELOS },
     ],
     previousStatement: null, nextStatement: null,
     colour: 200,
@@ -615,10 +645,24 @@ registrar('p3d_cerebro', function (block) {
   var args = 'cada=' + (block.getFieldValue('CADA') || 3) +
              ', personalidad=' +
              GEN.quote_(block.getFieldValue('PERSONA'));
-  if (obj && obj !== '*')
+  // el objetivo solo se emite si es un actor creado de verdad —
+  // evita NameError si el XML quedó con un nombre viejo.
+  if (obj && obj !== '*' &&
+      nombres_creados(block).indexOf(sanea(obj)) >= 0)
     args += ', objetivo=' + sanea(obj);
   return campo_nombre(block) +
          '.aprender(pilas.habilidades.Cerebro, ' + args + ')\n';
+});
+
+registrar('p3d_chat', function (block) {
+  return 'pilas.actores.Chat(' + campo_nombre(block) +
+         ', tecla=pilas.simbolos.' +
+         block.getFieldValue('TECLA') + ')\n';
+});
+
+registrar('p3d_cielo', function (block) {
+  return campo_nombre(block) + '.tipo = ' +
+         GEN.quote_(block.getFieldValue('TIPO')) + '\n';
 });
 
 registrar('p3d_sonido', function (block) {
@@ -754,6 +798,7 @@ var TOOLBOX = {
       contents: [
         { kind: 'block', type: 'p3d_color' },
         { kind: 'block', type: 'p3d_textura' },
+        { kind: 'block', type: 'p3d_cielo' },
         { kind: 'block', type: 'p3d_texto' },
         { kind: 'block', type: 'p3d_decir' },
         { kind: 'block', type: 'p3d_globo' },
@@ -777,6 +822,7 @@ var TOOLBOX = {
     { kind: 'category', name: 'IA', colour: '330',
       contents: [
         { kind: 'block', type: 'p3d_cerebro' },
+        { kind: 'block', type: 'p3d_chat' },
       ] },
     { kind: 'category', name: 'Sensores', colour: '210',
       contents: [

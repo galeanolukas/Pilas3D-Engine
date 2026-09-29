@@ -306,3 +306,28 @@ Detalles:
 - Si la respuesta no parsea, se descarta y cuenta en `cerebro.fallos`.
 - `cerebro.ultima_decision` guarda la última acción para depurar.
 - Ejemplo completo: `ejemplos/cerebro.py`.
+
+## 13. `pilas.actores.Chat`: hablarle al actor con cerebro
+
+Actor invisible que conecta el teclado con el cerebro de un NPC:
+al pulsar la tecla (por defecto `t`) se abre un cuadro de texto
+(`pilas.pedir_texto`) y el mensaje viaja al LLM junto con el estado
+del actor:
+
+```python
+mono.aprender(pilas.habilidades.Cerebro,
+              personalidad='sos un mono charlatan')
+chat = pilas.actores.Chat(mono, tecla='t')
+# pulsá T -> escribí "vení" -> el mono responde/acerca
+```
+
+La respuesta pasa por el **mismo canal que el cerebro**: el modelo
+devuelve una acción de la lista cerrada, así que el NPC no solo
+habla — también actúa (`"vení"` → `acercarse`, `"hola"` → `decir`).
+Si el actor no tiene cerebro pero es un `ActorIA`, se delega a su
+`preguntar` (con voz Piper); si no tiene nada, responde con el
+asistente en su globo.
+
+Bloques nuevos en el editor (categoría IA + Apariencia):
+`darle cerebro`, `crear chat` y `poner el cielo` (estrellas/día/
+textura del paquete). Ejemplo precargado: **"NPC con cerebro (IA)"**.

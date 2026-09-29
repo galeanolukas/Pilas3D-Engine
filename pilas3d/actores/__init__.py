@@ -33,6 +33,7 @@ from pilas3d.actores.menu import Menu
 from pilas3d.actores.personajes import (Personaje, Robot, Humanoide,
                                       Mono, Arania, Espectro)
 from pilas3d.actores.actor_ia import ActorIA
+from pilas3d.actores.chat import Chat
 
 
 class Actores(object):
@@ -191,6 +192,17 @@ class Actores(object):
         solo al cabo de esos segundos (ver ``globo.decir``)."""
         return Globo(self._pilas, actor=actor, texto=texto, x=x, y=y,
                      alto=alto, tamano=tamano, duracion=duracion)
+
+    def Chat(self, npc, tecla='t', etiqueta=None):
+        """Puente para charlar con un actor: al pulsar ``tecla`` se
+        abre un cuadro de texto y el mensaje va al LLM local.
+
+        Si ``npc`` tiene la habilidad ``Cerebro`` la respuesta vuelve
+        como una acción suya (decir, moverse, acercarse…); si es un
+        ``ActorIA`` se delega a su ``preguntar`` (con voz); si no,
+        responde con el asistente y su globo."""
+        return Chat(self._pilas, npc=npc, tecla=tecla,
+                    etiqueta=etiqueta)
 
     def Temporizador(self, x=10, y=10, tamano=18, duracion=0,
                      cuando_termina=None, ciclico=False, visible=True,
