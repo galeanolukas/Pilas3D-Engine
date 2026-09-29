@@ -56,3 +56,16 @@ Regla práctica:
    fuerza `actualizar`).
 3. Skinning en GPU por shader — el salto real para modelos de
    10k+ vértices o muchos personajes simultáneos.
+
+## Formato .glb + .anim.json (editor de personajes)
+
+El editor guarda clips como ``<modelo>.<nombre>.anim.json`` junto al
+.glb y ``ModeloGLTF`` los registra solo al cargar. Es el diseño
+correcto: el binario es estándar/rápido y el JSON de animación es
+editable a mano, por código (``crear_animacion``), por el editor o
+por la IA — y diffs limpios en git.
+
+Robustez: cada canal guarda ``nodo`` (índice) **y** ``nodo_nombre``.
+Si el .glb se re-exporta con otro orden de huesos,
+``cargar_animacion`` remapea por nombre; sin coincidencia, descarta
+ese canal en vez de romper la pose.

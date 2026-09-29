@@ -266,6 +266,7 @@ class ModeloGLTF(Actor):
                            for pose in poses]
                 if any(v != valores[0] for v in valores):
                     canales.append({'nodo': i, 'camino': camino,
+                                    'nodo_nombre': base['nombre'],
                                     'tiempos': tiempos,
                                     'valores': valores,
                                     'interp': 'LINEAR'})
@@ -303,11 +304,33 @@ class ModeloGLTF(Actor):
             datos = [datos]
         nombres = []
         for clip in datos:
+            canales = [self._canal_resuelto(c) for c in
+                       clip['canales']]
             self._escena['animaciones'][clip['nombre']] = {
-                'canales': clip['canales'],
+                'canales': [c for c in canales if c],
                 'duracion': clip['duracion']}
             nombres.append(clip['nombre'])
         return nombres[0] if len(nombres) == 1 else nombres
+
+    def _canal_resuelto(self, canal):
+        """Valida el índice de nodo del canal contra el esqueleto.
+
+        Los .anim.json guardan 'nodo' (índice) y 'nodo_nombre': si el
+        .glb se re-exportó y cambió el orden de nodos, se remapea por
+        nombre. Sin coincidencia, el canal se descarta."""
+        nodos = self._escena['nodos']
+        i = canal.get('nodo', -1)
+        nombre = canal.get('nodo_nombre')
+        if 0 <= i < len(nodos) and (nombre is None or
+                                    nodos[i]['nombre'] == nombre):
+            return canal
+        if nombre:
+            for j, n in enumerate(nodos):
+                if n['nombre'] == nombre:
+                    c = dict(canal)
+                    c['nodo'] = j
+                    return c
+        return None
 
     def _indice_hueso(self, hueso):
         """Acepta índice de nodo, índice de articulación o nombre."""

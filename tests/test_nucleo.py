@@ -2919,3 +2919,29 @@ def test_guardar_y_cargar_partida(tmp_path):
     n = recreados[0]
     assert (n.x, n.z, n.rotacion_y) == (3, -2, 45)
     assert n.vida == 30 and n.vida_maxima == 80
+
+
+def test_anim_json_remapea_por_nombre(tmp_path):
+    """Un .anim.json referencia huesos por índice; si el esqueleto
+    cambió de orden, el nombre los reubica."""
+    pilas = crear_pilas()
+    m = pilas.actores.ModeloGLTF('modelos/personajes/fox/Fox.glb')
+    hueso = m.huesos()[0][0]
+    pose_a = {str(hueso): {'r': [0, 0, 0.0, 1.0]}}
+    pose_b = {str(hueso): {'r': [0, 0, 0.2, 0.98]}}
+    m.crear_animacion('giro', [pose_a, pose_b])
+    ruta = str(tmp_path / 'fox.anim.json')
+    m.guardar_animacion(ruta, 'giro')
+
+    import json
+    datos = json.load(open(ruta))
+    canal = datos['canales'][0]
+    assert canal['nodo_nombre']                  # se exportó el nombre
+    canal['nodo'] = 0                            # índice roto (re-export)
+    json.dump(datos, open(ruta, 'w'))
+
+    m2 = pilas.actores.ModeloGLTF('modelos/personajes/fox/Fox.glb')
+    m2.cargar_animacion(ruta)
+    nodo_ok = m2._escena['animaciones']['giro']['canales'][0]['nodo']
+    nombre_ok = [n['nombre'] for n in m2._escena['nodos']]
+    assert nombre_ok[nodo_ok] == canal['nodo_nombre']
