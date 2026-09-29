@@ -16,9 +16,11 @@ Soporte acotado: ver ``pilas3d.gltf`` (una sola skin, color plano
 
 import math
 
-from pyglet.gl import GL_TRIANGLES
+from pyglet.gl import GL_TRIANGLES, GL_TEXTURE_2D, \
+    GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_REPEAT, glBindTexture, \
+    glTexParameteri
 
-from pilas3d import gltf
+from pilas3d import gltf, shaders
 from pilas3d.actores.actor import Actor
 
 
@@ -36,9 +38,9 @@ class ModeloGLTF(Actor):
         # pose original (para reiniciar_pose / edición)
         self._trs_orig = [(n['t'][:], n['r'][:], n['s'][:])
                           for n in self._escena['nodos']]
+        self._listas = None          # vertex lists por material
         super(ModeloGLTF, self).__init__(pilas, x=x, y=y, z=z)
         self.escala = escala
-        self._aplicar_textura()
         self._cargar_anims_junto_al_modelo()
         if animacion:
             self.animar(animacion)
@@ -60,19 +62,87 @@ class ModeloGLTF(Actor):
             except Exception:
                 pass          # json roto o incompatible: no molesta
 
-    def _aplicar_textura(self):
-        """Toma la primera ``baseColorTexture`` encontrada y la asigna
-        como ``imagen`` del actor (path, bytes embebidos → ImageData)."""
-        img = next((m.get('imagen') for m in self._escena['mallas']
-                    if m.get('imagen')), None)
-        if img is None:
-            return
+    # -- render por material ------------------------------------------------
+    # Cada primitiva glTF puede tener su propia textura y color: el actor
+    # mantiene un vertex_list por grupo de material (``_listas``) en vez
+    # de uno único — así un modelo multi-material no muestra la primera
+    # textura pegada en todas sus partes.
+
+    def _textura_de(self, img):
+        """Convierte ``imagen`` del gltf (ruta o bytes) en textura GL."""
         if isinstance(img, bytes):
             import io
             from pyglet.image import load as _load
             ext = '.png' if img[:4] == b'\x89PNG' else '.jpg'
             img = _load('textura' + ext, file=io.BytesIO(img))
-        self.imagen = img
+        elif isinstance(img, str):
+            from pyglet.image import load as _load
+            img = _load(self._resolver_imagen(img))
+        tex = img.get_texture()
+        glBindTexture(GL_TEXTURE_2D, tex.id)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        return tex
+
+    def _construir_gl(self):
+        programa = shaders.obtener_programa()
+        self._listas = []
+        for g in self._grupos:
+            v0, v1 = g['v0'], g['v1']
+            vl = programa.vertex_list_indexed(
+                v1 - v0, GL_TRIANGLES, g['indices'],
+                position=('f', self._pos[v0 * 3:v1 * 3]),
+                normal=('f', self._nor[v0 * 3:v1 * 3]),
+                color=('f', self._col[v0 * 4:v1 * 4]),
+                texcoords=('f', self._uv[v0 * 2:v1 * 2]))
+            self._listas.append({'vl': vl, 'imagen': g['imagen'],
+                                 'tex': None})
+        # compat: el primer grupo sigue siendo ``_vertex_list``
+        self._vertex_list = self._listas[0]['vl'] if self._listas \
+            else None
+
+    def dibujar(self):
+        """Una pasada por grupo de material, cada uno con su textura."""
+        if self._listas is None:
+            self._construir_gl()
+        programa = shaders.obtener_programa()
+        programa['modelo'] = self.matriz_modelo()
+        programa['punto_tamano'] = getattr(self, 'punto_tamano', 1.0)
+        programa['uv_escala'] = self._uv_escala
+        programa['uv_desplazamiento'] = self._uv_desplazamiento
+        programa['sin_luz'] = self.sin_luz
+        if self._imagen is not None:
+            # textura forzada por el usuario: una para todo el modelo
+            if self._textura is None:
+                self._cargar_textura()
+            glBindTexture(GL_TEXTURE_2D, self._textura.id)
+            programa['usar_textura'] = True
+            for g in self._listas:
+                g['vl'].draw(GL_TRIANGLES)
+            return
+        for g in self._listas:
+            if g['imagen'] is not None:
+                if g['tex'] is None:
+                    g['tex'] = self._textura_de(g['imagen'])
+                glBindTexture(GL_TEXTURE_2D, g['tex'].id)
+                programa['usar_textura'] = True
+            else:
+                programa['usar_textura'] = False
+            g['vl'].draw(GL_TRIANGLES)
+
+    def _reconstruir_gl(self):
+        for g in getattr(self, '_listas', None) or []:
+            g['vl'].delete()
+        self._listas = None
+        self._vertex_list = None        # ya quedó borrada arriba
+        super(ModeloGLTF, self)._reconstruir_gl()
+
+    def eliminar(self):
+        for g in getattr(self, '_listas', None) or []:
+            g['vl'].delete()
+        self._listas = None
+        self._vertex_list = None
+        super(ModeloGLTF, self).eliminar()
 
     # -- carga ------------------------------------------------------------------
 
@@ -85,6 +155,7 @@ class ModeloGLTF(Actor):
         bind_v, bind_n = [], []
         joints, pesos = [], []
         indices = []
+        self._grupos = []             # un grupo por primitiva/material
         self._con_piel = False
 
         escena = self._escena
@@ -93,6 +164,12 @@ class ModeloGLTF(Actor):
         for m in escena['mallas']:
             base = len(pos) // 3          # offset de vértices del mesh
             idx = m['indices'] or list(range(len(m['posiciones'])))
+            self._grupos.append({
+                'v0': base,
+                'v1': base + len(m['posiciones']),
+                'indices': list(idx),      # locales: ya son del mesh
+                'imagen': m.get('imagen'),
+            })
             indices += [base + i for i in idx]
             # transformación del nodo que cuelga el mesh (pose de reposo)
             gn = glob[m['nodo']] if m['nodo'] is not None else None
@@ -363,7 +440,7 @@ class ModeloGLTF(Actor):
     # -- skinning por CPU ---------------------------------------------------------
 
     def _aplicar_piel(self):
-        if not self._con_piel or self._vertex_list is None:
+        if not self._con_piel or not self._listas:
             return
         escena = self._escena
         skin = escena['skin']
@@ -387,5 +464,7 @@ class ModeloGLTF(Actor):
             largo = math.sqrt(ax * ax + ay * ay + az * az) or 1.0
             pos += [x, y, z]
             nor += [ax / largo, ay / largo, az / largo]
-        self._vertex_list.position[:] = pos
-        self._vertex_list.normal[:] = nor
+        for g, lst in zip(self._grupos, self._listas):
+            v0, v1 = g['v0'], g['v1']
+            lst['vl'].position[:] = pos[v0 * 3:v1 * 3]
+            lst['vl'].normal[:] = nor[v0 * 3:v1 * 3]

@@ -88,3 +88,51 @@ Moon 2K.* (raíz, sueltos)   → props/moon/ (obj+mtl+textures)
                               ; blend/c4d/fbx/ma/max → fuentes/moon/
 Textures/*.png              → props/moon/texturas/
 ```
+
+## Estándar de texturas en pilas3d
+
+Lo que el motor soporta hoy (y cómo conviene armar los modelos):
+
+### `.glb` — formato recomendado
+
+- **Texturas embebidas**: PNG/JPEG dentro del `.glb` via
+  `baseColorTexture`. Una por material — cada primitiva muestra **su**
+  textura (el motor dibuja un grupo por material, no una textura
+  global).
+- **Texturas externas**: `.gltf` + `textures/*.png` al lado —
+  el loader resuelve `uri` relativa al archivo (así está armado
+  `modelos/props/hotdog (Copia 1)/`).
+- **`baseColorFactor`**: se hornea como color de vértice y se
+  multiplica con la textura (igual que la spec glTF). Un factor
+  oscuro + textura = modelo oscuro; si se ve gris, revisá el factor
+  al exportar (dejarlo en blanco `[1,1,1,1]` si solo querés la
+  textura).
+- **Canal de UV**: `TEXCOORD_0`. Si falta, la primitiva dibuja con el
+  primer píxel de la textura (color plano del borde) — no da error,
+  pero el resultado es "se ve de un solo color".
+
+### Lo que no se lee (por ahora)
+
+- `normalTexture`, `metallicRoughnessTexture`, `emissiveTexture`,
+  `occlusionTexture` — se ignoran silenciosamente.
+- `alphaMode` BLEND/MASK: se respeta solo el canal alfa de
+  `baseColorFactor`/textura para descarte (`alpha < 0.1`), sin
+  blending real.
+- Múltiples UV sets (`TEXCOORD_1`+), vertex colors `COLOR_0`, KHR_*
+  (draco, material variants).
+
+### Reglas prácticas para que "se vean bien"
+
+1. Exportá a `.glb` con **"Pack images"** (embebidas) — una sola
+   textura baseColor por material evita el 90% de los problemas.
+2. Aplicá transforms y normals en Blender antes de exportar
+   (`Ctrl+A` + recalcular normals si se ven caras "huecas").
+3. Si un modelo sale todo de un color, casi siempre es: sin UVs,
+   textura externa mal referenciada, o `baseColorFactor` oscuro.
+4. Para props estáticos con texturas sueltas, `.obj`+`.mtl`+png
+   funciona, pero el estándar del motor es `.glb` embebido.
+
+> **Por qué se veían mal antes**: `ModeloGLTF` tomaba la primera
+> `baseColorTexture` y la aplicaba a todo el actor. Desde que cada
+> material tiene su grupo de render, modelos multi-material como el
+> hotdog (salchicha texturizada + outline plano) se ven correctos.
