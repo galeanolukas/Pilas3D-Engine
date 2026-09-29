@@ -57,3 +57,14 @@ def resolver_circulo_en_cajas(x, z, radio, cajas):
             x += empuje[1] * empuje[0]
             z += empuje[2] * empuje[0]
     return x, z
+
+
+def colisionan(a, b):
+    """True si ``a`` y ``b`` se tocan en el plano XZ (círculos).
+
+    Atajo de ``a.colisiona_en_plano_con(b)`` para cuando no tenés
+    claro qué actor preguntar::
+
+        if pilas.colisiones.colisionan(pelota, meta): ...
+    """
+    return a.colisiona_en_plano_con(b)

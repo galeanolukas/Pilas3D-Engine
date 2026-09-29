@@ -243,6 +243,8 @@ class Pilas(object):
         from pilas3d.mapas import Mapas
         self.mapas = Mapas(self)
         self.interpolaciones = interpolaciones
+        from pilas3d import colisiones
+        self.colisiones = colisiones
         from pilas3d.red import Red
         self.red = Red(self)
         from pilas3d.eventos import Eventos

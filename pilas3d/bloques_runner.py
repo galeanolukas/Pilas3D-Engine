@@ -21,7 +21,7 @@ def main(ruta):
         titulo="pilas3d - bloques",
         sin_ventana=bool(os.environ.get('PILAS3D_SIN_VENTANA')))
     pilas.escena.fondo = pilas.colores.gris_oscuro
-    ns = {'pilas': pilas, 'pilas3d': pilas3d}
+    ns = {'pilas': pilas, 'pilas3d': pilas3d, '__file__': ruta}
     try:
         codigo = open(ruta, encoding='utf-8').read()
         exec(compile(codigo, '<bloques>', 'exec'), ns)

@@ -2625,3 +2625,13 @@ def test_ia_facade_preguntar(monkeypatch):
     monkeypatch.setattr(asistente, 'preguntar',
                         lambda c, **k: 'resp: ' + c)
     assert pilas.ia.preguntar('hola') == 'resp: hola'
+
+
+def test_pilas_colisiones():
+    """pilas.colisiones.colisionan es el atajo de colisión en XZ."""
+    pilas = crear_pilas()
+    a = pilas.actores.Cubo(x=0)
+    b = pilas.actores.Cubo(x=1)
+    assert pilas.colisiones.colisionan(a, b)
+    b.x = 50
+    assert not pilas.colisiones.colisionan(a, b)

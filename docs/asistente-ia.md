@@ -361,3 +361,7 @@ elegido queda fijo sin exportar variables.
   `pilas.camara.seguir_a(actor, modo='tercera')`,
   `pilas.camara.usar_control_orbital()`, `pilas.camara.proyectar(x,y,z)`.
   Los bloques de Blockly ya generan esta forma.
+- `pilas.colisiones` — utilidades de colisión en el plano XZ:
+  `pilas.colisiones.colisionan(a, b)` (atajo de
+  `a.colisiona_en_plano_con(b)`), `caja_desde_actor` y
+  `resolver_circulo_en_cajas` para paredes/obstáculos.
