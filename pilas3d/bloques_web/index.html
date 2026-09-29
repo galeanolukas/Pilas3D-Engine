@@ -17,10 +17,10 @@
   #ejemplos { background: #3a3a3a; color: #eee; border: 1px solid
               #555; border-radius: 5px; padding: 6px 10px;
               font-size: 14px; cursor: pointer; }
-  #guardar, #abrir { background: #3a3a3a; color: #eee; border: 1px
-              solid #555; border-radius: 5px; padding: 6px 12px;
-              font-size: 14px; cursor: pointer; }
-  #guardar:hover, #abrir:hover { background: #4a4a4a; }
+  #guardar, #abrir, #nuevo { background: #3a3a3a; color: #eee;
+              border: 1px solid #555; border-radius: 5px;
+              padding: 6px 12px; font-size: 14px; cursor: pointer; }
+  #guardar:hover, #abrir:hover, #nuevo:hover { background: #4a4a4a; }
   #estado { font-size: 13px; color: #aaa; }
   #estado.error { color: #ff7b72; }
   #estado.ok { color: #7ee787; }
@@ -65,6 +65,7 @@
   <b>pilas3d bloques</b>
   <button id="ejecutar">▶ Ejecutar</button>
   <select id="ejemplos"><option value="">ejemplos…</option></select>
+  <button id="nuevo">Nuevo</button>
   <button id="guardar">Guardar</button>
   <button id="abrir">Abrir</button>
   <input id="abrir_archivo" type="file" accept=".xml"

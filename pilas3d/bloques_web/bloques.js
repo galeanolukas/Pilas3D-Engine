@@ -1305,6 +1305,14 @@ try {
   cargar_xml(INICIAL);              // XML guardado corrupto -> default
 }
 
+document.getElementById('nuevo').onclick = function () {
+  // el autosave pisa lo anterior al limpiar: por eso se confirma
+  if (confirm('¿Empezar un proyecto nuevo? Se borran los bloques ' +
+              'actuales (guardá antes si los querés conservar).')) {
+    cargar_xml(INICIAL);
+  }
+};
+
 document.getElementById('guardar').onclick = function () {
   var a = document.createElement('a');
   a.href = URL.createObjectURL(
