@@ -2635,3 +2635,120 @@ def test_pilas_colisiones():
     assert pilas.colisiones.colisionan(a, b)
     b.x = 50
     assert not pilas.colisiones.colisionan(a, b)
+
+
+def test_cuando_colisionan_flanco():
+    """cuando_colisionan llama solo al EMPEZAR a tocarse."""
+    pilas = crear_pilas()
+    a = pilas.actores.Cubo(x=0)
+    b = pilas.actores.Cubo(x=10)
+    toques = []
+    pilas.colisiones.cuando_colisionan(a, b, lambda: toques.append(1))
+    escena = pilas.escena_actual()
+    escena.actualizar(0.1)                    # lejos: nada
+    b.x = 0.5
+    escena.actualizar(0.1)                    # entra -> 1 llamada
+    escena.actualizar(0.1)                    # sigue tocando: no repite
+    assert toques == [1]
+    b.x = 10
+    escena.actualizar(0.1)                    # sale
+    b.x = 0.5
+    escena.actualizar(0.1)                    # reingresa -> 2
+    assert toques == [1, 1]
+
+
+def test_vida_dano_curar_y_morir():
+    """Vida: recibir_dano/curar, evento 'murio' y callback al_morir."""
+    pilas = crear_pilas()
+    e = pilas.actores.Cubo()
+    e.aprender(pilas.habilidades.Vida, vida=100)
+    muertos = []
+    pilas.eventos.cuando('murio', muertos.append)
+    e.recibir_dano(30)
+    assert e.vida == 70 and e.vivo
+    e.curar(10)
+    assert e.vida == 80
+    e.curar(999)
+    assert e.vida == 100                      # no pasa del máximo
+    e.al_morir = lambda: muertos.append('cb')
+    e.recibir_dano(200)
+    assert not e.vivo and e.vida == 0
+    assert muertos == [e, 'cb']
+    e.recibir_dano(10)                        # muerto: ignora
+    assert len(muertos) == 2
+
+
+def test_barra_fraccion():
+    """Barra lee vida/vida_maxima de un actor o un callable."""
+    pilas = crear_pilas()
+    e = pilas.actores.Cubo()
+    e.aprender(pilas.habilidades.Vida, vida=100)
+    barra = pilas.actores.Barra(e)
+    assert barra.fraccion() == 1.0
+    e.recibir_dano(75)
+    assert barra.fraccion() == 0.25
+    e.recibir_dano(50)
+    assert barra.fraccion() == 0.0
+    assert pilas.actores.Barra(de=lambda: 0.5).fraccion() == 0.5
+
+
+def test_zona_entra_y_sale_por_flanco():
+    """La Zona dispara entra/sale solo en los bordes."""
+    pilas = crear_pilas()
+    zona = pilas.actores.Zona(x=0, z=0, radio=2)
+    cubo = pilas.actores.Cubo(x=10)
+    evts = []
+    zona.cuando_entra(cubo, lambda: evts.append('entra'))
+    zona.cuando_sale(cubo, lambda: evts.append('sale'))
+    escena = pilas.escena_actual()
+    escena.actualizar(0.05)
+    assert evts == []
+    cubo.x = 1
+    escena.actualizar(0.05)
+    assert evts == ['entra']
+    escena.actualizar(0.05)                   # adentro: no repite
+    assert evts == ['entra']
+    cubo.x = 10
+    escena.actualizar(0.05)
+    assert evts == ['entra', 'sale']
+
+
+def test_maquina_de_estados_basica():
+    """Estados nombrados que corren por frame y cambian solos."""
+    pilas = crear_pilas()
+    npc = pilas.actores.Cubo()
+    pasos = []
+
+    def quieto(a):
+        pasos.append('quieto')
+        a.x += 1                            # camina hasta cruzar 2
+        if a.x > 2:
+            a.cambiar_estado('moverse')
+
+    def moverse(a):
+        pasos.append('moverse')
+        a.x += 1
+
+    npc.aprender(pilas.habilidades.MaquinaDeEstados,
+                 estados={'quieto': quieto, 'moverse': moverse},
+                 inicial='quieto')
+    escena = pilas.escena_actual()
+    for _ in range(5):
+        escena.actualizar(1 / 60.0)
+    assert npc.estado == 'moverse'            # cambió solo
+    assert 'quieto' in pasos and 'moverse' in pasos
+
+
+def test_maquina_de_estados_entrar_salir():
+    """Los estados-dict tienen hooks entrar/salir."""
+    pilas = crear_pilas()
+    npc = pilas.actores.Cubo()
+    hooks = []
+    npc.aprender(
+        pilas.habilidades.MaquinaDeEstados,
+        estados={
+            'a': {'salir': lambda x: hooks.append('sale_a')},
+            'b': {'entrar': lambda x: hooks.append('entra_b')},
+        }, inicial='a')
+    npc.cambiar_estado('b')
+    assert hooks == ['sale_a', 'entra_b']

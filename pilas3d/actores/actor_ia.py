@@ -48,8 +48,11 @@ class ActorIA(Actor):
         self.subtitulo = pilas.actores.Globo(
             actor=self.cuerpo, alto=alto_globo, tamano=14)
         # Pre-carga el modelo en un hilo: la primera pregunta real no
-        # paga el costo de cargar pesos en memoria.
-        threading.Thread(target=self._calentar, daemon=True).start()
+        # paga el costo de cargar pesos en memoria. Sin ventana
+        # (tests/headless) no tiene sentido.
+        if pilas.ventana is not None:
+            threading.Thread(target=self._calentar,
+                             daemon=True).start()
 
     @staticmethod
     def _calentar():

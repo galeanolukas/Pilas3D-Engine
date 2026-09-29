@@ -559,9 +559,10 @@ def iniciar(ancho=640, alto=480, titulo="pilas3d", sin_ventana=False):
     ``sin_ventana=True`` permite crear el mundo sin abrir una ventana
     (útil para tests).
     """
-    # PILAS3D_HEADLESS=1 fuerza modo sin ventana (validación de juegos
-    # generados, CI, tests).
-    if os.environ.get('PILAS3D_HEADLESS'):
+    # PILAS3D_HEADLESS=1 o PILAS3D_SIN_VENTANA=1 fuerzan modo sin
+    # ventana (validación de juegos generados, CI, tests).
+    if os.environ.get('PILAS3D_HEADLESS') or \
+            os.environ.get('PILAS3D_SIN_VENTANA'):
         sin_ventana = True
     return Pilas(ancho=ancho, alto=alto, titulo=titulo,
                  sin_ventana=sin_ventana)

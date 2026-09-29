@@ -130,10 +130,18 @@ def llamar_ollama(prompt, system=SYSTEM, modelo=None, al_token=None):
 
 def calentar(modelo=None):
     """Pre-carga el modelo en Ollama (vacío, solo para que quede en
-    memoria) — la primera respuesta real sale mucho más rápida."""
+    memoria) — la primera respuesta real sale mucho más rápida.
+
+    Solo calienta si el modelo YA está instalado; nunca descarga —
+    la descarga corresponde a una acción explícita del usuario."""
     try:
+        from pilas3d.ia.servidor import listar_modelos
         asegurar_servidor()
-        modelo = asegurar_modelo(modelo or modelo_actual())
+        modelo = modelo or modelo_actual()
+        instalados = listar_modelos()
+        if modelo not in instalados and \
+                modelo + ':latest' not in instalados:
+            return
         req = urllib.request.Request(
             URL_API + '/api/generate',
             data=json.dumps({'model': modelo, 'keep_alive': '10m',

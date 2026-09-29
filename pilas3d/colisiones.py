@@ -68,3 +68,29 @@ def colisionan(a, b):
         if pilas.colisiones.colisionan(pelota, meta): ...
     """
     return a.colisiona_en_plano_con(b)
+
+
+def cuando_colisionan(a, b, funcion, cada=0.1):
+    """Llama ``funcion()`` cada vez que ``a`` y ``b`` EMPIEZAN a
+    tocarse (flanco de entrada, como en pilas 1.x).
+
+    La vigilancia corre como tarea condicional de la escena y termina
+    sola si alguno de los dos sale de la escena::
+
+        pilas.colisiones.cuando_colisionan(
+            pelota, meta, lambda: pelota.decir('gol!'))
+
+    ``cada`` es el intervalo de chequeo en segundos.
+    """
+    tocando = [False]
+
+    def chequear():
+        if not (a.esta_en_escena() and b.esta_en_escena()):
+            return False            # termina la tarea
+        ahora = a.colisiona_en_plano_con(b)
+        if ahora and not tocando[0]:
+            funcion()
+        tocando[0] = ahora
+        return True
+
+    return a.pilas.tareas.condicional(cada, chequear)

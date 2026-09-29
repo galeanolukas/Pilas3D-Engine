@@ -26,6 +26,8 @@ from pilas3d.habilidades.perseguir_a_otro_actor import (
     PerseguirAOtroActor)
 from pilas3d.habilidades.ser_bot import SerBot
 from pilas3d.habilidades.cerebro import Cerebro
+from pilas3d.habilidades.vida import Vida
+from pilas3d.habilidades.maquina_de_estados import MaquinaDeEstados
 from pilas3d.habilidades.arrastrable import Arrastrable
 from pilas3d.habilidades.seguir_al_mouse import SeguirAlMouse
 from pilas3d.habilidades.disparar import Disparar
@@ -54,6 +56,8 @@ class Habilidades(object):
     PerseguirAOtroActor = PerseguirAOtroActor
     SerBot = SerBot
     Cerebro = Cerebro
+    Vida = Vida
+    MaquinaDeEstados = MaquinaDeEstados
     Arrastrable = Arrastrable
     SeguirAlMouse = SeguirAlMouse
     Disparar = Disparar
@@ -76,6 +80,8 @@ class Habilidades(object):
             'perseguiraotroactor': PerseguirAOtroActor,
             'serbot': SerBot,
             'cerebro': Cerebro,
+            'vida': Vida,
+            'maquinadeestados': MaquinaDeEstados,
             'arrastrable': Arrastrable,
             'seguiralmouse': SeguirAlMouse,
             'disparar': Disparar,

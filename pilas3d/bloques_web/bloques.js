@@ -146,6 +146,17 @@ Blockly.defineBlocksWithJsonArray([
     tooltip: 'Corre una vez al hacer click con el mouse',
   },
   {
+    type: 'p3d_al_colisionar',
+    message0: 'cuando %1 choque con %2 hacer %3',
+    args0: [
+      { type: 'field_dropdown', name: 'A', options: actores_opciones },
+      { type: 'field_dropdown', name: 'B', options: actores_opciones },
+      { type: 'input_statement', name: 'HACER' },
+    ],
+    colour: 45,
+    tooltip: 'Corre cada vez que empiezan a tocarse',
+  },
+  {
     type: 'p3d_al_pulsar',
     message0: 'al pulsar la tecla %1 hacer %2',
     args0: [
@@ -546,6 +557,16 @@ registrar('p3d_al_click', function (block) {
          dentro + 'pilas.cuando_hace_click(' + fn + ')\n\n';
 });
 
+registrar('p3d_al_colisionar', function (block) {
+  var fn = nombre_unico('al_chocar');
+  var dentro = GEN.statementToCode(block, 'HACER') ||
+      GEN.INDENT + 'pass\n';
+  return 'def ' + fn + '():\n' + globales(block) + dentro +
+         'pilas.colisiones.cuando_colisionan(' +
+         campo_nombre(block, 'A') + ', ' +
+         campo_nombre(block, 'B') + ', ' + fn + ')\n\n';
+});
+
 registrar('p3d_al_pulsar', function (block) {
   var fn = nombre_unico('al_pulsar');
   var dentro = GEN.statementToCode(block, 'HACER') ||
@@ -778,6 +799,7 @@ var TOOLBOX = {
         { kind: 'block', type: 'p3d_al_iniciar' },
         { kind: 'block', type: 'p3d_por_siempre' },
         { kind: 'block', type: 'p3d_al_click' },
+        { kind: 'block', type: 'p3d_al_colisionar' },
         { kind: 'block', type: 'p3d_al_pulsar' },
       ] },
     { kind: 'category', name: 'Actores', colour: '290',

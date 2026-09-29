@@ -34,6 +34,8 @@ from pilas3d.actores.personajes import (Personaje, Robot, Humanoide,
                                       Mono, Arania, Espectro)
 from pilas3d.actores.actor_ia import ActorIA
 from pilas3d.actores.chat import Chat
+from pilas3d.actores.barra import Barra
+from pilas3d.actores.zona import Zona
 
 
 class Actores(object):
@@ -203,6 +205,22 @@ class Actores(object):
         responde con el asistente y su globo."""
         return Chat(self._pilas, npc=npc, tecla=tecla,
                     etiqueta=etiqueta)
+
+    def Barra(self, de=None, x=10, y=10, ancho=120, alto=12,
+              color=None):
+        """Barra de vida/energía del HUD (overlay 2D).
+
+        ``de`` es un actor con ``vida``/``vida_maxima`` (p.ej. con la
+        habilidad ``Vida``) o un callable que devuelve 0..1."""
+        return Barra(self._pilas, de=de, x=x, y=y, ancho=ancho,
+                     alto=alto, color=color)
+
+    def Zona(self, x=0, y=0, z=0, radio=2.0, visible=False,
+             color=None):
+        """Área en el suelo que detecta entradas/salidas de actores:
+        ``zona.cuando_entra(actor, fn)`` / ``cuando_sale``."""
+        return Zona(self._pilas, x=x, y=y, z=z, radio=radio,
+                    visible=visible, color=color)
 
     def Temporizador(self, x=10, y=10, tamano=18, duracion=0,
                      cuando_termina=None, ciclico=False, visible=True,

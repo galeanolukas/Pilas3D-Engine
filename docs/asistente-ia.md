@@ -365,3 +365,34 @@ elegido queda fijo sin exportar variables.
   `pilas.colisiones.colisionan(a, b)` (atajo de
   `a.colisiona_en_plano_con(b)`), `caja_desde_actor` y
   `resolver_circulo_en_cajas` para paredes/obstáculos.
+
+## 16. Piezas para juegos: vida, zonas, colisiones por evento, estados
+
+```python
+# daño y muerte
+enemigo.aprender(pilas.habilidades.Vida, vida=100)
+enemigo.recibir_dano(30); enemigo.curar(10)
+enemigo.al_morir = lambda: enemigo.eliminar()
+pilas.eventos.cuando('murio', lambda a: print(a, 'murio'))
+
+# barra de vida en el HUD (lee actor.vida o un callable)
+pilas.actores.Barra(de=jugador, x=10, y=60)
+
+# zona trampa/checkpoint (entra/sale por flanco)
+zona = pilas.actores.Zona(x=5, radio=2, visible=True)
+zona.cuando_entra(jugador, lambda: jugador.curar(40))
+
+# colisión como evento — sin por_siempre + if
+pilas.colisiones.cuando_colisionan(jugador, enemigo,
+                                   lambda: jugador.recibir_dano(20))
+
+# máquina de estados para NPCs
+npc.aprender(pilas.habilidades.MaquinaDeEstados,
+             estados={'patrullar': fn1, 'perseguir': fn2},
+             inicial='patrullar')
+npc.cambiar_estado('perseguir')
+```
+
+Ejemplo completo: `ejemplos/vida_y_zonas.py`. En bloques, la
+colisión por evento es el bloque **"cuando ... choque con ..."** de
+la categoría Eventos.
