@@ -2552,3 +2552,76 @@ def test_chat_ignora_mensaje_vacio():
     chat.decir_a('   ')
     chat.actualizar()
     assert not getattr(cubo, '_globo', None)
+
+
+def test_pilas_camara_atajo():
+    """pilas.camara es la camara de la escena actual."""
+    pilas = crear_pilas()
+    assert pilas.camara is pilas.escena_actual().camara
+
+
+def test_eventos_cuando_y_emitir():
+    """El bus de eventos conecta oyentes por nombre."""
+    pilas = crear_pilas()
+    visto = []
+    pilas.eventos.cuando('golpe', visto.append)
+    pilas.eventos.emitir('golpe', 10)
+    pilas.eventos.emitir('golpe', 20)
+    assert visto == [10, 20]
+    pilas.eventos.emitir('otro')              # sin oyentes: no explota
+
+
+def test_eventos_decorador_y_olvidar():
+    pilas = crear_pilas()
+    visto = []
+
+    @pilas.eventos.cuando('meta')
+    def al_llegar():
+        visto.append('llego')
+
+    pilas.eventos.emitir('meta')
+    assert visto == ['llego']
+    pilas.eventos.olvidar('meta', al_llegar)
+    pilas.eventos.emitir('meta')
+    assert visto == ['llego']                 # ya no escucha
+    pilas.eventos.cuando('x', visto.append)
+    pilas.eventos.limpiar()
+    pilas.eventos.emitir('x')
+    assert len(visto) == 1
+
+
+def test_config_leer_y_guardar(tmp_path, monkeypatch):
+    """La config persiste en ~/.pilas3d/config.json (o PILAS3D_CONFIG)."""
+    from pilas3d import config
+    archivo = tmp_path / 'config.json'
+    monkeypatch.setenv('PILAS3D_CONFIG', str(archivo))
+    assert config.leer('ia_modelo') is None
+    config.guardar('ia_modelo', 'smollm2:135m')
+    assert config.leer('ia_modelo') == 'smollm2:135m'
+    config.guardar('otra', 42)                 # no pisa la anterior
+    assert config.leer('ia_modelo') == 'smollm2:135m'
+    assert config.leer('otra') == 42
+
+
+def test_ia_modelo_env_y_config(tmp_path, monkeypatch):
+    """pilas.ia.modelo: env > config > default; el setter persiste."""
+    from pilas3d.ia import asistente
+    monkeypatch.setenv('PILAS3D_CONFIG',
+                       str(tmp_path / 'config.json'))
+    monkeypatch.delenv('PILAS3D_IA_MODELO', raising=False)
+    pilas = crear_pilas()
+    assert pilas.ia.modelo == 'qwen2.5-coder:0.5b'   # default
+    pilas.ia.modelo = 'smollm2:135m'
+    assert pilas.ia.modelo == 'smollm2:135m'          # config
+    assert asistente.modelo_actual() == 'smollm2:135m'
+    monkeypatch.setenv('PILAS3D_IA_MODELO', 'x:0')
+    assert pilas.ia.modelo == 'x:0'                   # env pisa todo
+
+
+def test_ia_facade_preguntar(monkeypatch):
+    """pilas.ia.preguntar delega en el asistente."""
+    from pilas3d.ia import asistente
+    pilas = crear_pilas()
+    monkeypatch.setattr(asistente, 'preguntar',
+                        lambda c, **k: 'resp: ' + c)
+    assert pilas.ia.preguntar('hola') == 'resp: hola'

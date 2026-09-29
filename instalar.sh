@@ -57,11 +57,28 @@ if [ -t 0 ] && [ -x "$OLLAMA_BIN" ]; then
             sleep 0.2
         done
         "$OLLAMA_BIN" pull "$MODELO" \
-        && echo "Modelo $MODELO instalado. Si no es el default, usa" \
-                "PILAS3D_IA_MODELO=$MODELO" \
+        && echo "Modelo $MODELO instalado." \
         || echo "Aviso: no se pudo bajar el modelo (se bajara al usarlo)."
         kill $SRV 2>/dev/null
+        # El motor recuerda el modelo elegido (~/.pilas3d/config.json);
+        # PILAS3D_IA_MODELO lo pisa si está definida.
+        .venv/bin/python -c \
+            "from pilas3d import config; config.guardar('ia_modelo', '$MODELO')" \
+            2>/dev/null || true
     fi
+fi
+
+# Voz del asistente (Piper, ~20 MB): NPCs que hablan en español.
+if [ -t 0 ]; then
+    echo ""
+    read -p "Descargar voces en español (mujer+hombre) para los NPC? [s/N]: " VOZ_OP
+    case "$VOZ_OP" in
+        s|S|y|Y)
+            .venv/bin/python -c \
+                "from pilas3d.ia import voz; voz.descargar_voces()" \
+                && echo "Voces instaladas." \
+                || echo "Aviso: no se pudieron bajar las voces." ;;
+    esac
 fi
 
 echo ""

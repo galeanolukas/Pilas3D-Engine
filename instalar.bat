@@ -60,7 +60,16 @@ if defined OLLAMA_BIN (
         ) else (
             %OLLAMA_BIN% pull %IA_MODELO% || echo Aviso: no se pudo bajar el modelo.
         )
+        REM El motor recuerda el modelo elegido (~/.pilas3d/config.json)
+        .venv\Scripts\python.exe -c "from pilas3d import config; config.guardar('ia_modelo', '%IA_MODELO%')" 2>nul
     )
+)
+
+REM Voces del asistente (Piper, ~20 MB): NPCs que hablan en espanol.
+echo.
+set /p VOZ_OP="Descargar voces en espanol (mujer+hombre) para los NPC? [s/N]: "
+if /i "%VOZ_OP%"=="s" (
+    .venv\Scripts\python.exe -c "from pilas3d.ia import voz; voz.descargar_voces()" || echo Aviso: no se pudieron bajar las voces.
 )
 
 echo.

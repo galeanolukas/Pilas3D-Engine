@@ -331,3 +331,33 @@ asistente en su globo.
 Bloques nuevos en el editor (categoría IA + Apariencia):
 `darle cerebro`, `crear chat` y `poner el cielo` (estrellas/día/
 textura del paquete). Ejemplo precargado: **"NPC con cerebro (IA)"**.
+
+## 14. `pilas.ia`: un punto de acceso único
+
+El namespace junta todo lo del asistente:
+
+```python
+pilas.ia.preguntar('¿cómo hago un enemigo que persiga?')
+pilas.ia.modelo                 # el modelo en uso
+pilas.ia.modelo = 'smollm2:135m'  # queda guardado en la config
+pilas.ia.calentar()             # pre-carga el modelo (en un hilo)
+pilas.ia.disponible()           # ¿hay servidor + modelo? (sin bajar nada)
+pilas.ia.modelos()              # los instalados en el Ollama local
+```
+
+**Orden de precedencia del modelo:**
+`PILAS3D_IA_MODELO` > `~/.pilas3d/config.json` (`ia_modelo`) >
+`qwen2.5-coder:0.5b` (default). El instalador y
+`python -m pilas3d.ia <modelo>` ya escriben la config — el modelo
+elegido queda fijo sin exportar variables.
+
+## 15. `pilas.eventos` y `pilas.camara`
+
+- `pilas.eventos` — bus propio del juego:
+  `pilas.eventos.cuando('golpe', fn)` (o `@pilas.eventos.cuando('golpe')`)
+  y `pilas.eventos.emitir('golpe', 10)`. Sirve para que actores,
+  habilidades y escenas se hablen sin referencias directas.
+- `pilas.camara` — atajo de `pilas.escena_actual().camara`:
+  `pilas.camara.seguir_a(actor, modo='tercera')`,
+  `pilas.camara.usar_control_orbital()`, `pilas.camara.proyectar(x,y,z)`.
+  Los bloques de Blockly ya generan esta forma.

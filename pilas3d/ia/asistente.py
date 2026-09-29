@@ -56,6 +56,17 @@ Si algo no está en la lista, decilo en vez de inventarlo.\
 """
 
 
+def modelo_actual():
+    """El modelo a usar: PILAS3D_IA_MODELO > config guardada > default.
+
+    La config se escribe al instalar o con ``pilas.ia.modelo = 'x'``.
+    """
+    from pilas3d import config
+    return (os.environ.get('PILAS3D_IA_MODELO')
+            or config.leer('ia_modelo')
+            or MODELO)
+
+
 def _opciones():
     """Opciones del modelo. Por defecto CPU (num_gpu=0) para que
     funcione en cualquier equipo; PILAS3D_IA_GPU=1 habilita la GPU.
@@ -74,7 +85,7 @@ def _opciones():
     return opciones
 
 
-def llamar_ollama(prompt, system=SYSTEM, modelo=MODELO, al_token=None):
+def llamar_ollama(prompt, system=SYSTEM, modelo=None, al_token=None):
     """Llama al modelo local y devuelve el texto de la respuesta.
 
     ``keep_alive`` mantiene el modelo cargado ~10 min: evita pagar la
@@ -83,7 +94,7 @@ def llamar_ollama(prompt, system=SYSTEM, modelo=MODELO, al_token=None):
     para mostrar la respuesta mientras se genera — la latencia
     percibida cae a casi cero)."""
     asegurar_servidor()
-    modelo = asegurar_modelo(modelo)
+    modelo = asegurar_modelo(modelo or modelo_actual())
     cuerpo = {
         'model': modelo,
         'stream': al_token is not None,
@@ -117,12 +128,12 @@ def llamar_ollama(prompt, system=SYSTEM, modelo=MODELO, al_token=None):
             "No pude hablar con el modelo local (%s)." % e)
 
 
-def calentar(modelo=MODELO):
+def calentar(modelo=None):
     """Pre-carga el modelo en Ollama (vacío, solo para que quede en
     memoria) — la primera respuesta real sale mucho más rápida."""
     try:
         asegurar_servidor()
-        modelo = asegurar_modelo(modelo)
+        modelo = asegurar_modelo(modelo or modelo_actual())
         req = urllib.request.Request(
             URL_API + '/api/generate',
             data=json.dumps({'model': modelo, 'keep_alive': '10m',
@@ -133,7 +144,7 @@ def calentar(modelo=MODELO):
         pass      # sin Ollama o sin modelo: el calentamiento es opcional
 
 
-def preguntar(consulta, contexto='', modelo=MODELO, al_token=None):
+def preguntar(consulta, contexto='', modelo=None, al_token=None):
     """Le pregunta al asistente; descarga Ollama/modelo si hace falta.
 
     >>> pilas.ayuda("¿cómo hago un enemigo que me persiga?")

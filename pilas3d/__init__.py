@@ -245,6 +245,10 @@ class Pilas(object):
         self.interpolaciones = interpolaciones
         from pilas3d.red import Red
         self.red = Red(self)
+        from pilas3d.eventos import Eventos
+        self.eventos = Eventos()
+        from pilas3d.ia import IA
+        self.ia = IA(self)
 
         if sin_ventana:
             self.ventana = None
@@ -286,6 +290,17 @@ class Pilas(object):
         ``pilas.escenas.Normal()``).
         """
         self.escenas.Normal()
+
+    @property
+    def camara(self):
+        """La cámara de la escena actual.
+
+        Atajo de ``pilas.escena_actual().camara``::
+
+            pilas.camara.seguir_a(actor, modo='tercera')
+            pilas.camara.usar_control_orbital()
+        """
+        return self._escena_actual.camara
 
     @property
     def tareas(self):

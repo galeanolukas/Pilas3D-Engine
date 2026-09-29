@@ -724,17 +724,17 @@ registrar('p3d_cada', function (block) {
 });
 
 registrar('p3d_camara_orbital', function (block) {
-  return 'pilas.escena_actual().camara.usar_control_orbital()\n';
+  return 'pilas.camara.usar_control_orbital()\n';
 });
 
 registrar('p3d_camara_seguir', function (block) {
-  return 'pilas.escena_actual().camara.seguir_a(' +
+  return 'pilas.camara.seguir_a(' +
          campo_nombre(block) + ", modo='" +
          block.getFieldValue('MODO') + "')\n";
 });
 
 registrar('p3d_camara_libre', function (block) {
-  return 'pilas.escena_actual().camara.dejar_de_seguir()\n';
+  return 'pilas.camara.dejar_de_seguir()\n';
 });
 
 registrar('p3d_tecla', function (block) {

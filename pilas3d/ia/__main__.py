@@ -53,8 +53,12 @@ def main():
     modelo = args[0] if args else MODELO
     asegurar_modelo(modelo)
     print("Listo: '%s' descargado." % modelo)
-    if modelo != MODELO:
-        print("Para usarlo: PILAS3D_IA_MODELO=%s" % modelo)
+    if args:
+        # elegido a mano: queda como default en la config del motor
+        from pilas3d import config
+        config.guardar('ia_modelo', modelo)
+        print("Quedó como modelo por defecto (pilas.ia.modelo).")
+        print("PILAS3D_IA_MODELO=<otro> lo pisa si está definida.")
     return 0
 
 
