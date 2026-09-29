@@ -55,10 +55,10 @@ exp = {'dir': os.path.expanduser('~'), 'sel': 0, 'entradas': []}
 nombrar = {'texto': '', 'ruta': None, 'para': 'modelo'}
 
 PANEL = 250   # ancho del panel lateral en px
-PIE = 90      # alto del panel inferior
+PIE = 110     # alto del panel inferior en px
 
 # actores de UI, creados por main()
-marcador = panel_der = panel_inf = lista = info = None
+marcador = panel_der = panel_inf = lista = info = ayuda = None
 
 
 def ruta_pose(ruta_modelo):
@@ -129,7 +129,9 @@ def organizar_layout():
     lista.y = h - 25
     lista.ancho = PANEL - 16
     info.x = 10
-    info.y = 58
+    info.y = PIE - 25
+    ayuda.x = 10
+    ayuda.y = PIE - 50
 
 
 def cargar_modelo(i):
@@ -480,7 +482,8 @@ def main(directorio='modelos', ejecutar=True):
     (por defecto ``modelos/`` en el directorio actual). Con
     ``ejecutar=False`` deja todo listo sin entrar al loop
     (para pruebas o para seguir desde IPython)."""
-    global pilas, MODELOS, marcador, panel_der, panel_inf, lista, info
+    global pilas, MODELOS, marcador, panel_der, panel_inf, lista, \
+        info, ayuda
 
     encontrados = buscar_modelos(directorio)
     if not encontrados:
@@ -508,13 +511,14 @@ def main(directorio='modelos', ejecutar=True):
     lista = pilas.actores.Texto("", tamano=12, ancho=PANEL - 16)
     info = pilas.actores.Texto("", tamano=15)
     info.color = pilas.colores.amarillo
-    pilas.actores.Texto(
-        "N: modelo - flechas: hueso - X/Y/Z+<-/->: rotar - "
-        "M/W/B/P: keyframes - S: stop - U: volver\n"
-        "J/L: guardar/cargar anim - G/C/R: pose - A: .glb - "
-        "K: textura\n"
-        "T: animación procedural (caminar, correr, sentarse, cola...)",
-        x=10, y=28, tamano=12)
+    ayuda = pilas.actores.Texto(
+        "N: modelo - flechas + X/Y/Z + <-/->: rotar hueso - "
+        "G/C/R: pose\n"
+        "M/W/B: keyframes - P: play - S: stop - U: volver - "
+        "J/L: animaciones\n"
+        "A: cargar .glb - K: textura - T: procedural - "
+        "botón derecho: cámara",
+        x=10, y=PIE - 50, tamano=12)
 
     organizar_layout()
     pilas.tareas.siempre(0.5, organizar_layout)   # sigue el resize
