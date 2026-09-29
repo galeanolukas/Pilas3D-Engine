@@ -1632,6 +1632,19 @@ def test_menu_click_en_opcion_la_activa():
     assert elegido == [2]
 
 
+def test_menu_fondo_y_centrado():
+    """El panel envuelve las opciones y centrar() lo deja en el medio."""
+    pilas = crear_pilas()
+    menu = pilas.actores.Menu(
+        opciones=[("Jugar", None), ("Salir", None)],
+        x=200, y=300, fondo=(0, 0, 0, 120), centrado=True)
+    assert menu._fondo_rgba == (0, 0, 0, 120)
+    x0, y0, x1, y1 = menu._rect_panel()
+    assert abs((x0 + x1) / 2 - 400) < 1    # ventana default 800x600
+    assert abs((y0 + y1) / 2 - 300) < 1
+    menu.dibujar()                          # no falla en headless
+
+
 def test_menu_limpia_sus_textos():
     pilas = crear_pilas()
     menu = pilas.actores.Menu(opciones=[("A", None), ("B", None)],

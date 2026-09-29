@@ -94,7 +94,9 @@ pilas.actores.Menu(
         ("Nombre", 'input', 'jugador', al_nombrar),
         ("Salir", pilas.terminar),
     ],
-    x=230, y=360, tamano=20,
+    tamano=20,
+    centrado=True,                  # panel centrado en la ventana
+    fondo=(0, 0, 0, 150),           # panel oscuro semitransparente
     color=pilas.colores.blanco,
     seleccionado=pilas.colores.amarillo)
 

@@ -28,6 +28,18 @@ Tipos de opción:
 Persistencia: con ``guardar_en='config-game.json'`` el menú carga los
 valores guardados al iniciar (y los aplica llamando a cada ``fn``) y
 vuelve a escribir el JSON en cada cambio.
+
+Fondo y presentación:
+
+- ``fondo=(r, g, b)`` o ``(r, g, b, alfa)``: dibuja un panel detrás
+  de las opciones para que el texto contraste; el alfa (0-255) lo
+  hace transparente — ``(0, 0, 0, 120)`` es un panel oscuro suave.
+- ``fondo_imagen='ruta.png'``: imagen detrás del menú (se estira al
+  área del panel o a toda la ventana si ``pantalla_completa``).
+- ``pantalla_completa=True``: el fondo/imagen cubre la ventana y el
+  menú se centra — pensado para pantallas de título.
+- ``centrado=True``: centra el panel en la ventana sin cubrirla.
+- ``margen``: relleno del panel alrededor del texto (píxeles).
 """
 
 import json
@@ -47,18 +59,34 @@ class Menu(Actor):
 
     def __init__(self, pilas, opciones, x=200, y=300, separacion=38,
                  tamano=22, color=None, seleccionado=None, titulo=None,
-                 guardar_en=None):
+                 guardar_en=None, fondo=None, fondo_imagen=None,
+                 pantalla_completa=False, centrado=False, margen=24):
         super(Menu, self).__init__(pilas)
         self.radio_de_colision = 0.0
         self.color_base = color or colores.blanco
         self.color_sel = seleccionado or colores.amarillo
         self.separacion = separacion
         self.tamano = tamano
+        self.margen = margen
+        self.pantalla_completa = pantalla_completa
         self._opciones = [self._normalizar(o) for o in opciones]
         self._sel = 0
         self._editando = None        # índice de la opción 'input' activa
         self._editando_valor = ''
         self._ruta = guardar_en
+        self._rect_fondo = None      # Rectangle lazy (modo ventana)
+        self._sprite = None
+        self._imagen = None
+        self._fondo_rgba = None
+        if fondo is not None:
+            f = tuple(fondo)
+            self._fondo_rgba = (f + (255,))[:4]
+        if fondo_imagen is not None:
+            try:
+                import pyglet
+                self._imagen = pyglet.image.load(fondo_imagen)
+            except Exception:
+                self._imagen = None
 
         y0 = y
         if titulo:
@@ -70,11 +98,14 @@ class Menu(Actor):
             self._titulo = None
 
         self._x = x
+        self._y0 = y0
         self._textos = []
         for i, op in enumerate(self._opciones):
             item = Texto(pilas, '', x=x,
                          y=y0 - i * separacion, tamano=tamano)
             self._textos.append(item)
+        if centrado or pantalla_completa:
+            self.centrar()
         self._pintar()
         if self._ruta:
             self.cargar()
@@ -119,6 +150,66 @@ class Menu(Actor):
         ty = self._textos[i].y
         return (self._x, ty - 6,
                 self._x + self._ancho_item(i), ty + self.tamano * 1.2)
+
+    def _rect_panel(self):
+        """Rectángulo (x0, y0, x1, y1) que contiene todo el menú."""
+        ancho = max(self._ancho_item(i)
+                    for i in range(len(self._opciones)))
+        ancho += self.tamano * 2.4        # el prefijo '» ' no entra
+        x0 = self._x - self.margen
+        x1 = self._x + ancho + self.margen
+        y1 = (self._titulo.y if self._titulo is not None
+              else self._textos[0].y) + (self.tamano + 10) * 1.3 \
+            + self.margen
+        y0 = self._textos[-1].y - 6 - self.margen
+        return (x0, y0, x1, y1)
+
+    def centrar(self):
+        """Reubica título y opciones centrados en la ventana."""
+        ventana = self.pilas.ventana
+        vw = ventana.width if ventana is not None else 800
+        vh = ventana.height if ventana is not None else 600
+        x0, y0, x1, y1 = self._rect_panel()
+        desplaza_x = (vw - (x1 - x0)) / 2 - x0
+        desplaza_y = (vh - (y1 - y0)) / 2 - y0
+        self._x += desplaza_x
+        for item in self._textos:
+            item.y += desplaza_y
+            item.x = self._x
+        if self._titulo is not None:
+            self._titulo.x = self._x
+            self._titulo.y += desplaza_y
+        self._y0 += desplaza_y
+
+    # -- dibujado ----------------------------------------------------------
+
+    def dibujar(self):
+        """Fondo del menú: imagen y/o panel de color con alfa."""
+        if self._imagen is None and self._fondo_rgba is None:
+            return
+        x0, y0, x1, y1 = self._rect_panel()
+        ventana = self.pilas.ventana
+        if self.pantalla_completa and ventana is not None:
+            x0, y0, x1, y1 = 0, 0, ventana.width, ventana.height
+        if self._imagen is not None:
+            if self._sprite is None:
+                import pyglet
+                self._sprite = pyglet.sprite.Sprite(self._imagen)
+            self._sprite.x = x0
+            self._sprite.y = y0
+            self._sprite.scale_x = (x1 - x0) / self._imagen.width
+            self._sprite.scale_y = (y1 - y0) / self._imagen.height
+            self._sprite.draw()
+        if self._fondo_rgba is not None:
+            from pyglet.shapes import Rectangle
+            if self._rect_fondo is None:
+                self._rect_fondo = Rectangle(0, 0, 1, 1)
+            r = self._rect_fondo
+            r.x, r.y = x0, y0
+            r.width, r.height = x1 - x0, y1 - y0
+            r.color = self._fondo_rgba[:3]
+            r.opacity = self._fondo_rgba[3]
+            r.draw()
 
     def _pintar(self):
         for i, item in enumerate(self._textos):
