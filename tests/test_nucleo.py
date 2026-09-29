@@ -1397,6 +1397,36 @@ def _gltf_esqueletico():
     return f.name
 
 
+def test_modelo_tinte_multiplica_colores():
+    """color/transparencia tiñen los colores por vértice del modelo."""
+    pilas = crear_pilas()
+    m = pilas.actores.ModeloGLTF('modelos/personajes/fox/Fox.glb')
+    m._construir_gl()
+    blancos = list(m._listas[0]['vl'].color[:4])
+    assert blancos == [1.0, 1.0, 1.0, 1.0]      # material sin tinte
+    m.color = pilas.colores.rojo
+    m._construir_gl()
+    r = list(m._listas[0]['vl'].color[:4])
+    assert r[0] == 1.0 and r[1] == 0.0 and r[2] == 0.0  # teñido rojo
+    m.color = pilas.colores.blanco
+    m.transparencia = 50
+    m._construir_gl()
+    assert abs(m._listas[0]['vl'].color[3] - 0.5) < 0.01
+
+
+def test_modelo_fabrica_rutea_glb_y_diferencia_animado():
+    """pilas.actores.Modelo acepta .glb (delega a ModeloGLTF) y los
+    flags es_animado/es_estatico distinguen skinned vs rígido."""
+    pilas = crear_pilas()
+    from pilas3d.actores.modelo_gltf import ModeloGLTF
+    fox = pilas.actores.Modelo('modelos/personajes/fox/Fox.glb')
+    assert isinstance(fox, ModeloGLTF)
+    assert fox.es_animado and not fox.es_estatico
+    caballo = pilas.actores.ModeloGLTF(
+        'modelos/personajes/horse/clydesdale_horse_-_3d_model_free.glb')
+    assert caballo.es_estatico and not caballo.es_animado
+
+
 def test_gltf_esqueletico_carga_y_anima():
     pilas = crear_pilas()
     ruta = _gltf_esqueletico()

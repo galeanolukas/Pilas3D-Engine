@@ -24,6 +24,10 @@ class Modelo(Actor):
         self.escala = escala
         self.radio_de_colision = self._datos['radio'] * escala
 
+    #: Un .obj nunca es animado: siempre estático.
+    es_animado = False
+    es_estatico = True
+
     def _generar_geometria(self):
         d = self._datos
         return d['posiciones'], d['normales'], GL_TRIANGLES, \

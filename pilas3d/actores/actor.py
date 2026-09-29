@@ -418,6 +418,29 @@ class Actor(object):
         a = 1.0 - self._transparencia / 100.0
         return [r, g, b, a] * cantidad
 
+    def _colores_tenidos(self, colores_vertices):
+        """Multiplica los colores del modelo por ``self._color``
+        (tinte) y la transparencia. Sirve para 'pintar' actores que
+        ya traen colores por vértice (materiales de .obj/.glb)."""
+        r, g, b = colores.normalizar(self._color)
+        a = 1.0 - self._transparencia / 100.0
+        out = []
+        for i in range(0, len(colores_vertices), 4):
+            out += [colores_vertices[i] * r,
+                    colores_vertices[i + 1] * g,
+                    colores_vertices[i + 2] * b,
+                    colores_vertices[i + 3] * a]
+        return out
+
+    def _colores_efectivos(self, colores_vertices, cantidad):
+        """Colores finales del draw: los del modelo teñidos por
+        ``color``/``transparencia``, o planos si no trae."""
+        if colores_vertices is None:
+            return self._colores_planos(cantidad)
+        if self._color != colores.blanco or self._transparencia:
+            return self._colores_tenidos(colores_vertices)
+        return colores_vertices
+
     def _reconstruir_gl(self):
         if self._vertex_list is not None:
             self._vertex_list.delete()
@@ -456,8 +479,8 @@ class Actor(object):
         uvs = datos[4] if len(datos) > 4 else None
         cantidad = len(posiciones) // 3
 
-        if colores_vertices is None:
-            colores_vertices = self._colores_planos(cantidad)
+        colores_vertices = self._colores_efectivos(
+            colores_vertices, cantidad)
         if uvs is None:
             uvs = [0.0] * (cantidad * 2)
 

@@ -87,6 +87,8 @@ class ModeloGLTF(Actor):
 
     def _construir_gl(self):
         programa = shaders.obtener_programa()
+        col_tint = self._colores_efectivos(self._col,
+                                           len(self._col) // 4)
         self._listas = []
         for g in self._grupos:
             v0, v1 = g['v0'], g['v1']
@@ -94,7 +96,7 @@ class ModeloGLTF(Actor):
                 v1 - v0, GL_TRIANGLES, g['indices'],
                 position=('f', self._pos[v0 * 3:v1 * 3]),
                 normal=('f', self._nor[v0 * 3:v1 * 3]),
-                color=('f', self._col[v0 * 4:v1 * 4]),
+                color=('f', col_tint[v0 * 4:v1 * 4]),
                 texcoords=('f', self._uv[v0 * 2:v1 * 2]))
             self._listas.append({'vl': vl, 'imagen': g['imagen'],
                                  'tex': None})
@@ -228,6 +230,16 @@ class ModeloGLTF(Actor):
             list(self._col), list(self._uv)
 
     # -- animación ---------------------------------------------------------------
+
+    @property
+    def es_animado(self):
+        """True si el archivo trae esqueleto (skin) — los modelos
+        'rígidos' (nodos sin joints) son estáticos."""
+        return bool(self._con_piel)
+
+    @property
+    def es_estatico(self):
+        return not self._con_piel
 
     def animaciones(self):
         """Nombres de las animaciones del archivo."""

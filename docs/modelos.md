@@ -136,3 +136,32 @@ Lo que el motor soporta hoy (y cómo conviene armar los modelos):
 > `baseColorTexture` y la aplicaba a todo el actor. Desde que cada
 > material tiene su grupo de render, modelos multi-material como el
 > hotdog (salchicha texturizada + outline plano) se ven correctos.
+
+## Estáticos vs animados
+
+| Tipo | Actor | Animación | Textura | Pintado |
+|---|---|---|---|---|
+| `.obj` | `pilas.actores.Modelo` | no | `imagen=` | `color=` tine |
+| `.glb`/`.gltf` | `pilas.actores.ModeloGLTF` | skin por CPU | por material + `imagen=` override | `color=` tine |
+| secuencia `.obj` | `pilas.actores.ModeloAnimado` | por cuadros | `imagen=` | `color=` tine |
+| bloque Minecraft | `pilas.actores.ModeloJSON` | no | por elemento | `color=` tine |
+
+`pilas.actores.Modelo('x.glb')` **delega automáticamente** a
+`ModeloGLTF` — los `.glb` sin esqueleto funcionan como estáticos.
+
+Para saber si un `.glb` es animado:
+
+```python
+m = pilas.actores.ModeloGLTF('fox.glb')
+m.es_animado      # True si tiene skin (esqueleto)
+m.es_estatico     # True si es de partes rígidas (horse, props)
+m.animaciones()   # nombres de los clips
+```
+
+### Pintar (`color`) y texturizar (`imagen`) valen para todos
+
+- `modelo.color = pilas.colores.rojo` **tiñe** el modelo:
+  multiplica los colores de material/vértice (blanco = sin cambio).
+- `modelo.imagen = 'x.png'` fuerza **una** textura para todo el
+  actor — en `ModeloGLTF` reemplaza las texturas por material.
+- `modelo.transparencia = 40` baja el alfa de todos los vértices.

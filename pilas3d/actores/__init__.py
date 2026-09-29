@@ -81,6 +81,12 @@ class Actores(object):
             eliminar_al_terminar=eliminar_al_terminar)
 
     def Modelo(self, ruta, x=0, y=0, z=0, escala=1.0):
+        """Modelo estático (.obj). Si la ruta es ``.glb``/``.gltf``
+        delega en ``ModeloGLTF`` — sirve igual para archivos sin
+        esqueleto (quedan como estáticos)."""
+        if str(ruta).lower().endswith(('.glb', '.gltf')):
+            return ModeloGLTF(self._pilas, ruta, x=x, y=y, z=z,
+                              escala=escala)
         return Modelo(self._pilas, ruta, x=x, y=y, z=z, escala=escala)
 
     def Sombra(self, dueno, radio=None, opacidad=60):
