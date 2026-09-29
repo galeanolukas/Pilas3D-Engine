@@ -328,6 +328,25 @@ Si el actor no tiene cerebro pero es un `ActorIA`, se delega a su
 `preguntar` (con voz Piper); si no tiene nada, responde con el
 asistente en su globo.
 
+### Chat en red (multijugador)
+
+Si hay una conexión activa (`pilas.red.hospedar`/`conectar`), el
+mismo cuadro también **envía el mensaje a los demás jugadores** por
+el canal `'chat'` de la red, y los mensajes que llegan se muestran
+en un log de texto en pantalla:
+
+```python
+pilas.red.hospedar(7777)                    # o conectar(ip, 7777)
+chat = pilas.actores.Chat(mono, nombre='lukas')  # npc + red
+chat = pilas.actores.Chat(nombre='lukas')        # solo red (npc=None)
+```
+
+`nombre` es el apodo con el que te ven los demás; `log=False`
+desactiva el log en pantalla. La conexión puede llegar después de
+crear el Chat: se engancha sola cuando aparece. Atajos de la red:
+`conexion.chatear(texto, nombre)` y `conexion.cuando_chat(fn)` para
+`funcion(datos, de)` con `datos = {'texto', 'nombre'}`.
+
 Bloques nuevos en el editor (categoría IA + Apariencia):
 `darle cerebro`, `crear chat` y `poner el cielo` (estrellas/día/
 textura del paquete). Ejemplo precargado: **"NPC con cerebro (IA)"**.

@@ -150,8 +150,10 @@ In [2]: %explicar        # explica el último error
 ```
 
 El NPC con habilidad `Cerebro` decide sus acciones con el LLM local
-(`acercarse`, `decir`, `ir_a`…) y el actor `Chat` le habla con una
-tecla. Sin Ollama el motor funciona igual: `pilas.ayuda()` sigue
+(`acercarse`, `decir`, `ir_a`…) y el actor `Chat` sirve tanto para
+hablarle al NPC como de **chat entre jugadores** cuando hay una
+conexión de `pilas.red` activa — los mensajes llegan a un log en
+pantalla. Sin Ollama el motor funciona igual: `pilas.ayuda()` sigue
 mostrando la guía. Variables: `PILAS3D_IA_MODELO`, `PILAS3D_IA_GPU=1`.
 Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 

@@ -2554,6 +2554,46 @@ def test_chat_ignora_mensaje_vacio():
     assert not getattr(cubo, '_globo', None)
 
 
+def test_chat_en_red_entre_dos_jugadores():
+    """Chat(npc=None) manda por pilas.red y loguea lo que llega."""
+    import time
+    pilas_a = crear_pilas()
+    pilas_b = crear_pilas()
+    servidor = pilas_a.red.hospedar(puerto=0)
+    cliente = pilas_b.red.conectar('localhost', servidor.puerto)
+    chat_a = pilas_a.actores.Chat(nombre='ana')
+    chat_b = pilas_b.actores.Chat(nombre='beto')
+    try:
+        def pasar_frames():
+            servidor.actualizar()
+            cliente.actualizar()
+            chat_a.actualizar()
+            chat_b.actualizar()
+        for _ in range(50):      # dejar conectar los hilos de red
+            pasar_frames()
+            if cliente.id is not None:
+                break
+            time.sleep(0.01)
+        chat_a.decir_a('hola beto')
+        for _ in range(200):
+            pasar_frames()
+            if chat_b._log:
+                break
+            time.sleep(0.01)
+        assert chat_b._log[-1] == 'ana: hola beto'
+        chat_b.decir_a('hola ana')
+        for _ in range(200):
+            pasar_frames()
+            if 'beto: hola ana' in chat_a._log:
+                break
+            time.sleep(0.01)
+        assert 'beto: hola ana' in chat_a._log
+        assert 'vos: hola beto' in chat_a._log
+    finally:
+        cliente.cerrar()
+        servidor.cerrar()
+
+
 def test_pilas_camara_atajo():
     """pilas.camara es la camara de la escena actual."""
     pilas = crear_pilas()

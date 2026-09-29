@@ -196,16 +196,23 @@ class Actores(object):
         return Globo(self._pilas, actor=actor, texto=texto, x=x, y=y,
                      alto=alto, tamano=tamano, duracion=duracion)
 
-    def Chat(self, npc, tecla='t', etiqueta=None):
-        """Puente para charlar con un actor: al pulsar ``tecla`` se
-        abre un cuadro de texto y el mensaje va al LLM local.
+    def Chat(self, npc=None, tecla='t', etiqueta=None,
+             nombre='jugador', log=True):
+        """Puente para charlar con un actor — y entre jugadores en
+        red: al pulsar ``tecla`` se abre un cuadro de texto y el
+        mensaje va al LLM local y/o a ``pilas.red``.
 
         Si ``npc`` tiene la habilidad ``Cerebro`` la respuesta vuelve
         como una acción suya (decir, moverse, acercarse…); si es un
         ``ActorIA`` se delega a su ``preguntar`` (con voz); si no,
-        responde con el asistente y su globo."""
+        responde con el asistente y su globo.
+
+        Con una conexión activa (``pilas.red.hospedar/conectar``) los
+        mensajes se transmiten a los demás jugadores y los suyos se
+        muestran en un log en pantalla. ``npc=None`` da un chat solo
+        de red; ``nombre`` es el apodo que ven los demás."""
         return Chat(self._pilas, npc=npc, tecla=tecla,
-                    etiqueta=etiqueta)
+                    etiqueta=etiqueta, nombre=nombre, log=log)
 
     def Barra(self, de=None, x=10, y=10, ancho=120, alto=12,
               color=None):

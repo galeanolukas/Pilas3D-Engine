@@ -49,6 +49,16 @@ class _Conexion(object):
     def _encolar(self, nombre, datos, de):
         self._cola.put((nombre, datos, de))
 
+    # -- chat incorporado --------------------------------------------------
+
+    def chatear(self, texto, nombre='jugador'):
+        """Envía un mensaje de chat a todos: ``{'texto', 'nombre'}``."""
+        self.enviar('chat', texto=str(texto), nombre=nombre)
+
+    def cuando_chat(self, funcion):
+        """``funcion(datos, de)`` con ``datos`` = {'texto','nombre'}."""
+        self.cuando_reciba('chat', funcion)
+
     def actualizar(self):
         """Despacha los mensajes encolados (llamado por ``Pilas._tick``)."""
         while True:
@@ -88,10 +98,10 @@ class Servidor(_Conexion):
         """Ids de los clientes conectados (sin contar al que hospeda)."""
         return sorted(self._clientes)
 
-    def enviar(self, nombre, **datos):
+    def enviar(self, tipo, **datos):
         """Broadcast a todos los clientes conectados."""
         for cid in list(self._clientes):
-            self._mandar_a(cid, nombre, datos)
+            self._mandar_a(cid, tipo, datos)
 
     def _mandar_a(self, cid, nombre, datos):
         try:
@@ -179,9 +189,9 @@ class Cliente(_Conexion):
         self._hilo.daemon = True
         self._hilo.start()
 
-    def enviar(self, nombre, **datos):
+    def enviar(self, tipo, **datos):
         with self._lock:
-            _mandar(self._sock, nombre, datos)
+            _mandar(self._sock, tipo, datos)
 
     def _escuchar(self):
         try:
