@@ -89,6 +89,11 @@ def _cargar_crudo(ruta):
         a = doc['accessors'][i]
         fmt, tam = _COMP[a['componentType']]
         n = _NCOMP[a['type']]
+        if 'bufferView' not in a:
+            # spec glTF: accessor sin bufferView arranca en ceros
+            cero = (0.0,) * n if fmt == 'f' else (0,) * n
+            return [cero[0] if n == 1 else cero for _ in
+                    range(a['count'])]
         v = vistas[a['bufferView']]
         blob = blobs[v.get('buffer', 0)]
         base = v.get('byteOffset', 0) + a.get('byteOffset', 0)
