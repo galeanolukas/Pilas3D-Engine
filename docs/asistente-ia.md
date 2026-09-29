@@ -396,3 +396,22 @@ npc.cambiar_estado('perseguir')
 Ejemplo completo: `ejemplos/vida_y_zonas.py`. En bloques, la
 colisión por evento es el bloque **"cuando ... choque con ..."** de
 la categoría Eventos.
+
+## 17. Patrullar, HuirDe y variables en bloques
+
+```python
+# waypoints en loop (o ping-pong con ida_y_vuelta=True)
+guardia.aprender(pilas.habilidades.Patrullar,
+                 puntos=[(0, 0), (5, 0), (5, 5)], velocidad=2)
+
+# escapa cuando el objetivo entra al radio
+presa.aprender(pilas.habilidades.HuirDe, jugador,
+               radio=5, velocidad=3)
+```
+
+En el editor de bloques hay una categoría **Variables** nueva:
+`guardar X en la variable`, `sumar X a la variable` y `variable`
+(lector). Generan un dict global `variables` — los callbacks las
+modifican sin `global` y `variables.get('puntos', 0)` no falla aunque
+nunca se haya creado. Combinadas con "cuando … choque con …" ya dan
+juegos con puntaje.

@@ -2752,3 +2752,57 @@ def test_maquina_de_estados_entrar_salir():
         }, inicial='a')
     npc.cambiar_estado('b')
     assert hooks == ['sale_a', 'entra_b']
+
+
+def test_patrullar_recorre_waypoints_en_loop():
+    """El actor va de punto en punto y vuelve al primero."""
+    pilas = crear_pilas()
+    g = pilas.actores.Cubo(x=0, z=0)
+    g.aprender(pilas.habilidades.Patrullar,
+               puntos=[(4, 0), (4, 4)], velocidad=10)
+    escena = pilas.escena_actual()
+    for _ in range(200):
+        escena.actualizar(0.05)
+        if g.indice_patrulla == 1:
+            break
+    assert g.indice_patrulla == 1          # llegó al (4,0)
+    for _ in range(300):
+        escena.actualizar(0.05)
+        if g.indice_patrulla == 0:
+            break
+    assert g.indice_patrulla == 0          # hizo el loop completo
+
+
+def test_patrullar_ida_y_vuelta():
+    """Con ida_y_vuelta el orden es 0,1,...,n-1,...,1,0."""
+    from pilas3d.habilidades.patrullar import Patrullar
+    pilas = crear_pilas()
+    g = pilas.actores.Cubo(x=0, z=0)
+    h = g.aprender(pilas.habilidades.Patrullar,
+                   puntos=[(2, 0), (4, 0), (6, 0)],
+                   velocidad=20, ida_y_vuelta=True)
+    escena = pilas.escena_actual()
+    orden = [g.indice_patrulla]
+    for _ in range(400):
+        escena.actualizar(0.05)
+        if g.indice_patrulla != orden[-1]:
+            orden.append(g.indice_patrulla)
+        if len(orden) >= 4:
+            break
+    assert orden == [0, 1, 2, 1]           # ping-pong
+
+
+def test_huir_de():
+    """La presa se aleja del objetivo solo dentro del radio."""
+    pilas = crear_pilas()
+    presa = pilas.actores.Cubo(x=0, z=0)
+    cazador = pilas.actores.Cubo(x=10, z=0)
+    presa.aprender(pilas.habilidades.HuirDe, cazador,
+                   radio=5, velocidad=10)
+    escena = pilas.escena_actual()
+    escena.actualizar(0.05)                # cazador a 10m: quieto
+    assert presa.x == 0
+    cazador.x = 3                          # entra al radio
+    for _ in range(10):
+        escena.actualizar(0.05)
+    assert presa.x < 0                     # huyó hacia -x

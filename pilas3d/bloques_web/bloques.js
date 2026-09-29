@@ -338,6 +338,43 @@ Blockly.defineBlocksWithJsonArray([
     previousStatement: null, nextStatement: null,
     colour: 200,
   },
+  // -- variables ------------------------------------------------------
+  // se guardan en un dict global 'variables' — asi los callbacks no
+  // necesitan 'global' para modificarlas (variables.get(k,0) no falla
+  // si la variable todavia no se creo).
+
+  {
+    type: 'p3d_var_poner',
+    message0: 'guardar %1 en la variable %2',
+    args0: [
+      { type: 'input_value', name: 'VALOR', check: 'Number' },
+      { type: 'field_input', name: 'NOMBRE', text: 'puntos' },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 300,
+    tooltip: 'Crea o pisa la variable con un valor',
+  },
+  {
+    type: 'p3d_var_sumar',
+    message0: 'sumar %1 a la variable %2',
+    args0: [
+      { type: 'input_value', name: 'VALOR', check: 'Number' },
+      { type: 'field_input', name: 'NOMBRE', text: 'puntos' },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 300,
+    tooltip: 'Le suma (o resta con negativos) a la variable',
+  },
+  {
+    type: 'p3d_var',
+    message0: 'variable %1',
+    args0: [
+      { type: 'field_input', name: 'NOMBRE', text: 'puntos' },
+    ],
+    output: 'Number',
+    colour: 300,
+    tooltip: 'El valor guardado en la variable (0 si no existe)',
+  },
   {
     type: 'p3d_chat',
     message0: 'crear chat para hablar con %1 al pulsar %2',
@@ -561,10 +598,17 @@ registrar('p3d_al_colisionar', function (block) {
   var fn = nombre_unico('al_chocar');
   var dentro = GEN.statementToCode(block, 'HACER') ||
       GEN.INDENT + 'pass\n';
-  return 'def ' + fn + '():\n' + globales(block) + dentro +
-         'pilas.colisiones.cuando_colisionan(' +
-         campo_nombre(block, 'A') + ', ' +
-         campo_nombre(block, 'B') + ', ' + fn + ')\n\n';
+  // solo registra la vigilancia si ambos actores existen de verdad —
+  // si falta alguno, la función queda pero no se conecta (avisa).
+  var creados = nombres_creados(block);
+  var a = campo_nombre(block, 'A');
+  var b = campo_nombre(block, 'B');
+  var reg = (creados.indexOf(a) >= 0 && creados.indexOf(b) >= 0)
+    ? 'pilas.colisiones.cuando_colisionan(' + a + ', ' + b +
+      ', ' + fn + ')\n'
+    : '# al_chocar: falta crear alguno de los actores (' +
+      a + ', ' + b + ')\n';
+  return 'def ' + fn + '():\n' + globales(block) + dentro + reg + '\n';
 });
 
 registrar('p3d_al_pulsar', function (block) {
@@ -673,6 +717,34 @@ registrar('p3d_cerebro', function (block) {
     args += ', objetivo=' + sanea(obj);
   return campo_nombre(block) +
          '.aprender(pilas.habilidades.Cerebro, ' + args + ')\n';
+});
+
+function var_definicion() {
+  // inyecta 'variables = {}' una sola vez al tope del programa
+  GEN.definitions_['variables'] = 'variables = {}';
+}
+
+registrar('p3d_var_poner', function (block) {
+  var_definicion();
+  var v = GEN.valueToCode(block, 'VALOR', GEN.ORDER_NONE) || '0';
+  return 'variables[' +
+         GEN.quote_(sanea(block.getFieldValue('NOMBRE'))) +
+         '] = ' + v + '\n';
+});
+
+registrar('p3d_var_sumar', function (block) {
+  var_definicion();
+  var n = sanea(block.getFieldValue('NOMBRE'));
+  var v = GEN.valueToCode(block, 'VALOR', GEN.ORDER_NONE) || '0';
+  return 'variables[' + GEN.quote_(n) + '] = variables.get(' +
+         GEN.quote_(n) + ', 0) + ' + v + '\n';
+});
+
+registrar('p3d_var', function (block) {
+  var_definicion();
+  return ['variables.get(' +
+          GEN.quote_(sanea(block.getFieldValue('NOMBRE'))) +
+          ', 0)', GEN.ORDER_NONE];
 });
 
 registrar('p3d_chat', function (block) {
@@ -862,6 +934,12 @@ var TOOLBOX = {
         { kind: 'block', type: 'controls_if' },
         { kind: 'block', type: 'controls_repeat_ext' },
         { kind: 'block', type: 'math_number' },
+      ] },
+    { kind: 'category', name: 'Variables', colour: '300',
+      contents: [
+        { kind: 'block', type: 'p3d_var_poner' },
+        { kind: 'block', type: 'p3d_var_sumar' },
+        { kind: 'block', type: 'p3d_var' },
       ] },
     { kind: 'category', name: 'Matemática', colour: '230',
       contents: [
