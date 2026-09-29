@@ -166,6 +166,156 @@ Blockly.defineBlocksWithJsonArray([
     colour: 45,
     tooltip: 'Corre una vez al pulsar esa tecla',
   },
+  {
+    type: 'p3d_al_entrar_zona',
+    message0: 'cuando %1 entre a la zona %2 hacer %3',
+    args0: [
+      { type: 'field_dropdown', name: 'A', options: actores_opciones },
+      { type: 'field_dropdown', name: 'B', options: actores_opciones },
+      { type: 'input_statement', name: 'HACER' },
+    ],
+    colour: 45,
+    tooltip: 'Corre una vez cada vez que el actor entra a la zona',
+  },
+
+  // -- juego: vida, zonas, comportamientos, partidas -----------------
+  {
+    type: 'p3d_vida',
+    message0: 'darle %1 de vida a %2',
+    args0: [
+      { type: 'field_number', name: 'N', value: 100, min: 1 },
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 80,
+    tooltip: 'El actor gana vida/recibir_dano/curar/al_morir',
+  },
+  {
+    type: 'p3d_danar',
+    message0: '%1 a %2 en %3',
+    args0: [
+      { type: 'field_dropdown', name: 'QUE', options: [
+        ['dañar', 'recibir_dano'], ['curar', 'curar'],
+      ] },
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_number', name: 'N', value: 10 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 80,
+  },
+  {
+    type: 'p3d_barra',
+    message0: 'crear barra de vida para %1',
+    args0: [{ type: 'field_dropdown', name: 'NOMBRE',
+              options: actores_opciones }],
+    previousStatement: null, nextStatement: null,
+    colour: 80,
+  },
+  {
+    type: 'p3d_patrullar',
+    message0: 'que %1 patrulle los puntos %2 a velocidad %3',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_input', name: 'PUNTOS', text: '(0,0),(4,0),(4,4)' },
+      { type: 'field_number', name: 'VEL', value: 2, min: 0.1 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 80,
+    tooltip: 'Puntos como (x,z),(x,z),… — recorre en loop',
+  },
+  {
+    type: 'p3d_huir',
+    message0: 'que %1 huya de %2 en radio %3 a velocidad %4',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_dropdown', name: 'OBJ', options: actores_o_nadie },
+      { type: 'field_number', name: 'RADIO', value: 5, min: 0.5 },
+      { type: 'field_number', name: 'VEL', value: 3, min: 0.1 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 80,
+  },
+  {
+    type: 'p3d_parpadeo',
+    message0: 'que %1 parpadee intensidad %2 velocidad %3',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_number', name: 'INT', value: 0.25, min: 0, max: 1 },
+      { type: 'field_number', name: 'VEL', value: 8, min: 0.1 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 80,
+    tooltip: 'Titila la luz de una lámpara como una llama',
+  },
+  {
+    type: 'p3d_encender',
+    message0: '%1 a %2',
+    args0: [
+      { type: 'field_dropdown', name: 'QUE', options: [
+        ['encender', 'True'], ['apagar', 'False'],
+      ] },
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 80,
+    tooltip: 'Enciende/apaga la luz de una lámpara',
+  },
+  {
+    type: 'p3d_rebotar',
+    message0: 'que %1 rebote entre x ±%2 z ±%3 a velocidad %4',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_number', name: 'X', value: 6, min: 1 },
+      { type: 'field_number', name: 'Z', value: 6, min: 1 },
+      { type: 'field_number', name: 'VEL', value: 4, min: 0.1 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 80,
+    tooltip: 'Rebota como logo de DVD dentro de esos límites',
+  },
+  {
+    type: 'p3d_saltar',
+    message0: 'que %1 pise plataformas y salte con ESPACIO (impulso %2)',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_number', name: 'IMP', value: 9, min: 0 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 80,
+    tooltip: 'Gravedad + salto con barra espaciadora',
+  },
+  {
+    type: 'p3d_temblor',
+    message0: 'sacudir la cámara intensidad %1 durante %2 s',
+    args0: [
+      { type: 'field_number', name: 'INT', value: 0.4, min: 0 },
+      { type: 'field_number', name: 'SEG', value: 0.5, min: 0 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 60,
+  },
+  {
+    type: 'p3d_guardar',
+    message0: 'guardar partida en %1',
+    args0: [{ type: 'field_input', name: 'RUTA', text: 'partida.json' }],
+    previousStatement: null, nextStatement: null,
+    colour: 80,
+  },
+  {
+    type: 'p3d_cargar',
+    message0: 'cargar partida de %1',
+    args0: [{ type: 'field_input', name: 'RUTA', text: 'partida.json' }],
+    previousStatement: null, nextStatement: null,
+    colour: 80,
+  },
 
   // -- actores ------------------------------------------------------
   {
@@ -205,7 +355,7 @@ Blockly.defineBlocksWithJsonArray([
       { type: 'field_dropdown', name: 'TIPO', options: [
         ['piso', 'Piso'], ['ejes', 'Ejes'], ['plano', 'Plano'],
         ['pared', 'Pared'], ['cartel', 'Cartel'], ['cielo', 'Cielo'],
-        ['lámpara', 'Lampara'],
+        ['lámpara', 'Lampara'], ['zona', 'Zona'],
       ] },
       { type: 'field_input', name: 'NOMBRE', text: 'piso' },
     ],
@@ -623,6 +773,100 @@ registrar('p3d_al_pulsar', function (block) {
          'pilas.escena_actual().cuando_pulsa_tecla = ' + fn + '\n\n';
 });
 
+registrar('p3d_al_entrar_zona', function (block) {
+  var fn = nombre_unico('al_entrar');
+  var dentro = GEN.statementToCode(block, 'HACER') ||
+      GEN.INDENT + 'pass\n';
+  var creados = nombres_creados(block);
+  var a = campo_nombre(block, 'A');
+  var b = campo_nombre(block, 'B');
+  var reg = (creados.indexOf(a) >= 0 && creados.indexOf(b) >= 0)
+    ? b + '.cuando_entra(' + a + ', ' + fn + ')\n'
+    : '# al_entrar: falta crear alguno de los actores (' +
+      a + ', ' + b + ')\n';
+  return 'def ' + fn + '():\n' + globales(block) + dentro + reg + '\n';
+});
+
+// -- juego ---------------------------------------------------------------
+
+registrar('p3d_vida', function (block) {
+  return campo_nombre(block) +
+         '.aprender(pilas.habilidades.Vida, vida=' +
+         block.getFieldValue('N') + ')\n';
+});
+
+registrar('p3d_danar', function (block) {
+  return campo_nombre(block) + '.' + block.getFieldValue('QUE') +
+         '(' + block.getFieldValue('N') + ')\n';
+});
+
+registrar('p3d_barra', function (block) {
+  return 'pilas.actores.Barra(de=' + campo_nombre(block) + ')\n';
+});
+
+registrar('p3d_patrullar', function (block) {
+  var puntos = block.getFieldValue('PUNTOS').trim();
+  return campo_nombre(block) +
+         '.aprender(pilas.habilidades.Patrullar, puntos=[' +
+         puntos + '], velocidad=' + block.getFieldValue('VEL') +
+         ')\n';
+});
+
+registrar('p3d_huir', function (block) {
+  var obj = block.getFieldValue('OBJ');
+  var args = 'radio=' + block.getFieldValue('RADIO') +
+             ', velocidad=' + block.getFieldValue('VEL');
+  if (obj && obj !== '*' &&
+      nombres_creados(block).indexOf(sanea(obj)) >= 0)
+    return campo_nombre(block) +
+           '.aprender(pilas.habilidades.HuirDe, ' + sanea(obj) +
+           ', ' + args + ')\n';
+  return '# huir: falta crear el actor objetivo\n';
+});
+
+registrar('p3d_parpadeo', function (block) {
+  return campo_nombre(block) +
+         '.aprender(pilas.habilidades.Parpadear, intensidad=' +
+         block.getFieldValue('INT') + ', velocidad=' +
+         block.getFieldValue('VEL') + ')\n';
+});
+
+registrar('p3d_encender', function (block) {
+  return campo_nombre(block) + '.encendida = ' +
+         block.getFieldValue('QUE') + '\n';
+});
+
+registrar('p3d_rebotar', function (block) {
+  var x = block.getFieldValue('X');
+  var z = block.getFieldValue('Z');
+  var v = block.getFieldValue('VEL');
+  return campo_nombre(block) +
+         '.aprender(pilas.habilidades.RebotaEnParedes, vx=' + v +
+         ', vz=' + v + ', limites=(-' + x + ', ' + x + ', -' + z +
+         ', ' + z + '))\n';
+});
+
+registrar('p3d_saltar', function (block) {
+  return campo_nombre(block) +
+         '.aprender(pilas.habilidades.PisaPlataformas, salto=' +
+         block.getFieldValue('IMP') + ')\n';
+});
+
+registrar('p3d_temblor', function (block) {
+  return 'pilas.camara.temblor(' + block.getFieldValue('INT') +
+         ', ' + block.getFieldValue('SEG') + ')\n';
+});
+
+registrar('p3d_guardar', function (block) {
+  return 'pilas.guardar_partida(' +
+         GEN.quote_(block.getFieldValue('RUTA')) + ')\n';
+});
+
+registrar('p3d_cargar', function (block) {
+  return 'pilas.cargar_partida(' +
+         GEN.quote_(block.getFieldValue('RUTA')) + ')\n';
+});
+
 registrar('p3d_crear_actor', function (block) {
   var tipo = block.getFieldValue('TIPO');
   var nom = campo_nombre(block);
@@ -873,6 +1117,7 @@ var TOOLBOX = {
         { kind: 'block', type: 'p3d_por_siempre' },
         { kind: 'block', type: 'p3d_al_click' },
         { kind: 'block', type: 'p3d_al_colisionar' },
+        { kind: 'block', type: 'p3d_al_entrar_zona' },
         { kind: 'block', type: 'p3d_al_pulsar' },
       ] },
     { kind: 'category', name: 'Actores', colour: '290',
@@ -908,11 +1153,26 @@ var TOOLBOX = {
         { kind: 'block', type: 'p3d_esperar' },
         { kind: 'block', type: 'p3d_cada' },
       ] },
+    { kind: 'category', name: 'Juego', colour: '80',
+      contents: [
+        { kind: 'block', type: 'p3d_vida' },
+        { kind: 'block', type: 'p3d_danar' },
+        { kind: 'block', type: 'p3d_barra' },
+        { kind: 'block', type: 'p3d_patrullar' },
+        { kind: 'block', type: 'p3d_huir' },
+        { kind: 'block', type: 'p3d_parpadeo' },
+        { kind: 'block', type: 'p3d_encender' },
+        { kind: 'block', type: 'p3d_rebotar' },
+        { kind: 'block', type: 'p3d_saltar' },
+        { kind: 'block', type: 'p3d_guardar' },
+        { kind: 'block', type: 'p3d_cargar' },
+      ] },
     { kind: 'category', name: 'Cámara', colour: '60',
       contents: [
         { kind: 'block', type: 'p3d_camara_orbital' },
         { kind: 'block', type: 'p3d_camara_seguir' },
         { kind: 'block', type: 'p3d_camara_libre' },
+        { kind: 'block', type: 'p3d_temblor' },
       ] },
     { kind: 'category', name: 'IA', colour: '330',
       contents: [

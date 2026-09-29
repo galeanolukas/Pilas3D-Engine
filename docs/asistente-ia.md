@@ -429,3 +429,21 @@ El foco se dibuja a color plano gracias al flag `actor.sin_luz`
 (uniform nuevo del shader) — sirve para sprites brillantes. Si la
 escena se ve oscura: `pilas.luces.direccional.ambiente = 0.6` (el
 default subió de 0.35 a 0.45) o agregá lámparas puntuales (máx. 8).
+
+## 19. RebotaEnParedes, temblor de cámara y guardar partida
+
+```python
+bola.aprender(pilas.habilidades.RebotaEnParedes,
+              vx=3, vz=4, limites=(-8, 8, -8, 8))  # opc. paredes=[p]
+
+pilas.camara.temblor(intensidad=0.4, duracion=0.5)  # decae solo
+
+pilas.guardar_partida('partida.json', datos={'puntos': 3})
+datos = pilas.cargar_partida('partida.json')  # recrea los actores
+```
+
+En Blockly hay categoría **Juego** nueva: vida, dañar/curar, barra,
+patrullar puntos, huir de, parpadear, encender/apagar lámpara,
+rebotar, saltar con ESPACIO (PisaPlataformas), guardar/cargar, más
+el evento "cuando … entre a la zona" y "sacudir la cámara" en
+Cámara. 'zona' también entró al dropdown de crear.

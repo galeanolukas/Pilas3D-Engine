@@ -2864,3 +2864,58 @@ def test_parpadear_sin_lampara_no_rompe():
     c = pilas.actores.Cubo()
     c.aprender(pilas.habilidades.Parpadear)
     pilas.escena_actual().actualizar(0.05)
+
+
+def test_rebota_en_paredes():
+    """El actor rebota en los límites invirtiendo la velocidad."""
+    pilas = crear_pilas()
+    b = pilas.actores.Cubo(x=0, z=0)
+    b.aprender(pilas.habilidades.RebotaEnParedes,
+               vx=5, vz=0, limites=(-2, 2, -2, 2))
+    escena = pilas.escena_actual()
+    for _ in range(5):
+        escena.actualizar(0.1)
+    assert b.x == 2 and b.vel_x_rebote < 0       # rebotó en max_x
+    for _ in range(9):
+        escena.actualizar(0.1)
+    assert b.x == -2 and b.vel_x_rebote > 0      # y en min_x
+
+
+def test_camara_temblor_decae():
+    """El temblor mueve la cámara y se apaga solo."""
+    import random
+    pilas = crear_pilas()
+    cam = pilas.camara
+    random.seed(1)
+    x0 = cam.x
+    cam.temblor(1.0, duracion=0.5)
+    cam.actualizar(0.05)
+    assert cam.x != x0
+    for _ in range(40):
+        cam.actualizar(0.05)
+    pos = cam.x
+    cam.actualizar(0.05)
+    assert cam.x == pos                         # ya no tiembla
+
+
+def test_guardar_y_cargar_partida(tmp_path):
+    """Guarda actores y datos; cargar los recrea."""
+    import os
+    pilas = crear_pilas()
+    c = pilas.actores.Cubo(x=3, z=-2)
+    c.rotacion_y = 45
+    c.aprender(pilas.habilidades.Vida, vida=80)
+    c.vida = 30
+    ruta = str(tmp_path / 'p.json')
+    pilas.guardar_partida(ruta, datos={'puntos': 7})
+    assert os.path.exists(ruta)
+
+    datos = pilas.cargar_partida(ruta)
+    assert datos == {'puntos': 7}
+    from pilas3d.actores.cubo import Cubo
+    recreados = [a for a in pilas.escena_actual().actores
+                 if isinstance(a, Cubo)]
+    assert len(recreados) == 1
+    n = recreados[0]
+    assert (n.x, n.z, n.rotacion_y) == (3, -2, 45)
+    assert n.vida == 30 and n.vida_maxima == 80

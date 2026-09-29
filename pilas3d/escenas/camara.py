@@ -32,6 +32,9 @@ class Camara(object):
         self.seguir_altura = 3.0
         self.seguir_ojos = 1.5
         self.seguir_suavizado = 8.0
+        self._temblor_restante = 0.0
+        self._temblor_duracion = 1.0
+        self._temblor_intensidad = 0.0
 
     @property
     def posicion(self):
@@ -204,10 +207,18 @@ class Camara(object):
         rad = math.radians(actor.rotacion_y)
         return -math.sin(rad), math.cos(rad)
 
+    def temblor(self, intensidad=0.4, duracion=0.5):
+        """Sacude la cámara ``duracion`` segundos con fuerza
+        ``intensidad`` (metros). El temblor decae solo."""
+        self._temblor_restante = duracion
+        self._temblor_duracion = duracion
+        self._temblor_intensidad = intensidad
+
     def actualizar(self, dt):
         """Actualiza el seguimiento (lo llama la escena cada frame)."""
         a = self._seguir
         if a is None or not a.esta_en_escena():
+            self._aplicar_temblor(dt)
             return
         fx, fz = self._frente_del_actor(a)
         ojos = a.y + self.seguir_ojos
@@ -230,6 +241,18 @@ class Camara(object):
         self.y += (py - self.y) * k
         self.z += (pz - self.z) * k
         self.objetivo = objetivo
+        self._aplicar_temblor(dt)
+
+    def _aplicar_temblor(self, dt):
+        if self._temblor_restante <= 0:
+            return
+        import random
+        self._temblor_restante -= dt
+        k = self._temblor_intensidad * max(
+            0.0, self._temblor_restante / self._temblor_duracion)
+        self.x += random.uniform(-k, k)
+        self.y += random.uniform(-k, k)
+        self.z += random.uniform(-k, k)
 
     # -- control orbital con el mouse -------------------------------------
 

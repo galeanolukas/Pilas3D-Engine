@@ -314,6 +314,21 @@ class Pilas(object):
         """Las luces de la escena actual (``pilas.luces.agregar(...)``)."""
         return self._escena_actual.luces
 
+    # -- partidas guardadas --------------------------------------------------
+
+    def guardar_partida(self, ruta='partida.json', datos=None):
+        """Guarda posición/rotación/vida de los actores en un JSON.
+
+        ``datos`` es un dict libre (puntaje, nivel…) que se guarda
+        junto a la escena y se devuelve al cargar."""
+        from pilas3d import partidas
+        return partidas.guardar(self, ruta, datos=datos)
+
+    def cargar_partida(self, ruta='partida.json', limpiar=True):
+        """Recrea los actores de un JSON guardado. Retorna ``datos``."""
+        from pilas3d import partidas
+        return partidas.cargar(self, ruta, limpiar=limpiar)
+
     # -- eventos de mouse ---------------------------------------------------
 
     def cuando_hace_click(self, funcion):
