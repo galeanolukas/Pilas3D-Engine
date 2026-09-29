@@ -39,6 +39,7 @@ class ModeloGLTF(Actor):
         self._trs_orig = [(n['t'][:], n['r'][:], n['s'][:])
                           for n in self._escena['nodos']]
         self._listas = None          # vertex lists por material
+        self._tex_cache = {}         # imagen -> textura GL (por actor)
         super(ModeloGLTF, self).__init__(pilas, x=x, y=y, z=z)
         self.escala = escala
         self._cargar_anims_junto_al_modelo()
@@ -123,7 +124,12 @@ class ModeloGLTF(Actor):
         for g in self._listas:
             if g['imagen'] is not None:
                 if g['tex'] is None:
-                    g['tex'] = self._textura_de(g['imagen'])
+                    # cache: muchas primitivas comparten la misma
+                    # imagen (atlas) — se decodifica una sola vez
+                    g['tex'] = self._tex_cache.get(g['imagen'])
+                    if g['tex'] is None:
+                        g['tex'] = self._textura_de(g['imagen'])
+                        self._tex_cache[g['imagen']] = g['tex']
                 glBindTexture(GL_TEXTURE_2D, g['tex'].id)
                 programa['usar_textura'] = True
             else:
