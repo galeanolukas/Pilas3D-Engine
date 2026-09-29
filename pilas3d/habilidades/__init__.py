@@ -30,6 +30,7 @@ from pilas3d.habilidades.vida import Vida
 from pilas3d.habilidades.maquina_de_estados import MaquinaDeEstados
 from pilas3d.habilidades.patrullar import Patrullar
 from pilas3d.habilidades.huir_de import HuirDe
+from pilas3d.habilidades.parpadear import Parpadear
 from pilas3d.habilidades.arrastrable import Arrastrable
 from pilas3d.habilidades.seguir_al_mouse import SeguirAlMouse
 from pilas3d.habilidades.disparar import Disparar
@@ -62,6 +63,7 @@ class Habilidades(object):
     MaquinaDeEstados = MaquinaDeEstados
     Patrullar = Patrullar
     HuirDe = HuirDe
+    Parpadear = Parpadear
     Arrastrable = Arrastrable
     SeguirAlMouse = SeguirAlMouse
     Disparar = Disparar
@@ -88,6 +90,7 @@ class Habilidades(object):
             'maquinadeestados': MaquinaDeEstados,
             'patrullar': Patrullar,
             'huirde': HuirDe,
+            'parpadear': Parpadear,
             'arrastrable': Arrastrable,
             'seguiralmouse': SeguirAlMouse,
             'disparar': Disparar,

@@ -2841,3 +2841,26 @@ def test_lampara_color_tina_la_luz():
     assert tuple(l.luz.color) == tuple(colores.normalizar(colores.rojo))
     l.alcance = 20
     assert l.luz.alcance == 20
+
+
+def test_parpadear_modula_el_alcance():
+    """El alcance de la lámpara oscila alrededor del valor base."""
+    pilas = crear_pilas()
+    l = pilas.actores.Lampara(alcance=8)
+    l.aprender(pilas.habilidades.Parpadear, intensidad=0.5,
+               velocidad=100)
+    escena = pilas.escena_actual()
+    valores = set()
+    for _ in range(30):
+        escena.actualizar(0.05)
+        valores.add(round(l.luz.alcance, 2))
+    assert len(valores) > 3               # titiló
+    assert all(4 <= v <= 12 for v in valores)   # ±50% de 8
+
+
+def test_parpadear_sin_lampara_no_rompe():
+    """En un actor sin .luz la habilidad no hace nada ni falla."""
+    pilas = crear_pilas()
+    c = pilas.actores.Cubo()
+    c.aprender(pilas.habilidades.Parpadear)
+    pilas.escena_actual().actualizar(0.05)
