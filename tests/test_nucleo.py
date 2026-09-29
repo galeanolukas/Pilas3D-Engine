@@ -1427,6 +1427,46 @@ def test_modelo_fabrica_rutea_glb_y_diferencia_animado():
     assert caballo.es_estatico and not caballo.es_animado
 
 
+def test_gltf_uv_flip_v():
+    """glTF usa origen de V arriba-izquierda; OpenGL abajo-izquierda.
+    El loader debe voltear V (v -> 1 - v) al leer TEXCOORD_0, si no el
+    mesh muestrea el atlas espejado (el bug de los parches del Fox)."""
+    import base64, io, json, struct, tempfile
+    from pilas3d import gltf
+    buf = io.BytesIO()
+    vistas, accesores = [], []
+    def acc(fmt, vals, comp, tipo, count):
+        datos = struct.pack('<' + fmt * len(vals), *vals)
+        vistas.append({'buffer': 0, 'byteOffset': buf.tell(),
+                       'byteLength': len(datos)})
+        buf.write(datos)
+        accesores.append({'bufferView': len(vistas) - 1,
+                          'componentType': comp, 'count': count,
+                          'type': tipo})
+        return len(accesores) - 1
+    i_pos = acc('f', [0, 0, 0, 1, 0, 0, 0, 1, 0], 5126, 'VEC3', 3)
+    i_uv = acc('f', [0.1, 0.25, 0.5, 0.25, 0.9, 0.75],
+               5126, 'VEC2', 3)
+    doc = {
+        'asset': {'version': '2.0'},
+        'scene': 0, 'scenes': [{'nodes': [0]}],
+        'nodes': [{'mesh': 0}],
+        'meshes': [{'primitives': [{
+            'attributes': {'POSITION': i_pos, 'TEXCOORD_0': i_uv}}]}],
+        'buffers': [{'uri': 'data:application/octet-stream;base64,' +
+                     base64.b64encode(buf.getvalue()).decode()}],
+        'bufferViews': vistas, 'accessors': accesores,
+    }
+    with tempfile.NamedTemporaryFile(suffix='.gltf', delete=False,
+                                     mode='w') as f:
+        json.dump(doc, f)
+    escena = gltf.cargar(f.name)
+    uvs = escena['mallas'][0]['uvs']
+    esperados = [[0.1, 0.75], [0.5, 0.75], [0.9, 0.25]]
+    for uv, (eu, ev) in zip(uvs, esperados):
+        assert abs(uv[0] - eu) < 1e-6 and abs(uv[1] - ev) < 1e-6
+
+
 def test_gltf_esqueletico_carga_y_anima():
     pilas = crear_pilas()
     ruta = _gltf_esqueletico()

@@ -110,6 +110,11 @@ Lo que el motor soporta hoy (y cómo conviene armar los modelos):
 - **Canal de UV**: `TEXCOORD_0`. Si falta, la primitiva dibuja con el
   primer píxel de la textura (color plano del borde) — no da error,
   pero el resultado es "se ve de un solo color".
+- **Eje V**: glTF define los UVs con origen **arriba-izquierda**;
+  OpenGL usa abajo-izquierda. El loader voltea V automáticamente
+  (`v -> 1 - v`) al leer `TEXCOORD_0`. Sin ese flip cada vértice
+  muestrea la textura espejada y cae en el fondo del atlas — así se
+  veía el Fox con parches verdes (el fondo oliva de su atlas).
 
 ### Lo que no se lee (por ahora)
 

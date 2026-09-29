@@ -138,7 +138,10 @@ def _cargar_crudo(ruta):
                 'normales': [list(v) for v in
                              acceso(at['NORMAL'])] if 'NORMAL' in at
                             else None,
-                'uvs': [list(v) for v in acceso(at['TEXCOORD_0'])]
+                # glTF: el origen V del texcoord es arriba-izquierda;
+                # OpenGL/pyglet esperan abajo-izquierda -> flip de V
+                'uvs': [[v[0], 1.0 - v[1]]
+                        for v in acceso(at['TEXCOORD_0'])]
                        if 'TEXCOORD_0' in at else None,
                 'articulaciones': [list(v) for v in
                                    acceso(at['JOINTS_0'])]
