@@ -62,6 +62,12 @@ class Actor(object):
         self.habilidades = ProxyHabilidades(self._habilidades)
         self._vertex_list = None
         self._modo = None
+        #: Índices para dibujar con vertex list indexado (los modelos
+        #: glTF los usan: no duplican vértices y el skinning es más
+        #: barato). ``None`` = draw plano con los vértices en orden.
+        #: Las subclases pueden setearlo antes de ``super().__init__``.
+        if not hasattr(self, '_indices'):
+            self._indices = None
         self._matriz = None
         self._matriz_sucia = True
 
@@ -456,14 +462,26 @@ class Actor(object):
             uvs = [0.0] * (cantidad * 2)
 
         self._modo = modo
-        self._vertex_list = shaders.obtener_programa().vertex_list(
-            cantidad,
-            modo,
-            position=("f", posiciones),
-            normal=("f", normales),
-            color=("f", colores_vertices),
-            texcoords=("f", uvs),
-        )
+        programa = shaders.obtener_programa()
+        if self._indices is not None:
+            self._vertex_list = programa.vertex_list_indexed(
+                cantidad,
+                modo,
+                self._indices,
+                position=("f", posiciones),
+                normal=("f", normales),
+                color=("f", colores_vertices),
+                texcoords=("f", uvs),
+            )
+        else:
+            self._vertex_list = programa.vertex_list(
+                cantidad,
+                modo,
+                position=("f", posiciones),
+                normal=("f", normales),
+                color=("f", colores_vertices),
+                texcoords=("f", uvs),
+            )
 
     def matriz_modelo(self):
         if self._matriz_sucia or self._matriz is None:

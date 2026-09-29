@@ -62,8 +62,25 @@ def _leer_archivo(ruta):
     return doc, blobs
 
 
+_cache = {}
+
+
 def cargar(ruta):
-    """Parsea el archivo y retorna la escena en estructuras planas."""
+    """Parsea el archivo y retorna la escena en estructuras planas.
+
+    Cachea por ruta absoluta: dos ``ModeloGLTF`` del mismo archivo
+    no reparsen — reciben una copia profunda (cada uno puede mutar
+    nodos/animaciones sin contaminar al otro ni al caché)."""
+    import copy
+    clave = os.path.abspath(ruta)
+    if clave in _cache:
+        return copy.deepcopy(_cache[clave])
+    escena = _cargar_crudo(ruta)
+    _cache[clave] = copy.deepcopy(escena)
+    return escena
+
+
+def _cargar_crudo(ruta):
     doc, blobs = _leer_archivo(ruta)
     vistas = doc.get('bufferViews', [])
 
