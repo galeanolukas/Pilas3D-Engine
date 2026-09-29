@@ -655,7 +655,7 @@ def test_luces_agregar_quitar_limpiar():
     pilas.luces.agregar(L.LuzPuntual())
     pilas.luces.limpiar()
     assert pilas.luces.puntuales == []
-    assert pilas.luces.direccional.ambiente == 0.35
+    assert pilas.luces.direccional.ambiente == 0.45
 
 
 def test_sombra_sigue_al_actor():
@@ -2806,3 +2806,38 @@ def test_huir_de():
     for _ in range(10):
         escena.actualizar(0.05)
     assert presa.x < 0                     # huyó hacia -x
+
+
+def test_lampara_registra_y_mueve_la_luz():
+    """La Lampara agrega una LuzPuntual que sigue su posición."""
+    pilas = crear_pilas()
+    l = pilas.actores.Lampara(x=1, y=3, z=0, alcance=12)
+    luces = pilas.escena_actual().luces.puntuales
+    assert l.luz in luces and l.luz.alcance == 12
+    l.x = 5
+    pilas.escena_actual().actualizar(0.05)
+    assert l.luz.x == 5                     # la luz siguió al actor
+    assert l.sin_luz is True                # el foco se dibuja plano
+
+
+def test_lampara_apagar_encender_y_eliminar():
+    """apagar quita la luz sin destruir el actor; eliminar limpia."""
+    pilas = crear_pilas()
+    l = pilas.actores.Lampara()
+    luces = pilas.escena_actual().luces.puntuales
+    l.apagar()
+    assert l.luz not in luces and l.encendida is False
+    l.encender()
+    assert l.luz in luces and l.encendida is True
+    l.eliminar()
+    assert l.luz not in luces               # no queda luz huérfana
+
+
+def test_lampara_color_tina_la_luz():
+    """lampara.color actualiza el color de la LuzPuntual."""
+    from pilas3d import colores
+    pilas = crear_pilas()
+    l = pilas.actores.Lampara(color=colores.rojo)
+    assert tuple(l.luz.color) == tuple(colores.normalizar(colores.rojo))
+    l.alcance = 20
+    assert l.luz.alcance == 20

@@ -54,6 +54,8 @@ uniform bool usar_textura;
 uniform vec3 luz_dir;          // dirección HACIA la luz direccional
 uniform vec3 luz_dir_color;
 uniform float luz_ambiente;
+uniform bool sin_luz;          // el actor se dibuja a color plano
+                              // (lámparas, sprites brillantes)
 uniform int cantidad_puntuales;
 uniform vec3 luz_posicion[MAX_LUCES];
 uniform vec3 luz_color[MAX_LUCES];
@@ -75,7 +77,7 @@ void main()
     if (difuso.a < 0.1) discard;
 
     vec3 luz_rgb = vec3(1.0);
-    if (length(v_normal) > 0.001) {
+    if (!sin_luz && length(v_normal) > 0.001) {
         vec3 n = normalize(v_normal);
         luz_rgb = vec3(luz_ambiente);
         luz_rgb += luz_dir_color

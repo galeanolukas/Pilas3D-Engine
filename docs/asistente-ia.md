@@ -415,3 +415,17 @@ En el editor de bloques hay una categoría **Variables** nueva:
 modifican sin `global` y `variables.get('puntos', 0)` no falla aunque
 nunca se haya creado. Combinadas con "cuando … choque con …" ya dan
 juegos con puntaje.
+
+## 18. Lampara y sin_luz
+
+```python
+lamp = pilas.actores.Lampara(x=2, y=3, z=0, alcance=10)
+lamp.color = pilas.colores.naranja     # tiñe la luz
+lamp.encendida = False                 # apaga sin destruir
+lamp.x = [5]                           # la luz lo sigue (interpola)
+```
+
+El foco se dibuja a color plano gracias al flag `actor.sin_luz`
+(uniform nuevo del shader) — sirve para sprites brillantes. Si la
+escena se ve oscura: `pilas.luces.direccional.ambiente = 0.6` (el
+default subió de 0.35 a 0.45) o agregá lámparas puntuales (máx. 8).

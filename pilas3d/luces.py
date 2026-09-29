@@ -22,7 +22,7 @@ class LuzDireccional(object):
     """Luz infinita con dirección (como el sol)."""
 
     def __init__(self, direccion=(-0.4, -0.8, -0.5), color=(1, 1, 1),
-                 ambiente=0.35):
+                 ambiente=0.45):
         self.direccion = direccion
         self.color = color
         self.ambiente = ambiente

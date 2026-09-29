@@ -205,12 +205,13 @@ Blockly.defineBlocksWithJsonArray([
       { type: 'field_dropdown', name: 'TIPO', options: [
         ['piso', 'Piso'], ['ejes', 'Ejes'], ['plano', 'Plano'],
         ['pared', 'Pared'], ['cartel', 'Cartel'], ['cielo', 'Cielo'],
+        ['lámpara', 'Lampara'],
       ] },
       { type: 'field_input', name: 'NOMBRE', text: 'piso' },
     ],
     previousStatement: null, nextStatement: null,
     colour: 290,
-    tooltip: 'Escenario: piso de grilla, ejes, plano, pared o cartel',
+    tooltip: 'Escenario: piso de grilla, ejes, plano, pared, cartel, cielo o lámpara',
   },
   {
     type: 'p3d_eliminar',

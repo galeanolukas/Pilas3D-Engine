@@ -54,6 +54,9 @@ class Actor(object):
         self.radio_de_disparo = None
 
         self.radio_de_colision = 1.0
+        #: Con ``True`` el actor se dibuja a color plano, sin
+        #: iluminación (focos de lámparas, sprites brillantes).
+        self.sin_luz = False
         self._interpolaciones = []
         self._habilidades = []
         self.habilidades = ProxyHabilidades(self._habilidades)
@@ -493,6 +496,7 @@ class Actor(object):
         programa["punto_tamano"] = getattr(self, 'punto_tamano', 1.0)
         programa["uv_escala"] = self._uv_escala
         programa["uv_desplazamiento"] = self._uv_desplazamiento
+        programa["sin_luz"] = self.sin_luz
         if self._imagen is not None:
             if self._textura is None:
                 self._cargar_textura()

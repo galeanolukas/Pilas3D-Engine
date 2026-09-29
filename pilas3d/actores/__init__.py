@@ -36,6 +36,7 @@ from pilas3d.actores.actor_ia import ActorIA
 from pilas3d.actores.chat import Chat
 from pilas3d.actores.barra import Barra
 from pilas3d.actores.zona import Zona
+from pilas3d.actores.lampara import Lampara
 
 
 class Actores(object):
@@ -221,6 +222,13 @@ class Actores(object):
         ``zona.cuando_entra(actor, fn)`` / ``cuando_sale``."""
         return Zona(self._pilas, x=x, y=y, z=z, radio=radio,
                     visible=visible, color=color)
+
+    def Lampara(self, x=0, y=2, z=0, color=None, alcance=8.0,
+                visible=True):
+        """Foco que ilumina alrededor: la luz sigue al actor.
+        ``lampara.encendida``, ``.alcance``, ``.color``."""
+        return Lampara(self._pilas, x=x, y=y, z=z, color=color,
+                       alcance=alcance, visible=visible)
 
     def Temporizador(self, x=10, y=10, tamano=18, duracion=0,
                      cuando_termina=None, ciclico=False, visible=True,
