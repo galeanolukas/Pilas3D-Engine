@@ -1,12 +1,13 @@
 <p align="center">
-  <img src="PilasLogo.png" width="220" alt="Pilas3D">
+  <img src="PilasLogo2.png" width="220" alt="Pilas3D">
 </p>
 
 # Pilas3D-Engine
 
 Motor de videojuegos 3D simple y en español, inspirado en
-[pilas-engine](https://github.com/pilas-engine/pilas-engine) 1.x de Hugo
-Ruscitti. Mantiene su filosofía y API didáctica, pero reemplaza el
+[pilas-engine](https://www.pilas-engine.com.ar/) 1.x de Hugo Ruscitti
+([código original](https://github.com/pilas-engine/pilas-engine)).
+Mantiene su filosofía y API didáctica, pero reemplaza el
 render 2D (QPainter/PyQt4) por OpenGL 3D usando **pyglet**.
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-apoyar-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/lukasgaleano)
