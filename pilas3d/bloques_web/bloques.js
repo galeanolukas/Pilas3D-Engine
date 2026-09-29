@@ -595,6 +595,31 @@ Blockly.defineBlocksWithJsonArray([
     colour: 200,
     tooltip: 'Una opción del menú (solo dentro de "crear menú")',
   },
+  {
+    type: 'p3d_menu_estilo',
+    message0: 'estilo: centrado %1 pantalla completa %2 sonidos %3',
+    args0: [
+      { type: 'field_checkbox', name: 'CENTRADO', checked: true },
+      { type: 'field_checkbox', name: 'COMPLETA', checked: false },
+      { type: 'field_checkbox', name: 'SONIDOS', checked: true },
+    ],
+    message1: 'fondo %1 transparencia %2 %% imagen %3',
+    args1: [
+      { type: 'field_dropdown', name: 'FONDO', options: [
+        ['sin color', ''], ['negro', '0, 0, 0'],
+        ['blanco', '255, 255, 255'], ['azul oscuro', '10, 20, 40'],
+        ['gris', '120, 120, 120'],
+      ] },
+      { type: 'field_number', name: 'ALFA', value: 50,
+        min: 0, max: 100 },
+      { type: 'field_input', name: 'IMAGEN', text: '' },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 200,
+    tooltip: 'Presentación del menú (dentro de "crear menú"): ' +
+             'panel de color transparente, imagen de fondo, ' +
+             'centrado, pantalla completa y efectos de audio',
+  },
 
   // -- tiempo -------------------------------------------------------
   {
@@ -1018,6 +1043,7 @@ registrar('p3d_menu', function (block) {
   var fns = '';
   var ops = [];
   var b = block.getInputTargetBlock('OPCIONES');
+  var extra = [];
   while (b) {
     if (b.type === 'p3d_menu_opcion') {
       var fn = nombre_unico('opcion');
@@ -1025,12 +1051,33 @@ registrar('p3d_menu', function (block) {
              (GEN.statementToCode(b, 'HACER') || GEN.INDENT + 'pass\n');
       ops.push('(' + GEN.quote_(b.getFieldValue('TEXTO')) +
                ', ' + fn + ')');
+    } else if (b.type === 'p3d_menu_estilo' && !extra.length) {
+      if (b.getFieldValue('CENTRADO') === 'TRUE') {
+        extra.push('centrado=True');
+      }
+      if (b.getFieldValue('COMPLETA') === 'TRUE') {
+        extra.push('pantalla_completa=True');
+      }
+      if (b.getFieldValue('SONIDOS') === 'TRUE') {
+        extra.push('sonido_mover=True', 'sonido_elegir=True');
+      }
+      var fondo = b.getFieldValue('FONDO');
+      if (fondo) {
+        var alfa = Math.round(Number(b.getFieldValue('ALFA'))
+                             * 2.55);
+        extra.push('fondo=(' + fondo + ', ' + alfa + ')');
+      }
+      var imagen = (b.getFieldValue('IMAGEN') || '').trim();
+      if (imagen) {
+        extra.push('fondo_imagen=' + GEN.quote_(imagen));
+      }
     }
     b = b.getNextBlock();
   }
   return fns + campo_nombre(block) + ' = pilas.actores.Menu(titulo=' +
          GEN.quote_(block.getFieldValue('TITULO')) +
-         ', opciones=[' + ops.join(', ') + '])\n';
+         ', opciones=[' + ops.join(', ') + ']' +
+         (extra.length ? ', ' + extra.join(', ') : '') + ')\n';
 });
 
 registrar('p3d_interpolar', function (block) {
@@ -1146,6 +1193,7 @@ var TOOLBOX = {
         { kind: 'block', type: 'p3d_sonido' },
         { kind: 'block', type: 'p3d_menu' },
         { kind: 'block', type: 'p3d_menu_opcion' },
+        { kind: 'block', type: 'p3d_menu_estilo' },
       ] },
     { kind: 'category', name: 'Tiempo', colour: '20',
       contents: [
