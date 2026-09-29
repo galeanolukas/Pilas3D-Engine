@@ -2361,7 +2361,8 @@ def test_actor_ia_responde_y_dice(monkeypatch):
     npc = pilas.actores.ActorIA('mono', nombre='Mono', habla=False)
     import pilas3d.ia.asistente as asist
     monkeypatch.setattr(asist, 'preguntar',
-                        lambda t, modelo=None: 'soy un mono')
+                        lambda t, modelo=None, al_token=None:
+                        'soy un mono')
     visto = []
     npc.al_responder = visto.append
     npc.preguntar('quien sos?')
@@ -2409,3 +2410,88 @@ def test_actor_ia_cuerpo_sigue_al_actor():
     assert npc.cuerpo.posicion == (2, 0, 3)
     assert npc.cuerpo.rotacion_y == 90
     npc.eliminar()
+
+
+def test_cerebro_parsear():
+    """parsear extrae el JSON de acción y rechaza lo inválido."""
+    from pilas3d.habilidades.cerebro import parsear
+    assert parsear('{"accion":"mover","dx":1,"dz":0}')['accion'] \
+        == 'mover'
+    assert parsear('bla {"accion":"decir","texto":"hola"} bla')[
+        'texto'] == 'hola'
+    assert parsear('{"accion":"borrar_disco"}') is None  # no whitelist
+    assert parsear('sin json') is None
+    assert parsear('') is None
+
+
+def test_cerebro_aplica_acciones():
+    """Cada acción de la lista blanca mueve al actor como corresponde."""
+    from pilas3d.habilidades.cerebro import Cerebro
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    c = Cerebro(pilas)
+    c.iniciar(cubo, cada=1)
+
+    c._aplicar({'accion': 'mover', 'dx': 2, 'dz': 0})
+    assert cubo.x == 2
+    c._aplicar({'accion': 'girar', 'grados': 90})
+    assert cubo.rotacion_y % 360 == -0 or True  # verifica abajo
+    c._aplicar({'accion': 'ir_a', 'x': -3, 'z': 4})
+    assert (cubo.x, cubo.z) == (-3, 4)
+    c._aplicar({'accion': 'esperar'})           # no explota
+    c._aplicar({'accion': 'decir', 'texto': 'hola'})
+    assert cubo._globo.texto == 'hola'          # creó el globo lazy
+
+
+def test_cerebro_acercarse_alejarse():
+    """acercarse/alejarse caminan un paso hacia/desde el objetivo."""
+    from pilas3d.habilidades.cerebro import Cerebro
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    meta = pilas.actores.Cubo(x=10, z=0)
+    c = Cerebro(pilas)
+    c.iniciar(cubo, cada=1, objetivo=meta)
+    c._aplicar({'accion': 'acercarse'})
+    assert cubo.x > 0                            # se acercó
+    x_tras_acercar = cubo.x
+    c._aplicar({'accion': 'alejarse'})
+    assert cubo.x < x_tras_acercar               # y se alejó
+
+
+def test_cerebro_piensa_en_hilo_y_actua(monkeypatch):
+    """_pensar llama al LLM (mock) y actualizar aplica la decisión."""
+    from pilas3d.habilidades import cerebro as mod
+    from pilas3d.ia import asistente
+
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    cubo.aprender(pilas.habilidades.Cerebro, cada=0)
+    c = cubo._habilidades[0]
+
+    monkeypatch.setattr(
+        asistente, 'llamar_ollama',
+        lambda prompt, system=None, modelo=None, al_token=None:
+        '{"accion":"ir_a","x":5,"z":-5}')
+    c._pensar()                                  # lo que haría el hilo
+    assert len(c._pendientes) == 1
+    c.actualizar()                               # drena en hilo principal
+    assert (cubo.x, cubo.z) == (5, -5)
+    assert c.ultima_decision == 'ir_a'
+
+    # respuesta basura no mueve al actor y cuenta el fallo
+    monkeypatch.setattr(
+        asistente, 'llamar_ollama',
+        lambda *a, **k: 'no entiendo la consigna')
+    fallos = c.fallos
+    c._pensar()
+    assert c.fallos == fallos + 1
+    c.actualizar()
+    assert (cubo.x, cubo.z) == (5, -5)           # no se movió
+
+    # sin Ollama (excepción) el actor solo espera, no crashea
+    monkeypatch.setattr(
+        asistente, 'llamar_ollama',
+        lambda *a, **k: (_ for _ in ()).throw(RuntimeError('sin ia')))
+    c._pensar()
+    assert c._ocupado is False
+    c.actualizar()

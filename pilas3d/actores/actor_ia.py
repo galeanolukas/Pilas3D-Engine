@@ -47,6 +47,17 @@ class ActorIA(Actor):
         #: Bocadillo de diálogo que sigue al NPC (``Globo`` overlay).
         self.subtitulo = pilas.actores.Globo(
             actor=self.cuerpo, alto=alto_globo, tamano=14)
+        # Pre-carga el modelo en un hilo: la primera pregunta real no
+        # paga el costo de cargar pesos en memoria.
+        threading.Thread(target=self._calentar, daemon=True).start()
+
+    @staticmethod
+    def _calentar():
+        try:
+            from pilas3d.ia import asistente
+            asistente.calentar()
+        except Exception:
+            pass
 
     # -- cuerpo visible -----------------------------------------------------
 
@@ -84,11 +95,17 @@ class ActorIA(Actor):
             self.al_responder(texto)
 
     def preguntar(self, texto, modelo=None):
-        """Le pregunta al asistente local; responde y habla sola."""
+        """Le pregunta al asistente local; responde y habla sola.
+
+        Usa streaming: el globo se llena palabra a palabra mientras el
+        modelo genera, así la respuesta se percibe inmediata."""
         def trabajo():
             try:
                 from pilas3d.ia import asistente
-                respuesta = asistente.preguntar(texto, modelo=modelo)
+                respuesta = asistente.preguntar(
+                    texto, modelo=modelo,
+                    al_token=lambda parcial: self._pendientes.append(
+                        ('parcial', parcial)))
                 self._pendientes.append(('decir', respuesta))
                 if self.habla:
                     self._pendientes.append(
@@ -114,7 +131,10 @@ class ActorIA(Actor):
     def _drenar(self):
         while self._pendientes:
             tipo, dato = self._pendientes.popleft()
-            if tipo == 'decir':
+            if tipo == 'parcial':
+                # texto parcial del streaming: solo actualiza el globo
+                self.subtitulo.decir("%s: %s" % (self.nombre, dato))
+            elif tipo == 'decir':
                 self.decir(dato)
             elif tipo == 'hablar':
                 texto, cual = dato

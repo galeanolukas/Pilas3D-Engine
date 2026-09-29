@@ -252,3 +252,57 @@ CUDA/Metal/ROCm.
   mismo criterio que Ollama: no se redistribuyen en el repo.
 - **Límite conocido**: el timeout de una respuesta es 300 s; en CPU
   una respuesta típica tarda 10–60 s según el equipo.
+
+
+## 11. Respuestas más rápidas
+
+La integración ya incluye varias optimizaciones:
+
+- **`keep_alive: 10m`** — el modelo queda cargado en memoria entre
+  preguntas; no se paga la recarga cada vez.
+- **`num_predict = 220`** (`PILAS3D_IA_MAX_TOKENS`) — corta respuestas
+  largas: un NPC no necesita miles de tokens.
+- **`num_ctx = 2048`** (`PILAS3D_IA_CTX`) — contexto acotado, menos
+  prefill en CPU.
+- **Streaming** — `ActorIA.preguntar` va llenando el globo palabra a
+  palabra mientras el modelo genera (latencia percibida ~0).
+- **Calentamiento** — al crear un `ActorIA` se pre-carga el modelo en
+  un hilo; la primera pregunta real sale rápida.
+- **GPU** — `PILAS3D_IA_GPU=1` deja de forzar `num_gpu=0` (5-10× si hay
+  GPU compatible).
+- **Modelo más chico** — `PILAS3D_IA_MODELO` permite usar uno más
+  veloz (p.ej. `smollm2:135m` vuela en CPU).
+
+## 12. `pilas.habilidades.Cerebro`: el actor piensa solo
+
+Habilidad que convierte a cualquier actor en un NPC dirigido por el
+LLM local. Cada `cada` segundos el cerebro describe el estado del
+actor al modelo y éste responde UNA acción JSON de una lista cerrada:
+
+```python
+mono = pilas.actores.Mono()
+mono.aprender(pilas.habilidades.Cerebro,
+              cada=3,
+              personalidad='sos un mono timido que evita a todos',
+              objetivo=jugador,       # actor a observar
+              radio_vista=10)
+```
+
+Acciones que puede elegir el modelo (lista blanca, **sin `eval`**):
+
+| Acción | Efecto sobre el actor |
+|---|---|
+| `mover(dx, dz)` | `x += dx; z += dz` y mira hacia donde va |
+| `girar(grados)` | `rotacion_y += grados` |
+| `ir_a(x, z)` | se teletransporta |
+| `decir(texto)` | globo de diálogo (usa `actor.decir`) |
+| `acercarse` / `alejarse` | un paso hacia/desde `objetivo` |
+| `esperar` | nada este turno |
+
+Detalles:
+
+- El pensamiento corre en un hilo; si el modelo tarda, el juego sigue
+  y el actor espera (una petición a la vez).
+- Si la respuesta no parsea, se descarta y cuenta en `cerebro.fallos`.
+- `cerebro.ultima_decision` guarda la última acción para depurar.
+- Ejemplo completo: `ejemplos/cerebro.py`.

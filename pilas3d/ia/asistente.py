@@ -58,19 +58,36 @@ Si algo no está en la lista, decilo en vez de inventarlo.\
 
 def _opciones():
     """Opciones del modelo. Por defecto CPU (num_gpu=0) para que
-    funcione en cualquier equipo; PILAS3D_IA_GPU=1 habilita la GPU."""
-    if os.environ.get('PILAS3D_IA_GPU'):
-        return {}
-    return {'num_gpu': 0}
+    funcione en cualquier equipo; PILAS3D_IA_GPU=1 habilita la GPU.
+
+    ``num_predict`` corta respuestas largas (un NPC no necesita 2000
+    tokens) y ``num_ctx`` acota el contexto — los dos bajan mucho la
+    latencia en CPU. Se ajustan con PILAS3D_IA_MAX_TOKENS /
+    PILAS3D_IA_CTX."""
+    opciones = {
+        'num_predict': int(os.environ.get('PILAS3D_IA_MAX_TOKENS',
+                                          '220')),
+        'num_ctx': int(os.environ.get('PILAS3D_IA_CTX', '2048')),
+    }
+    if not os.environ.get('PILAS3D_IA_GPU'):
+        opciones['num_gpu'] = 0
+    return opciones
 
 
-def llamar_ollama(prompt, system=SYSTEM, modelo=MODELO):
-    """Llama al modelo local y devuelve el texto de la respuesta."""
+def llamar_ollama(prompt, system=SYSTEM, modelo=MODELO, al_token=None):
+    """Llama al modelo local y devuelve el texto de la respuesta.
+
+    ``keep_alive`` mantiene el modelo cargado ~10 min: evita pagar la
+    recarga en cada pregunta. Con ``al_token`` se usa streaming y la
+    función se invoca con el texto parcial a medida que llega (sirve
+    para mostrar la respuesta mientras se genera — la latencia
+    percibida cae a casi cero)."""
     asegurar_servidor()
     modelo = asegurar_modelo(modelo)
     cuerpo = {
         'model': modelo,
-        'stream': False,
+        'stream': al_token is not None,
+        'keep_alive': '10m',
         'options': _opciones(),
         'messages': [
             {'role': 'system', 'content': system},
@@ -83,21 +100,49 @@ def llamar_ollama(prompt, system=SYSTEM, modelo=MODELO):
         headers={'Content-Type': 'application/json'})
     try:
         with urllib.request.urlopen(req, timeout=300) as r:
-            return json.loads(r.read())['message']['content']
+            if al_token is None:
+                return json.loads(r.read())['message']['content']
+            partes = []
+            for linea in r:
+                if not linea.strip():
+                    continue
+                pedazo = json.loads(linea)['message'].get(
+                    'content', '')
+                if pedazo:
+                    partes.append(pedazo)
+                    al_token(''.join(partes))
+            return ''.join(partes)
     except urllib.error.URLError as e:
         raise RuntimeError(
             "No pude hablar con el modelo local (%s)." % e)
 
 
-def preguntar(consulta, contexto='', modelo=MODELO):
+def calentar(modelo=MODELO):
+    """Pre-carga el modelo en Ollama (vacío, solo para que quede en
+    memoria) — la primera respuesta real sale mucho más rápida."""
+    try:
+        asegurar_servidor()
+        modelo = asegurar_modelo(modelo)
+        req = urllib.request.Request(
+            URL_API + '/api/generate',
+            data=json.dumps({'model': modelo, 'keep_alive': '10m',
+                             'prompt': '', 'stream': False}).encode(),
+            headers={'Content-Type': 'application/json'})
+        urllib.request.urlopen(req, timeout=120).read()
+    except Exception:
+        pass      # sin Ollama o sin modelo: el calentamiento es opcional
+
+
+def preguntar(consulta, contexto='', modelo=MODELO, al_token=None):
     """Le pregunta al asistente; descarga Ollama/modelo si hace falta.
 
     >>> pilas.ayuda("¿cómo hago un enemigo que me persiga?")
-    """
+
+    ``al_token`` se pasa a ``llamar_ollama`` para streaming."""
     prompt = ('Contexto actual:\n%s\n\n' % contexto
               if contexto else '') + 'Pregunta: ' + consulta
     try:
-        return llamar_ollama(prompt, modelo=modelo)
+        return llamar_ollama(prompt, modelo=modelo, al_token=al_token)
     except RuntimeError as e:
         return "No pude hablar con el modelo local. Probá de nuevo. (%s)" % e
 
