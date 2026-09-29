@@ -38,24 +38,40 @@ def guardar(pilas, ruta, datos=None):
 
 
 def cargar(pilas, ruta, limpiar=True):
-    """Recrea los actores guardados. Retorna el dict ``datos``."""
+    """Recrea los actores guardados. Retorna el dict ``datos``.
+
+    Con ``limpiar=False`` no borra nada: restaura posición, rotación
+    y vida sobre los actores vivos de la misma clase (conserva sus
+    habilidades, callbacks y conexiones — ideal para "cargar" dentro
+    del mismo juego), y crea solo los que falten."""
     with open(ruta, encoding='utf-8') as f:
         estado = json.load(f)
     escena = pilas.escena_actual()
     if limpiar:
         for a in list(escena.actores):
             a.eliminar()
+    disponibles = list(escena.actores) if not limpiar else []
     for spec in estado.get('actores', []):
-        ctor = getattr(pilas.actores, spec.get('clase', ''), None)
-        if ctor is None:
-            continue
-        try:
-            a = ctor(x=spec['x'], y=spec['y'], z=spec['z'])
-        except TypeError:
-            continue                        # ctor sin x,y,z: se omite
+        a = None
+        if disponibles is not None:
+            for candidato in disponibles:
+                if type(candidato).__name__ == spec.get('clase'):
+                    a = candidato
+                    disponibles.remove(candidato)
+                    break
+        if a is None:
+            ctor = getattr(pilas.actores, spec.get('clase', ''), None)
+            if ctor is None:
+                continue
+            try:
+                a = ctor(x=spec['x'], y=spec['y'], z=spec['z'])
+            except TypeError:
+                continue                    # ctor sin x,y,z: se omite
+        a.x, a.y, a.z = spec['x'], spec['y'], spec['z']
         a.rotacion_y = spec.get('rotacion_y', 0)
         if spec.get('vida_maxima') is not None:
             a.vida_maxima = spec['vida_maxima']
         if spec.get('vida') is not None:
             a.vida = spec['vida']
+            a.vivo = a.vida > 0
     return estado.get('datos', {})
