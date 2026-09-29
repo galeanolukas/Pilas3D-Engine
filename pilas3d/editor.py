@@ -18,10 +18,14 @@ Carga un modelo glTF riggeado y permite posar sus huesos:
   R: reiniciar
 - M: capturar keyframe   W: borrar último   B: vaciar todos
   P: reproducir la animación formada por los keyframes (interpolada)
+- S: detener la animación (queda en el frame actual)
+  U: volver a la pose que tenía antes de reproducir (P/L/T)
 - J: guardar la animación con nombre → '<modelo>.<nombre>.anim.json'
   L: cicla las animaciones guardadas del modelo
 - A: abrir el explorador de archivos para cargar un .glb externo
   (con caja de selección y nombre personalizado para el modelo)
+- K: cambiar la textura del modelo (explorador de imágenes;
+  "(texturas originales)" restaura las del archivo)
 - T: animación procedural (caminar, correr, sentarse, cola, saludar,
   asentir) — generada desde los nombres de los huesos, con ayuda de
   la IA local si no los reconoce
@@ -42,7 +46,7 @@ MODELOS = []      # .glb/.gltf descubiertos en el directorio de modelos
 
 estado = {'modelo': None, 'huesos': [], 'sel': 0, 'eje': 'y',
           'indice': 0, 'frames': [], 'modo': 'editar', 'proc': 0,
-          'anim_sel': 0}
+          'anim_sel': 0, 'pose_previa': None}
 
 TIPOS_PROC = ['caminar', 'correr', 'sentarse', 'cola', 'saludar',
               'asentir']
@@ -141,6 +145,7 @@ def cargar_modelo(i):
     estado['sel'] = 0
     estado['frames'] = []
     estado['anim_sel'] = 0
+    estado['pose_previa'] = None
     refrescar_ui()
 
 
@@ -174,30 +179,44 @@ class MarcadorHueso(object):
 # -- explorador de archivos (cargar .glb externo) -------------------------
 
 def _listar_dir():
-    """Relee exp['dir']: primero '..', luego dirs, luego .glb/.gltf."""
+    """Relee exp['dir']: primero '..', luego dirs, luego los
+    archivos según exp['para'] ('modelo' -> .glb/.gltf,
+    'textura' -> imágenes + opción de restaurar)."""
     try:
         ent = sorted(os.listdir(exp['dir']))
     except OSError:
         ent = []
     dirs = ['[%s]' % d for d in ent
             if os.path.isdir(os.path.join(exp['dir'], d))]
-    glbs = [f for f in ent
-            if f.lower().endswith(('.glb', '.gltf'))]
-    exp['entradas'] = ['..'] + dirs + glbs
+    if exp.get('para') == 'textura':
+        archivos = [f for f in ent if f.lower().endswith(
+            ('.png', '.jpg', '.jpeg', '.bmp'))]
+        extra = ['(texturas originales)']
+    else:
+        archivos = [f for f in ent
+                if f.lower().endswith(('.glb', '.gltf'))]
+        extra = []
+    exp['entradas'] = ['..'] + extra + dirs + archivos
     exp['sel'] = min(exp['sel'], len(exp['entradas']) - 1)
 
 
 def _pintar_explorador():
-    info.texto = "Elegir modelo - dir: %s" % exp['dir']
+    que = 'textura' if exp.get('para') == 'textura' else 'modelo'
+    info.texto = "Elegir %s - dir: %s" % (que, exp['dir'])
     ini = max(0, min(exp['sel'] - 7, len(exp['entradas']) - 14))
     lista.texto = '\n'.join(
         ('>> ' if ini + k == exp['sel'] else '   ') + e
         for k, e in enumerate(exp['entradas'][ini:ini + 14]))
 
 
-def abrir_explorador():
+def abrir_explorador(para='modelo'):
     estado['modo'] = 'explorar'
+    exp['para'] = para
     exp['sel'] = 0
+    if para == 'textura' and estado['modelo'] is not None:
+        # arranca junto al modelo: las texturas suelen estar ahí
+        exp['dir'] = os.path.dirname(
+            os.path.abspath(MODELOS[estado['indice']]))
     _listar_dir()
     _pintar_explorador()
 
@@ -221,6 +240,18 @@ def _tecla_explorador(t):
             exp['dir'] = os.path.join(exp['dir'], e[1:-1])
             exp['sel'] = 0
             _listar_dir()
+        elif exp.get('para') == 'textura':
+            modelo = estado['modelo']
+            if modelo is not None:
+                if e == '(texturas originales)':
+                    modelo.imagen = None      # vuelven los materiales
+                else:
+                    modelo.imagen = os.path.join(exp['dir'], e)
+            estado['modo'] = 'editar'
+            refrescar_ui()
+            info.texto = "textura: %s" % (
+                e if e != '(texturas originales)' else 'originales')
+            return
         else:
             nombrar['ruta'] = os.path.join(exp['dir'], e)
             nombrar['texto'] = os.path.splitext(e)[0]
@@ -309,6 +340,16 @@ def _al_texto_overlay(texto):
     return True
 
 
+def _guardar_pose_previa():
+    """Copia la pose actual antes de reproducir una animación
+    (teclas P/L/T) para que U la pueda restaurar."""
+    import json
+    modelo = estado['modelo']
+    if modelo is not None:
+        estado['pose_previa'] = json.loads(
+            json.dumps(modelo._pose_actual()))
+
+
 def al_pulsar(tecla):
     s = pilas.simbolos
     modelo = estado['modelo']
@@ -321,6 +362,26 @@ def al_pulsar(tecla):
     if tecla == s.n:
         if MODELOS:
             cargar_modelo((estado['indice'] + 1) % len(MODELOS))
+        return
+    if tecla == s.s:
+        # stop: frena la animación y deja el modelo en el frame actual
+        if modelo is not None and modelo.animacion:
+            modelo.detener()
+            info.texto = "animación detenida (frame actual)"
+        return
+    if tecla == s.u:
+        # volver: restaura la pose previa a la última reproducción
+        if modelo is not None:
+            modelo.detener()
+            if estado['pose_previa'] is not None:
+                modelo.aplicar_pose(estado['pose_previa'])
+                info.texto = "pose anterior restaurada"
+            else:
+                modelo.reiniciar_pose()
+                info.texto = "pose de carga restaurada"
+        return
+    if tecla == s.k:
+        abrir_explorador('textura')
         return
     if not huesos:
         refrescar_ui()
@@ -375,6 +436,7 @@ def al_pulsar(tecla):
         if len(frames) < 2:
             info.texto = "necesitás >= 2 keyframes (tecla M)"
             return
+        _guardar_pose_previa()
         modelo.crear_animacion('mi_anim', frames)
         modelo.animar('mi_anim', ciclica=True)
         info.texto = "reproduciendo %d keyframes" % len(frames)
@@ -393,6 +455,7 @@ def al_pulsar(tecla):
             return
         estado['anim_sel'] = (estado['anim_sel'] + 1) % len(anims)
         ruta = anims[estado['anim_sel']]
+        _guardar_pose_previa()
         modelo.animar(modelo.cargar_animacion(ruta), ciclica=True)
         info.texto = "animación: " + os.path.basename(ruta)
         return
@@ -401,6 +464,7 @@ def al_pulsar(tecla):
         estado['proc'] += 1
         mapa = mapear_huesos(huesos)
         try:
+            _guardar_pose_previa()
             nombre = animacion_procedural(modelo, tipo, mapa=mapa,
                                           usar_ia=True)
             modelo.animar(nombre, ciclica=True)
@@ -446,9 +510,9 @@ def main(directorio='modelos', ejecutar=True):
     info.color = pilas.colores.amarillo
     pilas.actores.Texto(
         "N: modelo - flechas: hueso - X/Y/Z+<-/->: rotar - "
-        "M/W/B/P: keyframes\n"
-        "J/L: guardar/cargar anim - G/C/R: pose - A: cargar .glb "
-        "externo\n"
+        "M/W/B/P: keyframes - S: stop - U: volver\n"
+        "J/L: guardar/cargar anim - G/C/R: pose - A: .glb - "
+        "K: textura\n"
         "T: animación procedural (caminar, correr, sentarse, cola...)",
         x=10, y=28, tamano=12)
 

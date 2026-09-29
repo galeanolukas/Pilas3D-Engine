@@ -328,6 +328,11 @@ class ModeloGLTF(Actor):
         import json
         with open(ruta) as f:
             datos = json.load(f)
+        self.aplicar_pose(datos)
+
+    def aplicar_pose(self, datos):
+        """Aplica un dict de pose como el que devuelve
+        ``_pose_actual``/``guardar_pose`` (``{indice: {'r','t','s'}}``)."""
         nodos = self._escena['nodos']
         for i, d in datos.items():
             nodos[int(i)]['r'] = list(d['r'])

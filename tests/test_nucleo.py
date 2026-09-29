@@ -1487,6 +1487,30 @@ def test_gltf_esqueletico_carga_y_anima():
     assert abs(vz) < 0.01
 
 
+def test_gltf_aplicar_pose_restaura_tras_animar():
+    """aplicar_pose devuelve el modelo a una pose previa — lo que el
+    editor usa para 'volver' (U) después de reproducir una animación."""
+    pilas = crear_pilas()
+    m = pilas.actores.ModeloGLTF(_gltf_esqueletico())
+    i = m.huesos()[1][0]
+    m.rotar_hueso(i, 'z', 30)
+    m.refrescar_pose()
+    pose_editada = m._pose_actual()
+    r_editada = list(m._escena['nodos'][i]['r'])
+
+    m.animar('giro', ciclica=False)
+    m._construir_gl()
+    pilas.dt = 0.5
+    m.actualizar()                    # la animación pisa los nodos
+    assert list(m._escena['nodos'][i]['r']) != r_editada
+
+    m.detener()
+    assert m.animacion is None        # quedó congelada en el frame
+    m.aplicar_pose(pose_editada)
+    assert list(m._escena['nodos'][i]['r']) == \
+        pytest.approx(r_editada)
+
+
 # -- controles de mouse ----------------------------------------------------
 
 
