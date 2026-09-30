@@ -3288,3 +3288,59 @@ def test_gltf_mezclar_clip_inexistente_avisa():
     pilas, m, i = _modelo_con_dos_clips()
     with pytest.raises(ValueError):
         m.mezclar('arriba', 'volar')
+
+
+# -- RAG del proyecto ---------------------------------------------------------
+
+def test_rag_buscar_encuentra_fragmentos_relevantes():
+    from pilas3d.ia import rag
+    r = rag.buscar('enemigo que persiga al jugador')
+    assert r                                     # índice no vacío
+    texto = (r[0]['archivo'] + ' ' + r[0]['texto']).lower()
+    assert 'persegu' in texto or 'bot' in texto
+
+
+def test_rag_buscar_identificadores_de_codigo():
+    from pilas3d.ia import rag
+    r = rag.buscar('colisiona_con radio_de_colision')
+    assert r
+    todo = ' '.join(x['texto'] for x in r)
+    assert 'colisiona' in todo
+
+
+def test_rag_contexto_formatea_para_prompt():
+    from pilas3d.ia import rag
+    ctx = rag.contexto('gravedad fisica vincular')
+    assert '###' in ctx                          # "### archivo"
+    assert len(ctx) <= 1600                      # respeta max_chars aprox
+
+
+def test_rag_reiniciar_indice_y_consulta_vacia():
+    from pilas3d.ia import rag
+    rag.reiniciar_indice()
+    assert rag.buscar('cubo')                    # reconstruye
+    assert rag.buscar('') == []                  # consulta vacía
+
+
+def test_ia_buscar_desde_el_motor():
+    pilas = crear_pilas()
+    r = pilas.ia.buscar('camara seguir actor')
+    assert isinstance(r, list)
+
+
+def test_preguntar_inyecta_documentacion(monkeypatch):
+    """preguntar() mete el RAG en el prompt del modelo."""
+    from pilas3d.ia import asistente
+    capturado = {}
+    def fake(prompt, system=None, modelo=None, al_token=None):
+        capturado['prompt'] = prompt
+        return 'ok'
+    monkeypatch.setattr(asistente, 'llamar_ollama', fake)
+    asistente.preguntar('¿cómo hago un enemigo que persiga?')
+    assert 'Documentación relevante del motor' in capturado['prompt']
+    assert 'Pregunta:' in capturado['prompt']
+
+    capturado.clear()
+    asistente.preguntar('¿cómo hago un enemigo que persiga?',
+                        con_rag=False)
+    assert 'Documentación' not in capturado['prompt']

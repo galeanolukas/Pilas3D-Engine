@@ -52,7 +52,11 @@ API disponible (no inventes métodos fuera de esta lista):
 - pilas.paso() avanza un frame (modo interactivo); pilas.ejecutar()
   bloquea
 
-Si algo no está en la lista, decilo en vez de inventarlo.\
+Si la consulta incluye 'Documentación relevante del motor', usala
+como referencia prioritaria (son fragmentos reales de los docs,
+ejemplos y código del proyecto).
+Si algo no está en la lista ni en la documentación, decilo en vez
+de inventarlo.\
 """
 
 
@@ -152,14 +156,28 @@ def calentar(modelo=None):
         pass      # sin Ollama o sin modelo: el calentamiento es opcional
 
 
-def preguntar(consulta, contexto='', modelo=None, al_token=None):
+def preguntar(consulta, contexto='', modelo=None, al_token=None,
+              con_rag=True):
     """Le pregunta al asistente; descarga Ollama/modelo si hace falta.
 
     >>> pilas.ayuda("¿cómo hago un enemigo que me persiga?")
 
-    ``al_token`` se pasa a ``llamar_ollama`` para streaming."""
-    prompt = ('Contexto actual:\n%s\n\n' % contexto
-              if contexto else '') + 'Pregunta: ' + consulta
+    - ``contexto``: descripción de la escena actual (la arma Pilas).
+    - ``con_rag``: inyecta los fragmentos de docs/ejemplos/docstrings
+      más relevantes a la consulta (RAG local, ver ``ia.rag``);
+      PILAS3D_IA_RAG=0 lo apaga globalmente.
+    - ``al_token`` se pasa a ``llamar_ollama`` para streaming."""
+    partes = []
+    if contexto:
+        partes.append('Contexto actual:\n' + contexto)
+    if con_rag:
+        from pilas3d.ia import rag
+        hallado = rag.contexto(consulta)
+        if hallado:
+            partes.append('Documentación relevante del motor:\n'
+                          + hallado)
+    partes.append('Pregunta: ' + consulta)
+    prompt = '\n\n'.join(partes)
     try:
         return llamar_ollama(prompt, modelo=modelo, al_token=al_token)
     except RuntimeError as e:

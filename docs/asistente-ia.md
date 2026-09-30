@@ -122,6 +122,34 @@ escena=Normal, actores=3 (Cubo, Esfera, Mundo), camara=(0.0, 5.0, 12.0)
 Así, si preguntás "¿por qué mi cubo no se mueve?", el modelo sabe que
 existe un `Cubo` en la escena.
 
+### RAG: la documentación entra al prompt
+
+Además del system prompt, cada consulta pasa por **RAG local**
+(`pilas3d/ia/rag.py`): un retriever BM25 en Python puro — sin
+embeddings, sin red, sin dependencias — que indexa los docs, los
+ejemplos y los docstrings del propio motor, e inyecta al prompt los
+~4 fragmentos más relevantes como "Documentación relevante del
+motor".
+
+Consecuencia práctica: cuando se agrega una feature (física, blend
+trees, chat), el asistente la conoce **sin reescribir el prompt** —
+alcanza con que exista la doc/docstring. El system prompt sigue
+siendo el piso; el RAG es la capa viva.
+
+```python
+pilas.ia.buscar('enemigo que persiga')   # retriever a mano, sin IA
+# [{'archivo': 'pilas3d/habilidades/perseguir_a_otro_actor.py',
+#   'texto': '...', 'score': 8.2}, ...]
+```
+
+- `pilas.ia.buscar()` funciona **aunque Ollama no esté instalado** —
+  es búsqueda por keywords, no generación.
+- `PILAS3D_IA_RAG=0` desactiva la inyección; `preguntar(...,
+  con_rag=False)` por llamada.
+- `rag.reiniciar_indice()` relee archivos tras editar docs.
+- El índice se arma perezoso al primer uso (milisegundos, ~1500
+  fragmentos) y vive en memoria del proceso.
+
 ---
 
 ## 6. Cómo usarlo

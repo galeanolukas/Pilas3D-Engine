@@ -69,6 +69,17 @@ class IA(object):
         except Exception:
             return []
 
+    def buscar(self, consulta, k=4):
+        """RAG del proyecto: los ``k`` fragmentos de
+        docs/ejemplos/docstrings más relevantes — sin modelo, funciona
+        aunque Ollama no esté instalado.
+
+        >>> pilas.ia.buscar('enemigo que persiga')
+        [{'archivo': '.../perseguir_a_otro_actor.py', ...}]
+        """
+        from pilas3d.ia import rag
+        return rag.buscar(consulta, k=k)
+
 
 __all__ = ['preguntar', 'explicar_error', 'llamar_ollama', 'calentar',
            'modelo_actual', 'asegurar_servidor', 'asegurar_modelo',
