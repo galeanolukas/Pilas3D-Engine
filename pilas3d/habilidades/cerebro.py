@@ -152,8 +152,7 @@ class Cerebro(Habilidad):
             return
         r.x += signo * dx / d * 0.5
         r.z += signo * dz / d * 0.5
-        r.rotacion_y = -math.degrees(math.atan2(signo * dx,
-                                                signo * dz))
+        r.mirar_hacia(r.x + signo * dx, r.z + signo * dz)
 
     def _aplicar(self, datos):
         r = self.receptor
@@ -165,7 +164,7 @@ class Cerebro(Habilidad):
             r.x += dx
             r.z += dz
             if dx or dz:
-                r.rotacion_y = -math.degrees(math.atan2(dx, dz))
+                r.mirar_hacia(r.x + dx, r.z + dz)
         elif a == 'girar':
             r.rotacion_y += _num(datos.get('grados'))
         elif a == 'ir_a':

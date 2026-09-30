@@ -75,15 +75,17 @@ class Disparar(Habilidad):
             d = cam.direccion()
             return cam.posicion, (d.x, d.y, d.z)
 
+        # el "adelante" del actor es su frente rotado por rotacion_y
+        # (frente=(0,-1) si el modelo mira -Z, como muchos glTF)
+        fx, fz = getattr(r, 'frente', (0.0, 1.0))
+        rad = math.radians(r.rotacion_y) + math.atan2(fx, fz)
         if self.hacia is not None:
             dx, dy, dz = self.hacia
         else:
-            rad = math.radians(r.rotacion_y)
             dx, dy, dz = math.sin(rad), 0.0, math.cos(rad)
 
         # el offset se rota con el actor: (0, y, z) es "delante"
         ox, oy, oz = self.offset
-        rad = math.radians(r.rotacion_y)
         rx = ox * math.cos(rad) + oz * math.sin(rad)
         rz = -ox * math.sin(rad) + oz * math.cos(rad)
         return (r.x + rx, r.y + oy, r.z + rz), (dx, dy, dz)

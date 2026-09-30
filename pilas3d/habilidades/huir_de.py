@@ -39,4 +39,5 @@ class HuirDe(Habilidad):
         paso = r.velocidad_huida * self.pilas.dt
         r.x += dx / dist * paso
         r.z += dz / dist * paso
-        r.rotacion_y = -math.degrees(math.atan2(dx, dz))
+        # mira hacia donde escapa (dx,dz ya apunta lejos del objetivo)
+        r.mirar_hacia(r.x + dx, r.z + dz)

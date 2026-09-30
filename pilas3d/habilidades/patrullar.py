@@ -44,7 +44,7 @@ class Patrullar(Habilidad):
         paso = min(r.velocidad * self.pilas.dt, dist)
         r.x += dx / dist * paso
         r.z += dz / dist * paso
-        r.rotacion_y = -math.degrees(math.atan2(dx, dz))
+        r.mirar_hacia(tx, tz)
 
     def _siguiente(self, r):
         n = len(r.puntos_patrulla)

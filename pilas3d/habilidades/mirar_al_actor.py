@@ -22,4 +22,4 @@ class MirarAlActor(Habilidad):
         dx = self.actor.x - r.x
         dz = self.actor.z - r.z
         if dx or dz:
-            r.rotacion_y = math.degrees(math.atan2(-dx, -dz))
+            r.mirar_hacia(self.actor.x, self.actor.z)

@@ -902,17 +902,19 @@ def test_seguir_al_actor_persigue_y_frena():
 
 
 def test_mirar_al_actor_orienta_hacia_objetivo():
+    """La convención: frente=+Z y rotacion_y=+90 rota +Z->+X, así que
+    mirar a -Z es 180 y mirar a +X es +90."""
     import math
     pilas = crear_pilas()
     objetivo = pilas.actores.Cubo(z=-10)
     torreta = pilas.actores.Cubo()
     torreta.aprender(pilas.habilidades.MirarAlActor, actor=objetivo)
     torreta.pre_actualizar()
-    assert abs(torreta.rotacion_y - 0) < 0.01   # mira hacia -z
+    assert abs(torreta.rotacion_y - 180) < 0.01  # frente +Z -> a -Z
     objetivo.x = 10
     objetivo.z = 0
     torreta.pre_actualizar()
-    assert abs(torreta.rotacion_y + 90) < 0.01   # mira hacia +x
+    assert abs(torreta.rotacion_y - 90) < 0.01   # mira hacia +x
 
 
 def test_moverse_en_circulo_orbita():
@@ -3344,3 +3346,38 @@ def test_preguntar_inyecta_documentacion(monkeypatch):
     asistente.preguntar('¿cómo hago un enemigo que persiga?',
                         con_rag=False)
     assert 'Documentación' not in capturado['prompt']
+
+
+# -- frente / mirar_hacia ------------------------------------------------------
+
+def test_mirar_hacia_respeta_frente_del_actor():
+    """mirar_hacia orienta según adónde mira el modelo en reposo:
+    frente=+Z (default) mira +Z con rotacion_y=0; un modelo que
+    mira -Z (wolf y la mayoría de los glTF) compensa con (0,-1)."""
+    pilas = crear_pilas()
+    a = pilas.actores.Cubo()
+    a.mirar_hacia(10, 0)                   # objetivo en +x
+    assert a.rotacion_y == pytest.approx(90)
+    a.mirar_hacia(0, -10)                  # objetivo en -z
+    assert a.rotacion_y == pytest.approx(180)
+
+    lobo = pilas.actores.Cubo()
+    lobo.frente = (0, -1)                  # modelo que mira -Z
+    lobo.mirar_hacia(10, 0)
+    # frente -Z debe llegar a +x: rotacion_y = 90 - 180 = -90
+    assert lobo.rotacion_y == pytest.approx(-90)
+    lobo.mirar_hacia(0, -10)
+    assert lobo.rotacion_y == pytest.approx(0)
+
+
+def test_serbot_sigue_mirando_al_llegar():
+    """Al quedar pegado al objetivo el bot sigue orientándose
+    (antes el early-return dejaba la rotación congelada)."""
+    pilas = crear_pilas()
+    objetivo = pilas.actores.Cubo()
+    bot = pilas.actores.Cubo(x=0.05, z=0.05)  # dist < 0.15
+    bot.aprender(pilas.habilidades.SerBot, objetivo=objetivo,
+                 radio_vision=5, velocidad=2.0)
+    bot.pre_actualizar()                   # estado perseguir + mira
+    # objetivo está en (-0.05,-0.05) -> atan2(-.05,-.05) = -135
+    assert bot.rotacion_y == pytest.approx(-135)

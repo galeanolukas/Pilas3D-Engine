@@ -37,7 +37,7 @@ class SeguirAlMouse(Habilidad):
         self.receptor.y = punto[1]
         if dist < 1e-6:
             return
-        self.receptor.rotacion_y = math.degrees(math.atan2(dx, dz))
+        self.receptor.mirar_hacia(punto[0], punto[2])
 
         paso = self.velocidad * self.pilas.dt
         if self.velocidad <= 0 or dist <= paso:

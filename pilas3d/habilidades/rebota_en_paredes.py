@@ -54,5 +54,5 @@ class RebotaEnParedes(Habilidad):
                 r.vel_z_rebote = -r.vel_z_rebote
                 break
 
-        r.rotacion_y = -math.degrees(
-            math.atan2(r.vel_x_rebote, r.vel_z_rebote))
+        r.mirar_hacia(r.x + r.vel_x_rebote,
+                      r.z + r.vel_z_rebote)

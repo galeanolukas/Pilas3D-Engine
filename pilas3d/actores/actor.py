@@ -57,6 +57,11 @@ class Actor(object):
         #: Con ``True`` el actor se dibuja a color plano, sin
         #: iluminación (focos de lámparas, sprites brillantes).
         self.sin_luz = False
+        #: Dirección ``(x, z)`` hacia donde "mira" el actor cuando
+        #: ``rotacion_y = 0``. Los personajes del motor miran +Z;
+        #: los glTF suelen mirar -Z — p. ej. ``lobo.frente = (0, -1)``.
+        #: Las habilidades la usan para orientar al actor.
+        self.frente = (0.0, 1.0)
         self._interpolaciones = []
         self._habilidades = []
         self.habilidades = ProxyHabilidades(self._habilidades)
@@ -197,6 +202,22 @@ class Actor(object):
     @rotacion.setter
     def rotacion(self, valor):
         self.rotacion_y = valor
+
+    def mirar_hacia(self, x, z):
+        """Orienta el actor en Y para que su ``frente`` apunte al
+        punto ``(x, z)`` del plano horizontal.
+
+        Tiene en cuenta ``actor.frente``: los personajes del motor
+        miran +Z por defecto; un modelo que mira -Z (la mayoría de
+        los glTF) se corrige con ``actor.frente = (0, -1)`` una sola
+        vez y todas las habilidades orientan bien.
+        """
+        dx, dz = x - self.x, z - self.z
+        if not (dx or dz):
+            return
+        fx, fz = self.frente
+        self.rotacion_y = math.degrees(math.atan2(dx, dz)) - \
+            math.degrees(math.atan2(fx, fz))
 
     # -- escala -------------------------------------------------------------
 

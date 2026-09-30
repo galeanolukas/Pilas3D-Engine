@@ -32,4 +32,4 @@ class SeguirAlActor(Habilidad):
         v = self.velocidad * self.pilas.dt
         r.x += dx / d * v
         r.z += dz / d * v
-        r.rotacion_y = math.degrees(math.atan2(-dx, -dz))
+        r.mirar_hacia(self.actor.x, self.actor.z)

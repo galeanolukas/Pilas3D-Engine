@@ -163,4 +163,4 @@ class PerseguirAOtroActor(Habilidad):
             return
         r.x += dx / d * paso
         r.z += dz / d * paso
-        r.rotacion_y = math.degrees(math.atan2(-dx, -dz))
+        r.mirar_hacia(tx, tz)

@@ -54,13 +54,16 @@ class SerBot(Habilidad):
     def _caminar_hacia(self, r, tx, tz, dt, rapido=False):
         dx, dz = tx - r.x, tz - r.z
         dist = math.hypot(dx, dz)
+        # primero orientar: si ya llegó (o está pegado al objetivo)
+        # igual debe quedar mirándolo, no congelado en la última
+        # dirección de marcha
+        r.mirar_hacia(tx, tz)
         if dist < 0.15:
             return True
         v = r.velocidad * (1.6 if rapido else 1.0)
         paso = min(v * dt, dist)
         r.x += dx / dist * paso
         r.z += dz / dist * paso
-        r.rotacion_y = -math.degrees(math.atan2(dx, dz))
         if r.mundo is not None:
             suelo = r.mundo.altura_suelo(r.x, r.z)
             if suelo is not None:

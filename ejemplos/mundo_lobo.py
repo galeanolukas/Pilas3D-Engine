@@ -115,6 +115,10 @@ class Lobo(ModeloGLTF):
 
     def __init__(self, pilas, jugador, mundo, x=0, z=0):
         super(Lobo, self).__init__(pilas, LOBO, escala=1.2, x=x, z=z)
+        self.jugador = jugador
+        # el modelo de lobo viene mirando -Z; sin esto camina
+        # "espejado": se mueve hacia vos pero con la cola adelante
+        self.frente = (0, -1)
         self._moviendo = False
         self._px, self._pz = x, z
         self.animar(self.ANIM['quieto'])
@@ -127,6 +131,9 @@ class Lobo(ModeloGLTF):
         self._moviendo = math.hypot(self.x - self._px,
                                     self.z - self._pz) > 0.001
         self._px, self._pz = self.x, self.z
+        if not self._moviendo and self.estado == 'perseguir':
+            # quieto pero con el jugador a la vista: lo mira igual
+            self.mirar_hacia(self.jugador.x, self.jugador.z)
         estado = self.estado if self._moviendo else 'quieto'
         clip = self.ANIM[estado]
         if clip != self.animacion:
