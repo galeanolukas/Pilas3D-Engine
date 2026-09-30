@@ -75,6 +75,6 @@ if /i "%VOZ_OP%"=="s" (
 echo.
 echo Listo. Para probar:
 echo   .venv\Scripts\python.exe ejemplos\hola_cubo.py
-echo   .venv\Scripts\python.exe ejemplos\minecraft.py
+echo   .venv\Scripts\python.exe ejemplos\pilascraft.py
 echo   .venv\Scripts\pilas3d.exe          REM consola interactiva
 pause

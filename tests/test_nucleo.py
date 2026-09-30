@@ -3112,3 +3112,112 @@ def test_anim_json_remapea_por_nombre(tmp_path):
     nodo_ok = m2._escena['animaciones']['giro']['canales'][0]['nodo']
     nombre_ok = [n['nombre'] for n in m2._escena['nodos']]
     assert nombre_ok[nodo_ok] == canal['nodo_nombre']
+
+
+# -- física 2D (pymunk) ------------------------------------------------------
+
+pymunk = pytest.importorskip('pymunk', reason='pymunk no instalado')
+
+
+def _pasos(pilas, n):
+    for _ in range(n):
+        pilas.fisica._actualizar()
+
+
+def test_fisica_gravedad_hace_caer_caja():
+    pilas = crear_pilas()
+    caja = pilas.actores.Cubo(y=5)
+    caja.radio_de_colision = 0.5
+    cuerpo = pilas.fisica.vincular(caja, forma='caja', ancho=1, alto=1)
+    _pasos(pilas, 60)
+    assert caja.y < 4.0                      # cayó
+    assert cuerpo.velocidad[1] < 0           # con velocidad hacia abajo
+
+
+def test_fisica_caja_se_apoya_en_suelo_estatico():
+    pilas = crear_pilas()
+    suelo = pilas.actores.Cubo(y=0)
+    pilas.fisica.vincular(suelo, forma='caja', estatico=True,
+                          ancho=20, alto=1)
+    pelota = pilas.actores.Esfera(y=3)
+    pelota.radio_de_colision = 0.5
+    pilas.fisica.vincular(pelota, forma='circulo', radio=0.5)
+    _pasos(pilas, 180)
+    # apoyada: 0.5 (mitad del suelo) + 0.5 (radio) = ~1.0
+    assert 0.8 < pelota.y < 1.2
+    cuerpo = pilas.fisica.cuerpo_de(pelota)
+    assert abs(cuerpo.velocidad[1]) < 0.5    # ya no cae
+
+
+def test_fisica_cuando_colisionan_dispara_callback():
+    pilas = crear_pilas()
+    suelo = pilas.actores.Cubo(y=0)
+    pilas.fisica.vincular(suelo, estatico=True, ancho=20, alto=1)
+    pelota = pilas.actores.Esfera(y=2)
+    pilas.fisica.vincular(pelota, forma='circulo', radio=0.5)
+    toques = []
+    pilas.fisica.cuando_colisionan(pelota, suelo,
+                                   lambda a, b: toques.append((a, b)))
+    _pasos(pilas, 180)
+    assert toques and toques[0] == (pelota, suelo)
+
+
+def test_fisica_sensor_detecta_sin_bloquear():
+    pilas = crear_pilas()
+    gatillo = pilas.actores.Cubo(y=0)
+    pilas.fisica.vincular(gatillo, estatico=True, ancho=20, alto=0.5,
+                          sensor=True)
+    pelota = pilas.actores.Esfera(y=2)
+    pilas.fisica.vincular(pelota, forma='circulo', radio=0.5)
+    toques = []
+    pilas.fisica.cuando_colisionan(pelota, gatillo,
+                                   lambda a, b: toques.append(1))
+    _pasos(pilas, 240)
+    assert toques                            # el sensor avisó
+    assert pelota.y < -0.5                   # pero no frenó a la pelota
+
+
+def test_fisica_plano_xz_mapea_x_z_y_cinematica():
+    pilas = crear_pilas()
+    pilas.fisica.plano = 'xz'
+    assert pilas.fisica.gravedad == (0.0, 0.0)
+    caja = pilas.actores.Cubo(x=1, z=2)
+    cuerpo = pilas.fisica.vincular(caja, cinematica=True)
+    caja.x, caja.z = 5, -3
+    _pasos(pilas, 2)
+    assert tuple(cuerpo.pymunk.position) == (5, -3)
+    caja.rotacion_y = 45
+    _pasos(pilas, 1)
+    # rotacion_y positiva = CCW visto desde arriba -> angle negativo
+    assert abs(cuerpo.pymunk.angle - (-3.14159 / 4)) < 0.01
+
+
+def test_fisica_desvincular_y_limpiar():
+    pilas = crear_pilas()
+    a = pilas.actores.Cubo(y=5)
+    b = pilas.actores.Cubo(y=6)
+    pilas.fisica.vincular(a)
+    pilas.fisica.vincular(b)
+    pilas.fisica.desvincular(a)
+    assert pilas.fisica.cuerpo_de(a) is None
+    assert pilas.fisica.cuerpo_de(b) is not None
+    pilas.fisica.limpiar()
+    assert pilas.fisica.cuerpo_de(b) is None
+
+
+def test_fisica_actor_eliminado_suelta_su_cuerpo():
+    pilas = crear_pilas()
+    caja = pilas.actores.Cubo(y=5)
+    pilas.fisica.vincular(caja)
+    caja.eliminar()
+    _pasos(pilas, 2)
+    assert pilas.fisica.cuerpo_de(caja) is None
+
+
+def test_fisica_impulso_lanza_la_caja():
+    pilas = crear_pilas()
+    caja = pilas.actores.Cubo(y=1)
+    cuerpo = pilas.fisica.vincular(caja)
+    cuerpo.impulsar(0, 5)
+    _pasos(pilas, 5)
+    assert caja.y > 1.2                      # subió por el impulso

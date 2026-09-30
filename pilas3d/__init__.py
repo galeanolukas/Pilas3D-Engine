@@ -110,6 +110,14 @@ Habilidades  (actor.aprender)
 Tareas
     pilas.tareas.una_vez(2, f)   siempre(1, f)   condicional(0.1, f)
 
+Física 2D (pymunk — 'pip install pymunk')
+    pilas.fisica.plano = 'xy'            # lateral | 'xz' cenital
+    pilas.fisica.gravedad = (0, -9.8)
+    pilas.fisica.vincular(actor, forma='caja'|'circulo'|'segmento',
+        estatico=True / cinematica=True, elasticidad=0.8, sensor=True)
+    actor.cuerpo.impulsar(0, 5)  .velocidad  .detener()
+    pilas.fisica.cuando_colisionan(a, b, fn)   desvincular(actor)
+
 Entrada
     pilas.control.arriba/abajo/izquierda/derecha   (flechas + WASD)
     pilas.simbolos.t  .ESPACIO  .ENTER  .a-.z  ._1-._9  .F1-F12
@@ -249,6 +257,8 @@ class Pilas(object):
         self.red = Red(self)
         from pilas3d.eventos import Eventos
         self.eventos = Eventos()
+        from pilas3d.fisica import Fisica
+        self.fisica = Fisica(self)
         from pilas3d.ia import IA
         self.ia = IA(self)
 
@@ -463,6 +473,7 @@ class Pilas(object):
     def _tick(self, dt):
         # escena.actualizar actualiza self.dt
         self._escena_actual.actualizar(dt)
+        self.fisica._actualizar()
         self.red._actualizar()
 
     def ejecutar(self):
