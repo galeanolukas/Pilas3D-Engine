@@ -307,27 +307,77 @@ def _nlerp_quat(a, b, f):
     return tuple(c / n for c in v)
 
 
+def _valor_en(canal, t):
+    """Valor interpolado del canal en el tiempo ``t``."""
+    tiempos, vals = canal['tiempos'], canal['valores']
+    if t <= tiempos[0]:
+        return vals[0]
+    if t >= tiempos[-1]:
+        return vals[-1]
+    i = 0
+    while tiempos[i + 1] < t:
+        i += 1
+    if canal['interp'] == 'STEP':
+        return vals[i]
+    f = (t - tiempos[i]) / (tiempos[i + 1] - tiempos[i])
+    if canal['camino'] == 'rotation':
+        return _nlerp_quat(vals[i], vals[i + 1], f)
+    return _lerp(vals[i], vals[i + 1], f)
+
+
+_CLAVES = {'translation': 't', 'rotation': 'r', 'scale': 's'}
+
+
 def muestrear(animacion, t, nodos):
     """Aplica a ``nodos`` la pose de ``animacion`` en el tiempo t
     (modifica las listas 't'/'r'/'s' de los nodos animados)."""
     for c in animacion['canales']:
-        tiempos, vals = c['tiempos'], c['valores']
-        if t <= tiempos[0]:
-            v = vals[0]
-        elif t >= tiempos[-1]:
-            v = vals[-1]
-        else:
-            i = 0
-            while tiempos[i + 1] < t:
-                i += 1
-            if c['interp'] == 'STEP':
-                v = vals[i]
-            else:
-                f = (t - tiempos[i]) / (tiempos[i + 1] - tiempos[i])
-                if c['camino'] == 'rotation':
-                    v = _nlerp_quat(vals[i], vals[i + 1], f)
-                else:
-                    v = _lerp(vals[i], vals[i + 1], f)
         nodo = nodos[c['nodo']]
-        nodo['t' if c['camino'] == 'translation'
-             else 'r' if c['camino'] == 'rotation' else 's'] = list(v)
+        nodo[_CLAVES[c['camino']]] = list(_valor_en(c, t))
+
+
+def muestrear_mezcla(clips, nodos, base):
+    """Blend tree: mezcla varios clips con peso en ``nodos``.
+
+    ``clips`` es una lista de ``(animacion, t, peso)`` — cada clip se
+    samplea en su propio tiempo. Los pesos se normalizan; la parte
+    que un clip no anima se completa desde ``base`` (la lista
+    ``_trs_orig``: ``base[i] = (t, r, s)`` de la pose de carga).
+    """
+    total = sum(p for _, _, p in clips) or 1.0
+    # (nodo, camino) -> [(valor, peso)]
+    por_canal = {}
+    for anim, t, peso in clips:
+        if peso <= 0:
+            continue
+        for c in anim['canales']:
+            clave = (c['nodo'], c['camino'])
+            por_canal.setdefault(clave, []).append(
+                (_valor_en(c, t), peso / total))
+
+    for (i, camino), entradas in por_canal.items():
+        nodo = nodos[i]
+        clave = _CLAVES[camino]
+        falta = 1.0 - sum(p for _, p in entradas)
+        if falta > 1e-9:
+            t0, r0, s0 = base[i]
+            v_base = {'t': t0, 'r': r0, 's': s0}[clave]
+            entradas = entradas + [(v_base, falta)]
+        if camino == 'rotation':
+            # nlerp acumulado con signos consistentes respecto al
+            # primer quaternion (evita el "camino largo")
+            ref = entradas[0][0]
+            acc = [0.0, 0.0, 0.0, 0.0]
+            for v, p in entradas:
+                if sum(x * y for x, y in zip(ref, v)) < 0:
+                    v = tuple(-x for x in v)
+                for k in range(4):
+                    acc[k] += v[k] * p
+            n = sum(c * c for c in acc) ** 0.5 or 1.0
+            nodo['r'] = [c / n for c in acc]
+        else:
+            acc = [0.0, 0.0, 0.0]
+            for v, p in entradas:
+                for k in range(3):
+                    acc[k] += v[k] * p
+            nodo[clave] = acc

@@ -3221,3 +3221,70 @@ def test_fisica_impulso_lanza_la_caja():
     cuerpo.impulsar(0, 5)
     _pasos(pilas, 5)
     assert caja.y > 1.2                      # subió por el impulso
+
+
+# -- blend trees -------------------------------------------------------------
+
+def _modelo_con_dos_clips():
+    """glTF esquelético con dos clips: 'arriba' (0 -> +90°) y
+    'abajo' (0 -> -90°) sobre el hueso 1."""
+    pilas = crear_pilas()
+    m = pilas.actores.ModeloGLTF(_gltf_esqueletico())
+    i = m.huesos()[1][0]
+    pose_a = m._pose_actual()
+    m.rotar_hueso(i, 'z', 90)
+    pose_b = m._pose_actual()
+    m.rotar_hueso(i, 'z', -180)
+    pose_c = m._pose_actual()
+    m.crear_animacion('arriba', [pose_a, pose_b], duracion=1.0)
+    m.crear_animacion('abajo', [pose_a, pose_c], duracion=1.0)
+    return pilas, m, i
+
+
+def test_gltf_mezclar_dos_clips():
+    """mezclar(a, b, peso) interpola la pose hueso por hueso:
+    peso 1 = el clip b; peso 0.5 = el punto medio."""
+    pilas, m, i = _modelo_con_dos_clips()
+    nodos = m._escena['nodos']
+
+    m.mezclar('arriba', 'abajo', 1.0)      # solo 'abajo'
+    pilas.dt = 0.5
+    m.actualizar()                          # t=0.5 -> mitad de -90°
+    r = nodos[i]['r']
+    assert r[2] == pytest.approx(-0.383, abs=0.01)   # sin(-22.5°)
+
+    m.mezclar('arriba', 'abajo', 0.0)      # solo 'arriba'
+    pilas.dt = 0.5
+    m.actualizar()
+    assert nodos[i]['r'][2] == pytest.approx(0.383, abs=0.01)
+
+    m.mezclar('arriba', 'abajo', 0.5)      # +45°/-45° -> ~0°
+    pilas.dt = 0.5
+    m.actualizar()
+    r = nodos[i]['r']
+    assert abs(r[2]) < 0.05 and r[3] == pytest.approx(1.0, abs=0.01)
+
+
+def test_gltf_arbol_mezcla_elige_vecinos():
+    """arbol_mezcla interpola entre los dos puntos que rodean al
+    parámetro y queda en un solo clip en los extremos."""
+    pilas, m, i = _modelo_con_dos_clips()
+    puntos = [(0, 'arriba'), (10, 'abajo')]
+
+    m.arbol_mezcla(puntos, 5)
+    assert m._mezcla == {'arriba': 0.5, 'abajo': 0.5}
+    m.arbol_mezcla(puntos, -3)
+    assert m._mezcla == {'arriba': 1.0}
+    m.arbol_mezcla(puntos, 99)
+    assert m._mezcla == {'abajo': 1.0}
+    m.arbol_mezcla(puntos, 7.5)
+    assert m._mezcla['abajo'] == pytest.approx(0.75)
+
+    m.detener()
+    assert m._mezcla is None and m.animacion is None
+
+
+def test_gltf_mezclar_clip_inexistente_avisa():
+    pilas, m, i = _modelo_con_dos_clips()
+    with pytest.raises(ValueError):
+        m.mezclar('arriba', 'volar')

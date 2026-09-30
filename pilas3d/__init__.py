@@ -63,6 +63,8 @@ Actores  (posición x/y/z, rotacion_x/y/z, escala, color, imagen)
     pilas.actores.ModeloAnimado('run/f*.obj', velocidad=10)  # secuencia .obj
     pilas.actores.ModeloGLTF('p.glb')        # glTF 2.0 con esqueleto
     modelo.animar('caminar'); modelo.animaciones()
+    modelo.mezclar('idle', 'walk', 0.3)      # blend de dos clips
+    modelo.arbol_mezcla([(0, 'idle'), (1, 'run')], v)  # blend tree
     pilas.actores.Mundo(tamano_chunk=16)     # voxels estilo Minecraft
     pilas.actores.Mundo(infinito=True)       # terreno procedural sin fin
     mundo.generar_terreno(48, 48, altura=4)  # heightmap procedural

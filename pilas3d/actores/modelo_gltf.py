@@ -33,6 +33,7 @@ class ModeloGLTF(Actor):
         self.velocidad = velocidad
         self.ciclica = ciclica
         self.animacion = None
+        self._mezcla = None           # {nombre: peso} (blend tree)
         self._t = 0.0
         self._armar_malla()
         # pose original (para reiniciar_pose / edición)
@@ -254,12 +255,61 @@ class ModeloGLTF(Actor):
             raise ValueError("el modelo no tiene la animación '%s' "
                              "(tiene: %s)" % (nombre, self.animaciones()))
         self.animacion = nombre
+        self._mezcla = None
         if ciclica is not None:
             self.ciclica = ciclica
         self._t = 0.0
 
     def detener(self):
         self.animacion = None
+        self._mezcla = None
+
+    # -- blend trees -----------------------------------------------------
+
+    def mezclar(self, a, b, peso=0.5):
+        """Mezcla dos clips con ``peso`` de 0 a 1 (0 = todo ``a``,
+        1 = todo ``b``). Los dos relojes avanzan juntos; la pose
+        resultante interpola hueso por hueso.
+
+        >>> mono.mezclar('idle', 'caminar', 0.3)   # 30% caminar
+        """
+        self._mezcla = {a: 1.0 - peso, b: float(peso)}
+        self.animacion = None
+        self._t = 0.0
+        self._clips_mezcla()          # valida que existan
+
+    def arbol_mezcla(self, puntos, parametro):
+        """Blend tree 1D: ``puntos`` es ``[(valor, 'anim'), ...]`` en
+        orden creciente; ``parametro`` interpola entre los vecinos.
+
+        >>> mono.arbol_mezcla([(0, 'idle'), (1, 'walk'), (2, 'run')],
+        ...                   velocidad)   # idle->walk->run suave
+        """
+        orden = sorted(puntos)
+        if parametro <= orden[0][0]:
+            pesos = {orden[0][1]: 1.0}
+        elif parametro >= orden[-1][0]:
+            pesos = {orden[-1][1]: 1.0}
+        else:
+            for (v0, a), (v1, b) in zip(orden, orden[1:]):
+                if v0 <= parametro <= v1:
+                    f = (parametro - v0) / (v1 - v0 or 1e-6)
+                    pesos = {a: 1.0 - f, b: f}
+                    break
+        self._mezcla = pesos
+        self.animacion = None
+        self._t = 0.0
+        self._clips_mezcla()
+
+    def _clips_mezcla(self):
+        """[(animacion, peso)] de la mezcla activa, validando nombres."""
+        anims = self._escena['animaciones']
+        for nombre in self._mezcla:
+            if nombre not in anims:
+                raise ValueError("el modelo no tiene la animación "
+                                 "'%s' (tiene: %s)"
+                                 % (nombre, self.animaciones()))
+        return [(anims[n], p) for n, p in self._mezcla.items()]
 
     # -- edición de pose (editor de personajes) ----------------------------
 
@@ -448,6 +498,14 @@ class ModeloGLTF(Actor):
         return skin['articulaciones'][hueso]
 
     def actualizar(self):
+        if self._mezcla is not None:
+            self._t += self.pilas.dt * self.velocidad
+            clips = [(anim, self._t % (anim['duracion'] or 1e-6), p)
+                     for anim, p in self._clips_mezcla()]
+            gltf.muestrear_mezcla(clips, self._escena['nodos'],
+                                  self._trs_orig)
+            self._aplicar_piel()
+            return
         if self.animacion is None:
             return
         anim = self._escena['animaciones'][self.animacion]

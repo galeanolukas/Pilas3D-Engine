@@ -163,6 +163,27 @@ m.es_estatico     # True si es de partes rígidas (horse, props)
 m.animaciones()   # nombres de los clips
 ```
 
+### Blend trees — mezcla suave entre animaciones
+
+`animar()` corta de un clip a otro de golpe. Para transiciones
+suaves (idle→caminar→correr según velocidad) el modelo mezcla
+poses hueso por hueso:
+
+```python
+mono.mezclar('idle', 'caminar', 0.3)     # 30% caminar + 70% idle
+
+# blend tree 1D: puntos ordenados, el parámetro interpola
+mono.arbol_mezcla([(0, 'idle'), (1, 'walk'), (2, 'run')],
+                  velocidad)             # ej. velocidad = 1.4
+```
+
+- Cada clip corre su propio reloj; los canales que un clip no
+  anima se completan con la pose de carga — se puede mezclar un
+  clip de piernas con uno de brazos.
+- `modelo.detener()` o `modelo.animar(...)` salen del modo mezcla.
+- Ejemplo: `ejemplos/blend_tree.py` (lobo idle→creep→walk→run
+  con las flechas).
+
 ### Pintar (`color`) y texturizar (`imagen`) valen para todos
 
 - `modelo.color = pilas.colores.rojo` **tiñe** el modelo:
