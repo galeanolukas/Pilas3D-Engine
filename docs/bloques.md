@@ -112,13 +112,38 @@ pilas.tareas.siempre(0, siempre)
 
 En `bloques.js`: un `defineBlocksWithJsonArray` + un `registrar` con
 el generador. Si el bloque crea un actor con nombre, agregarlo a
-`CREA_NOMBRE` para que aparezca en los `global`.
+`CREA_NOMBRE` para que aparezca en los `global`. Y en
+`bloques_js.js`, un `registrar_js` para que también exporte a web.
 
-## 5. Límites
+## 5. Exportar a web (botón 🌐 Web)
+
+El botón **Web** descarga `mi_juego.html`: un archivo autocontenido
+que corre en cualquier navegador, sin Python ni pilas instalado.
+
+**Cómo funciona:**
+
+- `vendor/javascript_compressed.js` (Blockly 9.3) aporta el generador
+  JS — matemática, lógica y control salen gratis.
+- `bloques_js.js` registra un generador JS para cada bloque `p3d_*`.
+- `pilas3d_web.js` es un mini-runtime WebGL (~800 líneas): primitivas
+  3D, color, movimiento, tareas, teclas/mouse, colisiones en plano,
+  interpolaciones, cámara orbital/seguir/temblor, vida+barra,
+  texto/globos/menú con DOM, y `guardar_partida` sobre localStorage.
+- El `.html` exportado lleva el runtime + el código del juego inline.
+
+**Qué se exporta y qué no:** cubos, esferas, cilindros, conos, piso,
+pared, plano, ejes, zona, cielo (día/estrellas), texto, globos, menú,
+habilidades (patrullar, huir, rebote, plataformas, vida, parpadeo),
+eventos, sensores, variables y sonidos (si el archivo está junto al
+html). Los modelos `.glb`, la IA (cerebro/chat), las texturas externas
+y los personajes compuestos no viajan: el generador deja un
+comentario `//` explicando cada sustitución (los personajes salen
+como cubos).
+
+## 6. Límites
 
 - Solo localhost, sin autenticación — no exponer el puerto.
 - Los errores del código generado aparecen en "Resultado", no sobre
   el bloque que falló.
-- No hay bloques de variables/listas todavía.
-- Es v1: el set de bloques está pensado para iterarse con la práctica
-  en aula (Pilas Bloques hizo eso durante años).
+- El export web cubre un subset del motor (ver §5) — es intencional:
+  lo que no corre en un navegador queda comentado en el código.

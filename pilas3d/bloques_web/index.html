@@ -17,10 +17,11 @@
   #ejemplos { background: #3a3a3a; color: #eee; border: 1px solid
               #555; border-radius: 5px; padding: 6px 10px;
               font-size: 14px; cursor: pointer; }
-  #guardar, #abrir, #nuevo { background: #3a3a3a; color: #eee;
+  #guardar, #abrir, #nuevo, #exportar { background: #3a3a3a; color: #eee;
               border: 1px solid #555; border-radius: 5px;
               padding: 6px 12px; font-size: 14px; cursor: pointer; }
-  #guardar:hover, #abrir:hover, #nuevo:hover { background: #4a4a4a; }
+  #guardar:hover, #abrir:hover, #nuevo:hover, #exportar:hover { background: #4a4a4a; }
+  #exportar { border-color: #3ba55d; color: #7ee787; }
   #estado { font-size: 13px; color: #aaa; }
   #estado.error { color: #ff7b72; }
   #estado.ok { color: #7ee787; }
@@ -68,6 +69,7 @@
   <button id="nuevo">Nuevo</button>
   <button id="guardar">Guardar</button>
   <button id="abrir">Abrir</button>
+  <button id="exportar" title="Descarga un .html con tu juego, listo para abrir en cualquier navegador">🌐 Web</button>
   <input id="abrir_archivo" type="file" accept=".xml"
          style="display:none">
   <span id="estado">editor listo</span>
@@ -84,8 +86,10 @@
 <script src="vendor/blockly_compressed.js"></script>
 <script src="vendor/blocks_compressed.js"></script>
 <script src="vendor/python_compressed.js"></script>
+<script src="vendor/javascript_compressed.js"></script>
 <script src="vendor/es.js"></script>
 <script src="ejemplos.js"></script>
 <script src="bloques.js"></script>
+<script src="bloques_js.js"></script>
 </body>
 </html>
