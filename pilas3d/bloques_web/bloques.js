@@ -44,6 +44,7 @@ var CREA_NOMBRE = {
   'p3d_crear_actor': 'NOMBRE',
   'p3d_crear_modelo': 'NOMBRE',
   'p3d_crear_escenario': 'NOMBRE',
+  'p3d_lampara': 'NOMBRE',
   'p3d_menu': 'NOMBRE',
 };
 
@@ -362,6 +363,24 @@ Blockly.defineBlocksWithJsonArray([
     previousStatement: null, nextStatement: null,
     colour: 290,
     tooltip: 'Escenario: piso de grilla, ejes, plano, pared, cartel, cielo o lámpara',
+  },
+  {
+    type: 'p3d_lampara',
+    message0: 'crear lámpara %1 en x %2 y %3 z %4 que alumbra %5 m ' +
+             '%6 con foco visible %7',
+    args0: [
+      { type: 'field_input', name: 'NOMBRE', text: 'lampara' },
+      { type: 'field_number', name: 'X', value: 0 },
+      { type: 'field_number', name: 'Y', value: 3 },
+      { type: 'field_number', name: 'Z', value: 0 },
+      { type: 'field_number', name: 'ALC', value: 8, min: 1 },
+      { type: 'input_dummy' },
+      { type: 'field_checkbox', name: 'VIS', checked: true },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 290,
+    tooltip: 'Una luz puntual con foco visible; "sin foco" deja ' +
+             'una luz invisible que solo alumbra',
   },
   {
     type: 'p3d_eliminar',
@@ -911,6 +930,16 @@ registrar('p3d_crear_escenario', function (block) {
          block.getFieldValue('TIPO') + '()\n';
 });
 
+registrar('p3d_lampara', function (block) {
+  var extra = 'x=' + block.getFieldValue('X') +
+              ', y=' + block.getFieldValue('Y') +
+              ', z=' + block.getFieldValue('Z') +
+              ', alcance=' + block.getFieldValue('ALC');
+  if (block.getFieldValue('VIS') !== 'TRUE') extra += ', visible=False';
+  return campo_nombre(block) + ' = pilas.actores.Lampara(' + extra +
+         ')\n';
+});
+
 registrar('p3d_eliminar', function (block) {
   return campo_nombre(block) + '.eliminar()\n';
 });
@@ -1176,6 +1205,7 @@ var TOOLBOX = {
         { kind: 'block', type: 'p3d_crear_actor' },
         { kind: 'block', type: 'p3d_crear_modelo' },
         { kind: 'block', type: 'p3d_crear_escenario' },
+        { kind: 'block', type: 'p3d_lampara' },
         { kind: 'block', type: 'p3d_eliminar' },
       ] },
     { kind: 'category', name: 'Movimiento', colour: '160',

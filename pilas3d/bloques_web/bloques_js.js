@@ -157,8 +157,9 @@ registrar_js('p3d_parpadeo', function (block) {
 });
 
 registrar_js('p3d_encender', function (block) {
-  return campo_nombre(block) + '.encendida = ' +
-         block.getFieldValue('QUE') + ';\n';
+  // el dropdown trae 'True'/'False' (Python): en JS van en minúscula
+  var v = block.getFieldValue('QUE') === 'True' ? 'true' : 'false';
+  return campo_nombre(block) + '.encendida = ' + v + ';\n';
 });
 
 registrar_js('p3d_rebotar', function (block) {
@@ -220,6 +221,16 @@ registrar_js('p3d_crear_escenario', function (block) {
   }
   return extra + campo_nombre(block) + ' = pilas.actores.' + tipo +
          '();\n';
+});
+
+registrar_js('p3d_lampara', function (block) {
+  // en web no hay luces puntuales: el foco se ve igual (encender la
+  // atenúa), pero el "alcance" no cambia la escena
+  var extra = '// en web la lámpara se ve pero no alumbra de verdad\n';
+  return extra + campo_nombre(block) + ' = pilas.actores.Lampara(' +
+         '{x: ' + block.getFieldValue('X') +
+         ', y: ' + block.getFieldValue('Y') +
+         ', z: ' + block.getFieldValue('Z') + '});\n';
 });
 
 registrar_js('p3d_eliminar', function (block) {

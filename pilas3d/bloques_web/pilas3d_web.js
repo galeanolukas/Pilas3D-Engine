@@ -561,7 +561,11 @@ var pilas = (function () {
   api.actores.Lampara = function (ops) {
     var l = api.actores.Esfera(ops);
     l.color = [1, 0.9, 0.5]; l.sin_luz = true; l.escala = 0.3;
-    l.encendida = true;
+    var enc = true;
+    Object.defineProperty(l, 'encendida', {
+      get: function () { return enc; },
+      set: function (v) { enc = v; l.alfa = v ? 1 : 0.25; },
+    });
     return l;
   };
 
