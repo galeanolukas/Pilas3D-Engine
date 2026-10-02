@@ -45,6 +45,7 @@ var CREA_NOMBRE = {
   'p3d_crear_modelo': 'NOMBRE',
   'p3d_crear_escenario': 'NOMBRE',
   'p3d_lampara': 'NOMBRE',
+  'p3d_terreno': 'NOMBRE',
   'p3d_menu': 'NOMBRE',
 };
 
@@ -381,6 +382,72 @@ Blockly.defineBlocksWithJsonArray([
     colour: 290,
     tooltip: 'Una luz puntual con foco visible; "sin foco" deja ' +
              'una luz invisible que solo alumbra',
+  },
+  // -- terreno deformable ---------------------------------------------
+  {
+    type: 'p3d_terreno',
+    message0: 'crear terreno llamado %1 de %2 x %3 celdas',
+    args0: [
+      { type: 'field_input', name: 'NOMBRE', text: 'terreno' },
+      { type: 'field_number', name: 'CELX', value: 20, min: 2 },
+      { type: 'field_number', name: 'CELZ', value: 20, min: 2 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 290,
+    tooltip: 'Rejilla deformable: montañas, pozos, lagos y ' +
+             'textura distinta por celda',
+  },
+  {
+    type: 'p3d_terreno_forma',
+    message0: 'en %1 hacer %2 en la celda %3 %4 radio %5 tamaño %6',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_dropdown', name: 'FORMA', options: [
+        ['una montaña', 'montana'], ['un pozo', 'pozo'],
+        ['subir un punto', 'subir'], ['bajar un punto', 'bajar'],
+      ] },
+      { type: 'field_number', name: 'I', value: 10, min: 0 },
+      { type: 'field_number', name: 'K', value: 10, min: 0 },
+      { type: 'field_number', name: 'RADIO', value: 3, min: 1 },
+      { type: 'field_number', name: 'N', value: 2 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 290,
+    tooltip: 'montaña/pozo son suaves y redondos; subir/bajar mueve ' +
+             'un solo vértice (el tamaño es la altura)',
+  },
+  {
+    type: 'p3d_terreno_pintar',
+    message0: 'pintar zona de %1 en celda %2 %3 radio %4 con %5',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_number', name: 'I', value: 10, min: 0 },
+      { type: 'field_number', name: 'K', value: 10, min: 0 },
+      { type: 'field_number', name: 'RADIO', value: 3, min: 0 },
+      { type: 'field_dropdown', name: 'TIPO', options: [
+        ['pasto', 'pasto'], ['piedra', 'piedra'], ['agua', 'agua'],
+      ] },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 290,
+    tooltip: 'Radio 0 pinta una sola celda',
+  },
+  {
+    type: 'p3d_terreno_agua',
+    message0: '%1 el agua de %2 %3',
+    args0: [
+      { type: 'field_dropdown', name: 'QUE', options: [
+        ['poner en altura', 'poner'], ['sacar', 'sacar']] },
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_number', name: 'N', value: 0.4 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 290,
+    tooltip: 'Un plano de agua: los pozos más bajos quedan llenos ' +
+             '(lagos). "sacar" lo elimina',
   },
   {
     type: 'p3d_eliminar',
@@ -953,6 +1020,40 @@ registrar('p3d_lampara', function (block) {
          ')\n';
 });
 
+registrar('p3d_terreno', function (block) {
+  return campo_nombre(block) + ' = pilas.actores.Terreno(celdas=' +
+         block.getFieldValue('CELX') + ')\n';
+});
+
+registrar('p3d_terreno_forma', function (block) {
+  var n = campo_nombre(block);
+  var forma = block.getFieldValue('FORMA');
+  var i = block.getFieldValue('I'), k = block.getFieldValue('K');
+  var radio = block.getFieldValue('RADIO'), v = block.getFieldValue('N');
+  if (forma === 'montana')
+    return n + '.montana(' + i + ', ' + k + ', radio=' + radio +
+           ', altura=' + v + ')\n';
+  if (forma === 'pozo')
+    return n + '.pozo(' + i + ', ' + k + ', radio=' + radio +
+           ', profundidad=' + v + ')\n';
+  // subir/bajar un vértice: el campo "radio" no aplica
+  return n + '.' + forma + '(' + i + ', ' + k + ', ' + v + ')\n';
+});
+
+registrar('p3d_terreno_pintar', function (block) {
+  return campo_nombre(block) + '.pintar_zona(' +
+         block.getFieldValue('I') + ', ' + block.getFieldValue('K') +
+         ', ' + block.getFieldValue('RADIO') + ', ' +
+         GEN.quote_(block.getFieldValue('TIPO')) + ')\n';
+});
+
+registrar('p3d_terreno_agua', function (block) {
+  if (block.getFieldValue('QUE') === 'sacar')
+    return campo_nombre(block) + '.agua = None\n';
+  return campo_nombre(block) + '.agua = ' +
+         block.getFieldValue('N') + '\n';
+});
+
 registrar('p3d_eliminar', function (block) {
   return campo_nombre(block) + '.eliminar()\n';
 });
@@ -1225,6 +1326,10 @@ var TOOLBOX = {
         { kind: 'block', type: 'p3d_crear_modelo' },
         { kind: 'block', type: 'p3d_crear_escenario' },
         { kind: 'block', type: 'p3d_lampara' },
+        { kind: 'block', type: 'p3d_terreno' },
+        { kind: 'block', type: 'p3d_terreno_forma' },
+        { kind: 'block', type: 'p3d_terreno_pintar' },
+        { kind: 'block', type: 'p3d_terreno_agua' },
         { kind: 'block', type: 'p3d_eliminar' },
       ] },
     { kind: 'category', name: 'Movimiento', colour: '160',

@@ -25,6 +25,13 @@ Controles:
 - N: mapa nuevo (vacío)           - T: terreno procedural de base
 - M: paleta bloques <-> props (modelos .glb/.obj de modelos/props/)
 - Q / E: subir / bajar la columna bajo el cursor (esculpir terreno)
+
+Modo terreno (Y: voxels <-> terreno heightmap, *.terreno.json):
+
+- click izquierdo: sube una colina suave - click medio o X: pozo
+- Q/E: subir/bajar un vértice - P: pinta celdas con la baldosa elegida
+- Z/C: achicar/agrandar el brush - W: poner/sacar el agua (lagos)
+- 1-3 o ←/→: baldosa (pasto/piedra/agua) - T: lomas aleatorias
 """
 
 import glob
@@ -46,7 +53,10 @@ estado = {'mundo': None, 'tipo': 0, 'prop': 0, 'props': [],
           'paleta': 'bloques',     # 'bloques' | 'props'
           'spawn': None,
           'celda': None, 'golpe': None, 'modo': 'editar',
-          'archivo': None, 'agarrado': None}
+          'archivo': None, 'agarrado': None,
+          # modo terreno: heightmap suave en vez de voxels
+          'escenario': 'voxels',   # 'voxels' | 'terreno'
+          'terreno': None, 'brush': 2, 'tile': 0}
 nombrar = {'texto': 'nivel'}
 exp = {'dir': '.', 'sel': 0, 'entradas': []}
 
@@ -83,12 +93,63 @@ def _dentro(i, j, k):
         0 <= j < ALTO
 
 
+def _celda_terreno(origen, direccion):
+    """Cruza el rayo del mouse con el heightmap del Terreno y
+    devuelve la celda (i, k) — dos pasadas: contra el plano base y
+    luego contra la altura real del punto, para precisión."""
+    t = estado['terreno']
+    if t is None:
+        return None
+    ox, oy, oz = origen
+    dx, dy, dz = direccion
+    if dy >= 0:
+        return None
+    tt = (t.y - oy) / dy
+    px, pz = ox + dx * tt, oz + dz * tt
+    h = t.altura_suelo(px, pz)
+    if h is not None:
+        tt = (h - oy) / dy
+        px, pz = ox + dx * tt, oz + dz * tt
+    li = (px - t.x) / t.tamano_celda + t.celdas / 2.0
+    lk = (pz - t.z) / t.tamano_celda + t.celdas / 2.0
+    i, k = int(math.floor(li)), int(math.floor(lk))
+    if 0 <= i < t.celdas and 0 <= k < t.celdas:
+        return i, k
+    return None
+
+
 def refrescar_cursor():
     """Recalcula la celda apuntada por el mouse y mueve el marcador."""
-    if pilas.ventana is None or estado['mundo'] is None:
+    if pilas.ventana is None:
         return
     camara = pilas.escena.camara
     origen, direccion = camara.rayo_desde_mouse()
+    if estado['escenario'] == 'terreno':
+        celda = _celda_terreno(
+            (origen.x, origen.y, origen.z),
+            (direccion.x, direccion.y, direccion.z))
+        estado['golpe'] = None
+        estado['celda'] = celda
+        if celda is not None:
+            i, k = celda
+            t = estado['terreno']
+            px = t.x + (i + 0.5 - t.celdas / 2.0) * t.tamano_celda
+            pz = t.z + (k + 0.5 - t.celdas / 2.0) * t.tamano_celda
+            py = t.altura_suelo(px, pz) or t.y
+            marcador.posicion = (px, py + 0.3, pz)
+            marcador.transparencia = 0
+            ag = estado['agarrado']
+            if ag is not None:
+                ag.posicion = (px, float(py), pz)
+            elif estado['paleta'] == 'props':
+                prop = _prop_cercano_xyz(px, py, pz, 2.5)
+                if prop is not None:
+                    marcador.posicion = (prop.x, prop.y + 0.4, prop.z)
+        else:
+            marcador.transparencia = 100
+        return
+    if estado['mundo'] is None:
+        return
     bloque, ady = estado['mundo'].disparar_bloque(
         (origen.x, origen.y, origen.z),
         (direccion.x, direccion.y, direccion.z), alcance=40)
@@ -123,7 +184,8 @@ def _autoescala_prop(actor, objetivo=1.6):
 
 def _poner_bloque():
     celda = estado['celda']
-    if celda is None or not _dentro(*celda):
+    if celda is None or (estado['escenario'] == 'voxels'
+                         and not _dentro(*celda)):
         return
     if estado['paleta'] == 'props':
         if estado['agarrado'] is not None:
@@ -131,7 +193,12 @@ def _poner_bloque():
         else:
             _poner_prop(celda)
         return
-    estado['mundo'].poner_bloque(*celda, TIPOS[estado['tipo']])
+    if estado['escenario'] == 'terreno':
+        i, k = celda[0], celda[-1]
+        estado['terreno'].montana(i, k, radio=estado['brush'],
+                                  altura=0.6)
+    else:
+        estado['mundo'].poner_bloque(*celda, TIPOS[estado['tipo']])
     _info_extra()
 
 
@@ -141,15 +208,29 @@ def _poner_prop(celda):
         info.texto = "no hay props en modelos/props/"
         return
     ruta = PROPS[estado['prop']]
-    i, j, k = celda
     if ruta.lower().endswith(('.glb', '.gltf')):
         actor = pilas.actores.ModeloGLTF(ruta)
     else:
         actor = pilas.actores.Modelo(ruta)
-    actor.posicion = (i + 0.5, float(j), k + 0.5)
+    if estado['escenario'] == 'terreno':
+        x, y, z = _punto_terreno(celda)
+        actor.posicion = (x, y, z)
+    else:
+        i, j, k = celda
+        actor.posicion = (i + 0.5, float(j), k + 0.5)
     _autoescala_prop(actor)
     estado['props'].append(actor)
     _info_extra()
+
+
+def _punto_terreno(celda):
+    """Centro de la celda (i, k) del terreno en coordenadas de mundo."""
+    i, k = celda
+    t = estado['terreno']
+    x = t.x + (i + 0.5 - t.celdas / 2.0) * t.tamano_celda
+    z = t.z + (k + 0.5 - t.celdas / 2.0) * t.tamano_celda
+    y = t.altura_suelo(x, z)
+    return x, (y if y is not None else t.y), z
 
 
 def _prop_cercano(celda, radio=1.6):
@@ -157,7 +238,10 @@ def _prop_cercano(celda, radio=1.6):
     if celda is None:
         return None
     i, j, k = celda
-    cx, cy, cz = i + 0.5, j + 0.5, k + 0.5
+    return _prop_cercano_xyz(i + 0.5, j + 0.5, k + 0.5, radio)
+
+
+def _prop_cercano_xyz(cx, cy, cz, radio=1.6):
     mejor, dist2 = None, radio * radio
     for p in estado['props']:
         d = (p.x - cx) ** 2 + (p.y - cy) ** 2 + (p.z - cz) ** 2
@@ -220,6 +304,14 @@ def _sacar_bloque():
             estado['props'].remove(prop)
             _info_extra()
             return
+    if estado['escenario'] == 'terreno':
+        celda = estado['celda']
+        if celda is not None:
+            estado['terreno'].pozo(celda[0], celda[-1],
+                                   radio=estado['brush'],
+                                   profundidad=0.6)
+            _info_extra()
+        return
     golpe = estado['golpe']
     if golpe:
         estado['mundo'].sacar_bloque(*golpe)
@@ -227,10 +319,18 @@ def _sacar_bloque():
 
 
 def _esculpir(delta):
-    """Sube (delta>0) o baja (delta<0) la columna bajo el cursor —
-    terraformar rápido sin picar bloque por bloque."""
+    """Sube (delta>0) o baja (delta<0) la columna/vértice bajo el
+    cursor — terraformar rápido sin picar de a uno."""
     celda = estado['celda']
     if celda is None:
+        return
+    if estado['escenario'] == 'terreno':
+        t = estado['terreno']
+        if delta > 0:
+            t.subir(celda[0], celda[-1], 0.25)
+        else:
+            t.bajar(celda[0], celda[-1], 0.25)
+        _info_extra()
         return
     mundo = estado['mundo']
     i, _, k = celda
@@ -288,7 +388,29 @@ def organizar_layout():
         g.y = 40
 
 
+def _tiles_terreno():
+    t = estado['terreno']
+    return t._tiles if t is not None else []
+
+
 def refrescar_ui():
+    if estado['escenario'] == 'terreno' \
+            and estado['paleta'] == 'bloques':
+        tiles = _tiles_terreno()
+        lineas = ['TERRENO - baldosas (Y voxels, M props)', '']
+        for n, tile in enumerate(tiles):
+            marca = '>> ' if n == estado['tile'] else '   '
+            lineas.append('%s%s' % (marca, tile))
+        lineas.append('')
+        lineas.append('brush: %d | agua: %s' % (
+            estado['brush'],
+            estado['terreno'].agua if estado['terreno'] else '-'))
+        nspawn = 'sí' if estado['spawn'] else 'no'
+        lineas.append('spawn: %s | props: %d' % (nspawn,
+                                               len(estado['props'])))
+        lista.texto = '\n'.join(lineas)
+        _info_extra()
+        return
     if estado['paleta'] == 'props':
         lineas = ['paleta de PROPS (M bloques)', '']
         if not PROPS:
@@ -312,8 +434,14 @@ def refrescar_ui():
 
 def _info_extra():
     celda = estado['celda']
-    nb = len(estado['mundo'].bloques) if estado['mundo'] else 0
     archivo = estado['archivo'] or '(sin guardar)'
+    if estado['escenario'] == 'terreno':
+        tiles = _tiles_terreno()
+        sel = tiles[estado['tile']] if tiles else '-'
+        info.texto = "%s | terreno %s | celda: %s | brush %d" % (
+            archivo, sel, celda, estado['brush'])
+        return
+    nb = len(estado['mundo'].bloques) if estado['mundo'] else 0
     if estado['paleta'] == 'props':
         sel = os.path.basename(PROPS[estado['prop']]) if PROPS \
             else '(sin props)'
@@ -339,16 +467,24 @@ def _guardar_en(ruta, nombre=None):
                       'x': p.x, 'y': p.y, 'z': p.z,
                       'escala': getattr(p, 'escala', 1.0),
                       'rotacion_y': getattr(p, 'rotacion_y', 0)})
-    pilas.mapas.guardar(ruta, estado['mundo'], nombre=nombre,
-                        spawn=estado['spawn'], props=props)
+    if estado['escenario'] == 'terreno':
+        pilas.mapas.guardar_terreno(ruta, estado['terreno'],
+                                    nombre=nombre,
+                                    spawn=estado['spawn'],
+                                    props=props)
+    else:
+        pilas.mapas.guardar(ruta, estado['mundo'], nombre=nombre,
+                            spawn=estado['spawn'], props=props)
     estado['archivo'] = ruta
     return ruta
 
 
 def guardar_mapa(nombre):
     """Guarda con nombre en ``mapas/`` (el caso típico)."""
-    return _guardar_en(os.path.join(_dir_mapas(),
-                                    nombre + '.mapa.json'), nombre)
+    ext = '.terreno.json' if estado['escenario'] == 'terreno' \
+        else '.mapa.json'
+    return _guardar_en(os.path.join(_dir_mapas(), nombre + ext),
+                       nombre)
 
 
 def _vaciar_escena():
@@ -358,11 +494,18 @@ def _vaciar_escena():
     estado['props'] = []
     if estado['mundo'] is not None:
         estado['mundo'].eliminar()
+        estado['mundo'] = None
+    if estado['terreno'] is not None:
+        estado['terreno'].eliminar()
+        estado['terreno'] = None
 
 
 def nuevo_mapa():
     _vaciar_escena()
-    estado['mundo'] = pilas.actores.Mundo()
+    if estado['escenario'] == 'terreno':
+        estado['terreno'] = pilas.actores.Terreno(celdas=MITAD * 2)
+    else:
+        estado['mundo'] = pilas.actores.Mundo()
     estado['spawn'] = None
     estado['archivo'] = None
     marca_spawn.transparencia = 100
@@ -371,16 +514,42 @@ def nuevo_mapa():
 
 def cargar_mapa(ruta):
     _vaciar_escena()
-    mundo = pilas.mapas.cargar(ruta)
-    estado['mundo'] = mundo
-    estado['props'] = mundo.props
+    esc = pilas.mapas.cargar(ruta)
+    if type(esc).__name__ == 'Terreno':
+        estado['terreno'] = esc
+        estado['mundo'] = None
+        estado['escenario'] = 'terreno'
+    else:
+        estado['mundo'] = esc
+        estado['terreno'] = None
+        estado['escenario'] = 'voxels'
+    estado['props'] = esc.props
     estado['archivo'] = ruta
-    estado['spawn'] = mundo.spawn
-    if mundo.spawn:
-        marca_spawn.posicion = mundo.spawn
+    estado['spawn'] = esc.spawn
+    if esc.spawn:
+        marca_spawn.posicion = esc.spawn
         marca_spawn.transparencia = 0
     else:
         marca_spawn.transparencia = 100
+    refrescar_ui()
+
+
+def _terreno_procedural():
+    """Lomas y un lago aleatorios sobre el Terreno del editor."""
+    import random
+    t = estado['terreno']
+    if t is None:
+        return
+    for _ in range(5):
+        t.montana(random.randrange(t.celdas),
+                  random.randrange(t.celdas),
+                  radio=random.randrange(2, 6),
+                  altura=random.uniform(0.8, 2.5))
+    i, k = random.randrange(t.celdas), random.randrange(t.celdas)
+    t.pozo(i, k, radio=3, profundidad=1.6)
+    t.pintar_zona(i, k, 3, 'agua')
+    if t.agua is None:
+        t.agua = 0.4
     refrescar_ui()
 
 
@@ -412,7 +581,8 @@ def _listar_dir():
         ent = []
     dirs = ['[%s]' % d for d in ent
             if os.path.isdir(os.path.join(exp['dir'], d))]
-    mapas = [f for f in ent if f.endswith('.mapa.json')]
+    mapas = [f for f in ent
+             if f.endswith('.mapa.json') or f.endswith('.terreno.json')]
     exp['entradas'] = ['..'] + dirs + mapas
     exp['sel'] = min(exp['sel'], len(exp['entradas']) - 1)
 
@@ -504,12 +674,21 @@ def al_pulsar(tecla):
         return
     digitos = [s._1, s._2, s._3, s._4, s._5]
     if tecla in digitos and estado['paleta'] == 'bloques':
-        estado['tipo'] = digitos.index(tecla)
+        if estado['escenario'] == 'terreno':
+            tiles = _tiles_terreno()
+            if tiles:
+                estado['tile'] = digitos.index(tecla) % len(tiles)
+        else:
+            estado['tipo'] = digitos.index(tecla)
         refrescar_ui()
     elif tecla == s.IZQUIERDA or tecla == s.DERECHA:
         d = -1 if tecla == s.IZQUIERDA else 1
         if estado['paleta'] == 'props' and PROPS:
             estado['prop'] = (estado['prop'] + d) % len(PROPS)
+        elif estado['escenario'] == 'terreno':
+            tiles = _tiles_terreno()
+            if tiles:
+                estado['tile'] = (estado['tile'] + d) % len(tiles)
         else:
             estado['tipo'] = (estado['tipo'] + d) % len(TIPOS)
         refrescar_ui()
@@ -517,6 +696,35 @@ def al_pulsar(tecla):
         estado['paleta'] = 'props' if estado['paleta'] == 'bloques' \
             else 'bloques'
         refrescar_ui()
+    elif tecla == s.y:
+        # voxels <-> terreno: el mundo queda, el terreno se crea al
+        # pasar por primera vez (ambos pueden convivir en la escena)
+        if estado['escenario'] == 'terreno':
+            estado['escenario'] = 'voxels'
+            if estado['mundo'] is None:
+                estado['mundo'] = pilas.actores.Mundo()
+        else:
+            estado['escenario'] = 'terreno'
+            if estado['terreno'] is None:
+                estado['terreno'] = pilas.actores.Terreno(
+                    celdas=MITAD * 2)
+        estado['archivo'] = None
+        refrescar_ui()
+        info.texto = "modo " + estado['escenario']
+    elif tecla == s.p and estado['escenario'] == 'terreno':
+        celda = estado['celda']
+        tiles = _tiles_terreno()
+        if celda is not None and tiles:
+            estado['terreno'].pintar_zona(celda[0], celda[-1],
+                                          estado['brush'],
+                                          tiles[estado['tile']])
+            _info_extra()
+    elif tecla == s.w and estado['escenario'] == 'terreno':
+        t = estado['terreno']
+        if t is not None:
+            t.agua = None if t.agua is not None else 0.4
+            info.texto = "agua: %s" % (t.agua if t.agua is not None
+                                       else 'no')
     elif tecla == s.q:
         _esculpir(+1)
     elif tecla == s.e:
@@ -532,6 +740,14 @@ def al_pulsar(tecla):
         _mover_prop_y(+0.5)
     elif tecla == s.v and estado['paleta'] == 'props':
         _mover_prop_y(-0.5)
+    elif tecla == s.z and estado['escenario'] == 'terreno' \
+            and estado['paleta'] == 'bloques':
+        estado['brush'] = max(1, estado['brush'] - 1)
+        _info_extra()
+    elif tecla == s.c and estado['escenario'] == 'terreno' \
+            and estado['paleta'] == 'bloques':
+        estado['brush'] = min(10, estado['brush'] + 1)
+        _info_extra()
     elif tecla == s.z and estado['paleta'] == 'props':
         _escalar_prop(0.85)
     elif tecla == s.c and estado['paleta'] == 'props':
@@ -560,7 +776,10 @@ def al_pulsar(tecla):
     elif tecla == s.n:
         nuevo_mapa()
     elif tecla == s.t:
-        terreno_base()
+        if estado['escenario'] == 'terreno':
+            _terreno_procedural()
+        else:
+            terreno_base()
 
 
 def _marcar_spawn():
@@ -572,8 +791,12 @@ def _marcar_spawn():
         marca_spawn.transparencia = 100
         info.texto = "spawn quitado"
         return
-    i, j, k = celda
-    estado['spawn'] = (i + 0.5, float(j + 1), k + 0.5)
+    if estado['escenario'] == 'terreno':
+        x, y, z = _punto_terreno(celda)
+        estado['spawn'] = (x, y + 1.0, z)
+    else:
+        i, j, k = celda
+        estado['spawn'] = (i + 0.5, float(j + 1), k + 0.5)
     marca_spawn.posicion = estado['spawn']
     marca_spawn.transparencia = 0
     info.texto = "spawn marcado en %s" % (estado['spawn'],)
@@ -611,8 +834,11 @@ def main(directorio='mapas', ejecutar=True):
             "R: girar - D: agarrar",
             "F/V Z/C: alto/escala\n"
             "Q/E: columna - S: spawn",
-            "T: terreno - N: nuevo\n"
-            "G/O: guardar - L: cargar"):
+            "T: base - N: nuevo\n"
+            "G/O: guardar - L: cargar",
+            "Y: modo terreno\n"
+            "click colina X pozo P pinta\n"
+            "Z/C brush W agua"):
         guias.append(pilas.actores.Texto(txt, tamano=10))
 
     organizar_layout()

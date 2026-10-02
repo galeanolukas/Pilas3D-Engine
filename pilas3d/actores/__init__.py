@@ -37,6 +37,7 @@ from pilas3d.actores.chat import Chat
 from pilas3d.actores.barra import Barra
 from pilas3d.actores.zona import Zona
 from pilas3d.actores.lampara import Lampara
+from pilas3d.actores.terreno import Terreno
 
 
 class Actores(object):
@@ -109,6 +110,14 @@ class Actores(object):
                      tamano_chunk=tamano_chunk, infinito=infinito,
                      semilla=semilla, altura=altura,
                      distancia_vista=distancia_vista)
+
+    def Terreno(self, x=0, y=0, z=0, celdas=20, tamano_celda=1.0,
+                tipos=None, imagen=None, agua=None):
+        """Rejilla deformable con textura por celda: montañas, pozos
+        y lagos con ``montana()/pozo()/pintar()/agua``."""
+        return Terreno(self._pilas, x=x, y=y, z=z, celdas=celdas,
+                       tamano_celda=tamano_celda, tipos=tipos,
+                       imagen=imagen, agua=agua)
 
     def ModeloJSON(self, ruta, x=0, y=0, z=0, escala=1.0):
         """Modelo de bloque estilo Minecraft (.json con elements)."""

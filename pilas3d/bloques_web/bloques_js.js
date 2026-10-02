@@ -233,6 +233,36 @@ registrar_js('p3d_lampara', function (block) {
          ', z: ' + block.getFieldValue('Z') + '});\n';
 });
 
+registrar_js('p3d_terreno', function (block) {
+  return campo_nombre(block) + ' = pilas.actores.Terreno({celdas: ' +
+         block.getFieldValue('CELX') + '});\n';
+});
+
+registrar_js('p3d_terreno_forma', function (block) {
+  var n = campo_nombre(block);
+  var forma = block.getFieldValue('FORMA');
+  var i = block.getFieldValue('I'), k = block.getFieldValue('K');
+  var radio = block.getFieldValue('RADIO'), v = block.getFieldValue('N');
+  if (forma === 'montana' || forma === 'pozo')
+    return n + '.' + forma + '(' + i + ', ' + k + ', ' + radio + ', ' +
+           v + ');\n';
+  return n + '.' + forma + '(' + i + ', ' + k + ', ' + v + ');\n';
+});
+
+registrar_js('p3d_terreno_pintar', function (block) {
+  return campo_nombre(block) + '.pintar_zona(' +
+         block.getFieldValue('I') + ', ' + block.getFieldValue('K') +
+         ', ' + block.getFieldValue('RADIO') + ', ' +
+         JSGEN.quote_(block.getFieldValue('TIPO')) + ');\n';
+});
+
+registrar_js('p3d_terreno_agua', function (block) {
+  if (block.getFieldValue('QUE') === 'sacar')
+    return campo_nombre(block) + '.agua = null;\n';
+  return campo_nombre(block) + '.agua = ' + block.getFieldValue('N') +
+         ';\n';
+});
+
 registrar_js('p3d_eliminar', function (block) {
   return campo_nombre(block) + '.eliminar();\n';
 });

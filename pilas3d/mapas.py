@@ -34,18 +34,19 @@ class Mapas(object):
         self.pilas = pilas
 
     def cargar(self, ruta):
-        """Crea un :class:`Mundo` con los bloques del archivo y sus
-        props. Devuelve el mundo con ``mundo.spawn`` (tupla x, y, z o
-        None) y ``mundo.props`` (lista de actores estáticos)."""
+        """Carga un archivo de mapa: ``*.mapa.json`` → :class:`Mundo`,
+        ``*.terreno.json`` → :class:`Terreno`. Devuelve el actor con
+        ``.spawn`` (tupla x, y, z o None) y ``.props`` (lista de
+        actores estáticos)."""
         with open(ruta) as f:
             datos = json.load(f)
-        mundo = self.pilas.actores.Mundo()
-        for i, j, k, tipo in datos.get('bloques', []):
-            mundo.poner_bloque(int(i), int(j), int(k), tipo)
-        mundo._sucio = True
+        if datos.get('tipo') == 'terreno':
+            return self._cargar_terreno_datos(ruta, datos)
+        return self._cargar_mundo_datos(ruta, datos)
 
-        dir_mapa = os.path.dirname(os.path.abspath(ruta))
-        mundo.props = []
+    def _cargar_props(self, datos, dir_mapa):
+        """Instancia los props del archivo (modelos estáticos)."""
+        props = []
         for p in datos.get('props', []):
             ruta_prop = p.get('ruta', '')
             # relativa: primero tal cual (cwd), luego junto al .mapa.json
@@ -66,13 +67,73 @@ class Mapas(object):
             actor.rotacion_x = p.get('rotacion_x', 0)
             actor.rotacion_y = p.get('rotacion_y', 0)
             actor.rotacion_z = p.get('rotacion_z', 0)
-            mundo.props.append(actor)
+            props.append(actor)
+        return props
 
+    def _nombre_spawn(self, actor, datos, ruta):
         spawn = datos.get('spawn')
-        mundo.spawn = tuple(spawn) if spawn else None
-        mundo.nombre = datos.get('nombre') or \
+        actor.spawn = tuple(spawn) if spawn else None
+        actor.nombre = datos.get('nombre') or \
             os.path.splitext(os.path.basename(ruta))[0]
+        actor.props = self._cargar_props(
+            datos, os.path.dirname(os.path.abspath(ruta)))
+
+    def _cargar_mundo_datos(self, ruta, datos):
+        mundo = self.pilas.actores.Mundo()
+        for i, j, k, tipo in datos.get('bloques', []):
+            mundo.poner_bloque(int(i), int(j), int(k), tipo)
+        mundo._sucio = True
+        self._nombre_spawn(mundo, datos, ruta)
         return mundo
+
+    def _cargar_terreno_datos(self, ruta, datos):
+        terreno = self.pilas.actores.Terreno(
+            celdas=datos.get('celdas', 20),
+            tamano_celda=datos.get('tamano_celda', 1.0),
+            tipos=datos.get('tipos'))
+        terreno.posicion = (datos.get('x', 0), datos.get('y', 0),
+                            datos.get('z', 0))
+        alturas = datos.get('alturas')
+        if alturas:
+            terreno.alturas = [[float(h) for h in fila]
+                               for fila in alturas]
+        celdas_tex = datos.get('celdas_tex')
+        if celdas_tex:
+            for i, fila in enumerate(celdas_tex):
+                for k, nombre in enumerate(fila):
+                    if nombre in terreno._tiles:
+                        terreno._tex[i][k] = terreno._tiles.index(nombre)
+        if datos.get('agua') is not None:
+            terreno.agua = datos['agua']
+        terreno._reconstruir_gl()
+        self._nombre_spawn(terreno, datos, ruta)
+        return terreno
+
+    def guardar_terreno(self, ruta, terreno, nombre=None, spawn=None,
+                        props=None):
+        """Serializa un :class:`Terreno` a ``*.terreno.json``: alturas
+        por vértice, baldosa por celda, nivel de agua, spawn y props."""
+        datos = {
+            'version': 1,
+            'tipo': 'terreno',
+            'nombre': nombre or getattr(terreno, 'nombre', None)
+                      or 'terreno',
+            'celdas': terreno.celdas,
+            'tamano_celda': terreno.tamano_celda,
+            'x': terreno.x, 'y': terreno.y, 'z': terreno.z,
+            'alturas': terreno.alturas,
+            'celdas_tex': [[terreno._tiles[t] for t in fila]
+                           for fila in terreno._tex],
+            'tipos': terreno.tipos,
+            'agua': terreno.agua,
+            'spawn': list(spawn) if spawn else None,
+            'props': props or [],
+        }
+        os.makedirs(os.path.dirname(os.path.abspath(ruta)),
+                    exist_ok=True)
+        with open(ruta, 'w') as f:
+            json.dump(datos, f, indent=1)
+        return ruta
 
     def guardar(self, ruta, mundo, nombre=None, spawn=None,
                 props=None):

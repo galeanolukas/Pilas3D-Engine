@@ -3381,3 +3381,95 @@ def test_serbot_sigue_mirando_al_llegar():
     bot.pre_actualizar()                   # estado perseguir + mira
     # objetivo está en (-0.05,-0.05) -> atan2(-.05,-.05) = -135
     assert bot.rotacion_y == pytest.approx(-135)
+
+
+# -- terreno ----------------------------------------------------------------
+
+def test_terreno_basico():
+    """El Terreno crea la rejilla de alturas y su geometría."""
+    pilas = crear_pilas()
+    t = pilas.actores.Terreno(celdas=10)
+    assert t.celdas == 10
+    assert len(t.alturas) == 11
+    assert all(len(f) == 11 for f in t.alturas)
+    pos, norm, modo, colores, uvs = t._generar_geometria()
+    # 10x10 celdas * 4 vértices (dibujo indexado, no duplica)
+    assert len(pos) == 10 * 10 * 4 * 3
+    assert len(norm) == len(pos)
+    assert len(uvs) == 10 * 10 * 4 * 2
+    assert len(t._indices) == 10 * 10 * 6
+
+
+def test_terreno_subir_bajar():
+    pilas = crear_pilas()
+    t = pilas.actores.Terreno(celdas=6)
+    t.subir(3, 3, 2.0)
+    assert t.alturas[3][3] == pytest.approx(2.0)
+    t.bajar(3, 3, 0.5)
+    assert t.alturas[3][3] == pytest.approx(1.5)
+    t.nivelar(0)
+    assert t.alturas[3][3] == 0
+
+
+def test_terreno_montana_y_pozo():
+    """Las formas circulares deforman la rejilla suavemente."""
+    pilas = crear_pilas()
+    t = pilas.actores.Terreno(celdas=12)
+    t.montana(6, 6, radio=3, altura=2.0)
+    # el pico está en el centro y decae con la distancia
+    assert t.alturas[6][6] == pytest.approx(2.0)
+    assert t.alturas[6][5] < 2.0
+    assert t.alturas[6][5] > 0.0
+    t.nivelar()
+    t.pozo(6, 6, radio=3, profundidad=1.5)
+    assert t.alturas[6][6] == pytest.approx(-1.5)
+
+
+def test_terreno_altura_suelo():
+    """altura_suelo interpola la rejilla en coordenadas de mundo."""
+    pilas = crear_pilas()
+    t = pilas.actores.Terreno(celdas=10)          # 10x10 m, centrado
+    t.subir(5, 5, 2.0)                            # vértice central
+    assert t.altura_suelo(0.0, 0.0) == pytest.approx(2.0)
+    assert t.altura_suelo(99, 0) is None          # fuera del terreno
+
+
+def test_terreno_pintar_y_tipos():
+    pilas = crear_pilas()
+    t = pilas.actores.Terreno(celdas=10)
+    t.pintar_zona(5, 5, 0, 'agua')
+    assert t._tiles[t._tex[5][5]] == 'agua'
+    t.pintar_zona(5, 5, 1, 'piedra')
+    assert t._tiles[t._tex[5][6]] == 'piedra'
+    # las celdas lejanas quedan como estaban
+    assert t._tiles[t._tex[0][0]] == 'pasto'
+
+
+def test_terreno_agua():
+    """El plano de agua aparece a la altura pedida y se puede quitar."""
+    pilas = crear_pilas()
+    t = pilas.actores.Terreno(celdas=8)
+    t.agua = 0.4
+    assert t._agua is not None
+    assert t._agua.y == pytest.approx(0.4)
+    t.agua = None
+    assert t._agua is None
+
+
+def test_terreno_guardar_cargar(tmp_path):
+    """guardar/cargar preserva alturas, baldosas, agua y spawn."""
+    pilas = crear_pilas()
+    t = pilas.actores.Terreno(celdas=8)
+    t.montana(3, 3, radio=2, altura=1.5)
+    t.pintar_zona(6, 6, 1, 'agua')
+    t.agua = 0.4
+    t.spawn = (0.0, 1.0, 0.0)
+    ruta = str(tmp_path / 'nivel.terreno.json')
+    t.guardar(ruta, nombre='nivel')
+    t2 = pilas.mapas.cargar(ruta)
+    assert type(t2).__name__ == 'Terreno'
+    assert t2.celdas == 8
+    assert t2.alturas[3][3] == pytest.approx(1.5)
+    assert t2._tiles[t2._tex[6][6]] == 'agua'
+    assert t2.agua == pytest.approx(0.4)
+    assert t2.spawn == (0.0, 1.0, 0.0)

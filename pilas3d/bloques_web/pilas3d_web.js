@@ -173,14 +173,18 @@ var pilas = (function () {
     document.body.appendChild(HUD);
     gl = canvas.getContext('webgl');
     var vs = 'attribute vec3 pos; attribute vec3 norm;' +
-      'uniform mat4 mvp; varying vec3 vnorm;' +
-      'void main(){ gl_Position = mvp * vec4(pos,1.0); vnorm = norm; }';
+      'attribute vec4 vcol; uniform mat4 mvp;' +
+      'varying vec3 vnorm; varying vec4 vvcol;' +
+      'void main(){ gl_Position = mvp * vec4(pos,1.0); vnorm = norm;' +
+      ' vvcol = vcol; }';
     var fs = 'precision mediump float; varying vec3 vnorm;' +
+      'varying vec4 vvcol;' +
       'uniform vec3 color; uniform float alfa; uniform float luz;' +
       'void main(){ vec3 n = normalize(vnorm);' +
       ' float d = max(dot(n, normalize(vec3(0.45,0.8,0.4))), 0.0);' +
-      ' vec3 c = color * (luz * (0.35 + 0.65 * d) + (1.0 - luz));' +
-      ' gl_FragColor = vec4(c, alfa); }';
+      ' vec3 c = color * vvcol.rgb *' +
+      ' (luz * (0.35 + 0.65 * d) + (1.0 - luz));' +
+      ' gl_FragColor = vec4(c, alfa * vvcol.a); }';
     function shader(t, src) {
       var s = gl.createShader(t);
       gl.shaderSource(s, src); gl.compileShader(s);
@@ -198,16 +202,18 @@ var pilas = (function () {
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   }
 
+  function subirBuffer(datos, estatico) {
+    var b = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(datos),
+                  estatico === false ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
+    return b;
+  }
+
   function aWebGL(malla) {
-    var bp = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, bp);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(malla.p),
-                  gl.STATIC_DRAW);
-    var bn = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, bn);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(malla.n),
-                  gl.STATIC_DRAW);
-    return { p: bp, n: bn, count: malla.p.length / 3 };
+    return { p: subirBuffer(malla.p), n: subirBuffer(malla.n),
+             c: malla.c ? subirBuffer(malla.c) : null,
+             count: malla.p.length / 3 };
   }
 
   var MALLAS = {};
@@ -221,6 +227,15 @@ var pilas = (function () {
       MALLAS[tipo] = aWebGL(m);
     }
     return MALLAS[tipo];
+  }
+
+  // reemplaza los buffers del actor (terreno deformable, etc.)
+  function reconstruirMalla(actor, malla) {
+    ['p', 'n', 'c'].forEach(function (k) {
+      if (actor._malla && actor._malla[k])
+        gl.deleteBuffer(actor._malla[k]);
+    });
+    actor._malla = aWebGL(malla);
   }
 
   // -- Actor ----------------------------------------------------------
@@ -545,6 +560,124 @@ var pilas = (function () {
   };
   // personajes/modelos: el subset web los sustituye por primitivas —
   // el generador deja el comentario correspondiente en el código.
+  // terreno deformable: rejilla con altura por vértice y color por
+  // celda (las texturas de Python se simulan con la paleta)
+  var TERRENO_COLORES = {
+    pasto: [0.3, 0.55, 0.25], piedra: [0.55, 0.53, 0.5],
+    agua: [0.2, 0.45, 0.7],
+  };
+  api.actores.Terreno = function (ops) {
+    ops = ops || {};
+    var celdas = ops.celdas || 20;
+    var tc = ops.tamano_celda || 1;
+    var t = new Actor('Terreno', { malla: 'plano', x: ops.x || 0,
+                                   z: ops.z || 0, radio: 999 });
+    t.color = [1, 1, 1];
+    t.celdas = celdas; t.tamano_celda = tc;
+    var l = celdas + 1, i, k;
+    t.alturas = [];
+    for (k = 0; k < l; k++) {
+      var fila = [];
+      for (i = 0; i < l; i++) fila.push(0);
+      t.alturas.push(fila);
+    }
+    t.tipos = [];
+    for (k = 0; k < celdas; k++) {
+      var ft = [];
+      for (i = 0; i < celdas; i++) ft.push('pasto');
+      t.tipos.push(ft);
+    }
+    var cA = [1, 1, 1, 1];
+    function colorCelda(tipo) {
+      var c = TERRENO_COLORES[tipo] || TERRENO_COLORES.pasto;
+      return [c[0], c[1], c[2], 1];
+    }
+    t._rearmar = function () {
+      var p = [], n = [], c = [];
+      for (var k = 0; k < celdas; k++) {
+        for (var i = 0; i < celdas; i++) {
+          var x0 = (i - celdas / 2) * tc, x1 = x0 + tc;
+          var z0 = (k - celdas / 2) * tc, z1 = z0 + tc;
+          var h00 = t.alturas[k][i], h10 = t.alturas[k][i + 1];
+          var h01 = t.alturas[k + 1][i], h11 = t.alturas[k + 1][i + 1];
+          var col = colorCelda(t.tipos[k][i]);
+          var quad = [[x0, h00, z0], [x1, h10, z0], [x1, h11, z1],
+                      [x0, h00, z0], [x1, h11, z1], [x0, h01, z1]];
+          // normal de la celda por el producto cruz de sus lados
+          var ux = tc, uy = h11 - h00, uz = tc;
+          var vx = tc, vy = h10 - h01, vz = -tc;
+          var nn = [uy * vz - uz * vy, uz * vx - ux * vz,
+                    ux * vy - uy * vx];
+          var m = Math.hypot(nn[0], nn[1], nn[2]) || 1;
+          quad.forEach(function (v) {
+            p.push(v[0], v[1], v[2]);
+            n.push(nn[0] / m, nn[1] / m, nn[2] / m);
+            c.push(col[0], col[1], col[2], col[3]);
+          });
+        }
+      }
+      reconstruirMalla(t, { p: p, n: n, c: c });
+      void cA;
+    };
+    t._rearmar();
+    function cepillo(i, k, radio, f) {
+      for (var kk = Math.max(0, Math.floor(k - radio));
+           kk <= Math.min(celdas, Math.ceil(k + radio)); kk++)
+        for (var ii = Math.max(0, Math.floor(i - radio));
+             ii <= Math.min(celdas, Math.ceil(i + radio)); ii++) {
+          var d = Math.hypot(ii - i, kk - k) / radio;
+          if (d <= 1) t.alturas[kk][ii] += f(d);
+        }
+      t._rearmar();
+    }
+    var suave = function (d) { var c = (Math.cos(d * Math.PI) + 1) / 2;
+                               return c; };
+    t.subir = function (i, k, dv) {
+      t.alturas[k][i] += dv; t._rearmar(); };
+    t.bajar = function (i, k, dv) {
+      t.alturas[k][i] -= dv; t._rearmar(); };
+    t.montana = function (i, k, radio, altura) {
+      cepillo(i, k, radio, function (d) { return altura * suave(d); }); };
+    t.pozo = function (i, k, radio, prof) {
+      cepillo(i, k, radio, function (d) { return -prof * suave(d); }); };
+    t.pintar_zona = function (i, k, radio, tipo) {
+      for (var kk = Math.max(0, Math.floor(k - radio));
+           kk <= Math.min(celdas - 1, Math.ceil(k + radio)); kk++)
+        for (var ii = Math.max(0, Math.floor(i - radio));
+             ii <= Math.min(celdas - 1, Math.ceil(i + radio)); ii++)
+          if (Math.hypot(ii - i, kk - k) <= Math.max(radio, 0.5))
+            t.tipos[kk][ii] = tipo;
+      t._rearmar();
+    };
+    Object.defineProperty(t, 'agua', {
+      get: function () { return t._agua ? t._agua.y - t.y : null; },
+      set: function (nivel) {
+        if (nivel === null || nivel === undefined) {
+          if (t._agua) t._agua.eliminar();
+          t._agua = null; return;
+        }
+        if (!t._agua) {
+          t._agua = api.actores.Plano({ x: t.x, z: t.z,
+                                        escala: celdas * tc });
+          t._agua.color = [0.3, 0.55, 0.8];
+          t._agua.alfa = 0.6;
+        }
+        t._agua.y = t.y + nivel;
+      },
+    });
+    t.altura_suelo = function (x, z) {
+      var lx = (x - t.x) / tc + celdas / 2;
+      var lz = (z - t.z) / tc + celdas / 2;
+      if (lx < 0 || lz < 0 || lx >= celdas || lz >= celdas) return null;
+      var i0 = Math.floor(lx), k0 = Math.floor(lz);
+      var fx = lx - i0, fz = lz - k0;
+      var h = t.alturas;
+      return t.y + (h[k0][i0] * (1 - fx) + h[k0][i0 + 1] * fx) * (1 - fz)
+                 + (h[k0 + 1][i0] * (1 - fx) + h[k0 + 1][i0 + 1] * fx) * fz;
+    };
+    return t;
+  };
+
   api.actores.Texto = function (txt, x, y) {
     var d = textoDOM(txt, x || 10, y || 30);
     return { fijar_texto: function (t) { d.textContent = t; },
@@ -779,6 +912,7 @@ var pilas = (function () {
 
     var aPos = gl.getAttribLocation(prog, 'pos');
     var aNorm = gl.getAttribLocation(prog, 'norm');
+    var aVcol = gl.getAttribLocation(prog, 'vcol');
     actores.forEach(function (a) {
       if (!a.vivo) return;
       var mvp = mMul(VP, mModelo(a));
@@ -792,6 +926,14 @@ var pilas = (function () {
       gl.bindBuffer(gl.ARRAY_BUFFER, a._malla.n);
       gl.enableVertexAttribArray(aNorm);
       gl.vertexAttribPointer(aNorm, 3, gl.FLOAT, false, 0, 0);
+      if (a._malla.c) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, a._malla.c);
+        gl.enableVertexAttribArray(aVcol);
+        gl.vertexAttribPointer(aVcol, 4, gl.FLOAT, false, 0, 0);
+      } else {
+        gl.disableVertexAttribArray(aVcol);
+        gl.vertexAttrib4f(aVcol, 1, 1, 1, 1);
+      }
       gl.drawArrays(gl.TRIANGLES, 0, a._malla.count);
     });
 
