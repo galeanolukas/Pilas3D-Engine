@@ -441,6 +441,19 @@ Blockly.defineBlocksWithJsonArray([
     previousStatement: null, nextStatement: null,
     colour: 160,
   },
+  {
+    type: 'p3d_escala',
+    message0: '%1 %2 a escala %3',
+    args0: [
+      { type: 'field_dropdown', name: 'QUE', options: [
+        ['poner', '='], ['multiplicar por', '*=']] },
+      { type: 'field_dropdown', name: 'NOMBRE', options: actores_opciones },
+      { type: 'field_number', name: 'N', value: 2, min: 0 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 160,
+    tooltip: 'Cambia el tamaño del actor (1 = tamaño normal)',
+  },
 
   // -- apariencia ---------------------------------------------------
   {
@@ -970,6 +983,12 @@ registrar('p3d_girar', function (block) {
          ' += ' + block.getFieldValue('N') + '\n';
 });
 
+registrar('p3d_escala', function (block) {
+  return campo_nombre(block) + '.escala ' +
+         block.getFieldValue('QUE') + ' ' +
+         block.getFieldValue('N') + '\n';
+});
+
 registrar('p3d_textura', function (block) {
   return campo_nombre(block) + '.imagen = ' +
          GEN.quote_(block.getFieldValue('TEXTURA')) + '\n';
@@ -1214,6 +1233,7 @@ var TOOLBOX = {
         { kind: 'block', type: 'p3d_ir_a' },
         { kind: 'block', type: 'p3d_ir_al_azar' },
         { kind: 'block', type: 'p3d_girar' },
+        { kind: 'block', type: 'p3d_escala' },
       ] },
     { kind: 'category', name: 'Apariencia', colour: '200',
       contents: [

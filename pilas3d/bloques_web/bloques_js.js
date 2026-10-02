@@ -264,6 +264,12 @@ registrar_js('p3d_girar', function (block) {
          ' += ' + block.getFieldValue('N') + ';\n';
 });
 
+registrar_js('p3d_escala', function (block) {
+  return campo_nombre(block) + '.escala ' +
+         block.getFieldValue('QUE') + ' ' +
+         block.getFieldValue('N') + ';\n';
+});
+
 // -- apariencia -----------------------------------------------------------
 
 registrar_js('p3d_textura', function (block) {
