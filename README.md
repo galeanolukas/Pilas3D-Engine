@@ -35,7 +35,7 @@ comando:
 | `pilas3d-ide` | **IDE integrado**: vista 3D + consola Python en la misma ventana | multilínea, historial, `Ctrl+S` guarda |
 | `pilas3d-editor` | **Editor de personajes**: posar huesos `.glb`, keyframes, animar | guarda `.anim.json` |
 | `pilas3d-bloques` | **Blockly web**: bloques tipo Scratch → Python real | ejemplos precargados, Run/Stop |
-| `pilas3d-mapas` | **Editor de mapas voxel**: click pone bloques, paleta, spawn | guarda `.mapa.json` |
+| `pilas3d-mapas` | **Editor de mapas**: voxels con click **y terreno deformable** (`Y`), spawn, props | guarda `.mapa.json` y `.terreno.json` |
 
 ### Editor de personajes (`pilas3d-editor`)
 
@@ -63,9 +63,12 @@ zonas, patrullas. Puente de bloques a código. Guía:
 
 ![mapas](capturas/pilas3d_mapas.png)
 
-Editor voxel con paleta de bloques y spawn del jugador. Los juegos
-cargan los `.mapa.json` con `pilas.mapas.cargar()`. Guía:
-[docs/mapas.md](docs/mapas.md).
+Editor voxel con paleta de bloques y spawn del jugador — y con `Y`
+un **modo terreno**: deformá la rejilla con el mouse para colinas,
+pozos y lagos, pintá baldosas por celda y poné agua. Los juegos cargan
+`.mapa.json` y `.terreno.json` con `pilas.mapas.cargar()`. Guías:
+[docs/mapas.md](docs/mapas.md) y
+[docs/terreno.md](docs/terreno.md).
 
 ### Consola interactiva (`pilas3d`)
 
@@ -172,6 +175,7 @@ Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 .venv/bin/python ejemplos/modelo_animado.py     # modelos .obj animados
 .venv/bin/python ejemplos/escenas.py            # menu -> juego (escenas)
 .venv/bin/python ejemplos/pilascraft.py         # mundo voxel infinito, picar/colocar
+.venv/bin/python ejemplos/terreno.py            # heightmap: colinas, pozos, lago, deformar en vivo
 .venv/bin/python ejemplos/pilascraft_red.py     # PilasCraft multijugador
 .venv/bin/python ejemplos/juego_modelos.py      # recolectar gemas con modelos .obj
 .venv/bin/python ejemplos/plataformas.py        # plataformero: PisaPlataformas + salto
@@ -243,6 +247,7 @@ bloquear con `ejecutar()`:
 | —                             | `Cartel()`, `Sombra()`, `Cielo()`, `Globo()`, `Chat()` |
 | —                             | `ModeloGLTF('x.glb')` — glTF 2.0 con skinning por CPU, `.animar()`, poses y keyframes propios (ver [docs/modelos-rendimiento.md](docs/modelos-rendimiento.md)) |
 | —                             | `Mundo()` — voxels tipo Minecraft; `ModeloJSON()` bloques |
+| —                             | `Terreno()` — heightmap deformable: montañas/pozos/lagos, baldosa por celda, `altura_suelo`, `.terreno.json` ([docs/terreno.md](docs/terreno.md)) |
 | —                             | `pilas.luces` — sol + hasta 8 puntuales; `escena.niebla` |
 | —                             | `pilas.red.hospedar/conectar` — multijugador simple |
 | `Mono`/`Robot`/...            | `Robot`/`Humanoide`/`Mono`/`Arania`/`Espectro` + `Bot()` |

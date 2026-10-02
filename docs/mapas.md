@@ -84,51 +84,7 @@ for prop in mundo.props:            # modelos estáticos del mapa
 
 ## Modo terreno (heightmap)
 
-Con `Y` el editor cambia de voxels a **terreno continuo**: una rejilla
-de `24x24` celdas donde cada vértice tiene altura y cada celda una
-baldosa del atlas (`pasto`/`piedra`/`agua` por defecto).
-
-| Entrada | Acción |
-|---|---|
-| click izquierdo | subir una colina suave (brush) |
-| click medio o `X` | pozo — si baja del nivel del agua se llena |
-| `Q` / `E` | subir / bajar un vértice puntual |
-| `P` | pintar la zona del brush con la baldosa elegida |
-| `1`-`3` o `←`/`→` | elegir baldosa (pasto/piedra/agua) |
-| `Z` / `C` | achicar / agrandar el brush |
-| `W` | poner / sacar el plano de agua (lagos) |
-| `T` | lomas y un lago aleatorios |
-| `S` | spawn — queda a la altura real del suelo |
-| `Y` | volver a voxels |
-
-`G` guarda `mapas/<nombre>.terreno.json` (alturas + baldosas + agua +
-spawn + props); `L` lo carga — `pilas.mapas.cargar()` detecta el
-formato solo y devuelve un `Terreno` con `.spawn`/`.props`.
-
-## El actor Terreno desde código
-
-```python
-t = pilas.actores.Terreno(celdas=20, tamano_celda=1.0)
-t.montana(5, 5, radio=4, altura=3)      # colina suave
-t.pozo(14, 12, radio=3, profundidad=2)  # hoyo
-t.pintar_zona(14, 12, 3, 'agua')        # baldosas del fondo
-t.agua = 0.4                            # plano de agua: lago
-
-# un personaje que sigue las lomas
-h = t.altura_suelo(robot.x, robot.z)
-if h is not None:
-    robot.y = h
-
-t.guardar('mapas/mi_terreno.terreno.json')
-t2 = pilas.mapas.cargar('mapas/mi_terreno.terreno.json')
-```
-
-Texturas propias: `tipos={'arena': 'arena.png', 'nieve': 'nieve.png'}`
-arma el atlas con tus imágenes (`pilas3d/data/` o cwd); una sola
-imagen para todo el terreno: `imagen='suelo.png'`.
-
-¿Cuándo qué? `Piso` = guía de referencia, `Terreno` = paisajes
-suaves (colinas/lagos), `Mundo` = voxels (cavar/construir/cuevas).
-
-Ejemplo jugable: `python3 ejemplos/terreno.py` — el robot camina
-siguiendo `altura_suelo` y las teclas deforman/pintan en vivo.
+Con `Y` el editor cambia de voxels a **terreno continuo**: rejilla
+deformable con click (colinas), pozos, lagos con agua y baldosa por
+celda. Guarda `*.terreno.json` — `pilas.mapas.cargar()` detecta el
+formato solo. Guía completa: [docs/terreno.md](terreno.md).
