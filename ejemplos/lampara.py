@@ -22,7 +22,8 @@ pilas.actores.Piso()
 # Algo de escenario para ver la luz caer sobre distintas cosas.
 for x, z in [(-4, -4), (4, -4), (-4, 4), (4, 4)]:
     pilas.actores.Pared(x=x, z=z, ancho=0.6, alto=2.2)
-pilas.actores.Cubo(x=-2, z=-2, escala=0.6)
+caja = pilas.actores.Cubo(x=-2, z=-2)
+caja.escala = 0.6
 
 # La lámpara: foco + luz puntual que lo acompaña.
 lampara = pilas.actores.Lampara(x=0, y=3, z=0,
