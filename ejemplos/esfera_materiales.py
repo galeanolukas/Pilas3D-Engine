@@ -37,9 +37,9 @@ piso.material = mat
 if mat.base:
     piso.imagen = mat.base
 
-# una lámpara naranja realza el especular y el relieve
-pilas.actores.Lampara(x=3, y=4, z=2, alcance=14)
-pilas.luces.direccional.ambiente = 0.35
+# una lámpara rasante realza el especular y el relieve del normal map
+pilas.actores.Lampara(x=4, y=2.5, z=3, alcance=16)
+pilas.luces.direccional.ambiente = 0.55
 
 texto = pilas.actores.Texto(
     "N: normal map on/off | R: rugosidad | drag: orbitar",
@@ -49,15 +49,19 @@ texto = pilas.actores.Texto(
 def al_pulsar(tecla):
     s = pilas.simbolos
     if tecla == s.n:
-        esfera.material.normal = None if esfera.material.normal \
-            else mat.normal
-        texto.texto = "normal: " + \
-            ("on" if esfera.material.normal else "off")
+        # apagar/prender conserva el mapa (no pisa mat.normal)
+        if mat.normal:
+            mat.apagar('normal')
+        else:
+            mat.prender('normal')
+        texto.texto = "normal: " + ("on" if mat.normal else "off")
     elif tecla == s.r:
-        esfera.material.rugosidad = \
-            None if esfera.material.rugosidad else mat.rugosidad
+        if mat.rugosidad:
+            mat.apagar('rugosidad')
+        else:
+            mat.prender('rugosidad')
         texto.texto = "rugosidad: " + \
-            ("on" if esfera.material.rugosidad else "off")
+            ("on" if mat.rugosidad else "off")
 
 
 pilas.escena.cuando_pulsa_tecla = al_pulsar

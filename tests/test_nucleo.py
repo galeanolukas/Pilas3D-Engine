@@ -3513,3 +3513,16 @@ def test_terreno_desde_heightmap(tmp_path):
     assert t.alturas[0][0] == pytest.approx(0)
     assert t.alturas[7][0] == pytest.approx(2.0)
     assert t.alturas[3][0] == pytest.approx(3 / 7.0 * 2.0, abs=0.02)
+
+
+def test_material_apagar_prender():
+    """apagar/prender apaga un mapa sin perder la ruta (el bug del
+    ejemplo: asignar None destruía el mapa para siempre)."""
+    mat = crear_pilas().materiales.cargar(normal='n.png')
+    mat.apagar('normal')
+    assert mat.normal is None
+    assert mat.textura('normal') is None
+    mat.prender('normal')
+    assert mat.normal == 'n.png'
+    mat.prender('normal')            # idempotente
+    assert mat.normal == 'n.png'

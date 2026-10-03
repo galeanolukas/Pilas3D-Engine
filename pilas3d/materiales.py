@@ -39,6 +39,19 @@ class Material(object):
         self.metalico = metalico      # detectado, no usado todavía
         self.heightmap = heightmap    # para Terreno.desde_heightmap
         self._tex = {}
+        self._desactivados = {}       # mapas apagados por apagar()
+
+    def apagar(self, slot):
+        """Desactiva un mapa sin perderlo — ``mat.apagar('normal')``
+        para comparar con y sin. Se restaura con ``prender``."""
+        if getattr(self, slot) is not None:
+            self._desactivados[slot] = getattr(self, slot)
+            setattr(self, slot, None)
+
+    def prender(self, slot):
+        """Reactiva el mapa apagado con ``apagar``."""
+        if slot in self._desactivados:
+            setattr(self, slot, self._desactivados.pop(slot))
 
     def textura(self, slot):
         """Carga perezosa del mapa ``slot`` (ruta, ImageData o
