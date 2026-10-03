@@ -11,19 +11,15 @@ relieve del normal map + el brillo especular de la rugosidad.
 - drag o espacio + mouse: orbita - rueda: zoom
 """
 
-import os
-
 import pilas3d
 
 pilas = pilas3d.iniciar()
 pilas.escena.fondo = pilas.colores.gris_oscuro
 
-CARPETA = 'modelos/Tiles144_1K-JPG'
-if not os.path.isdir(CARPETA):
-    CARPETA = os.path.join('modelos',
-                           'Poliigon_GrassPatchyGround_4585', '2K')
-
-mat = pilas.materiales.desde_carpeta(CARPETA)
+# los packs viven en texturas/<alias>/ — por nombre de carpeta
+mat = pilas.materiales['Tiles144_1K-JPG']
+if mat.base is None:
+    mat = pilas.materiales['Poliigon_GrassPatchyGround_4585/2K']
 print("material detectado:", mat)
 
 esfera = pilas.actores.Esfera(y=1.5)

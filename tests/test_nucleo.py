@@ -3526,3 +3526,17 @@ def test_material_apagar_prender():
     assert mat.normal == 'n.png'
     mat.prender('normal')            # idempotente
     assert mat.normal == 'n.png'
+
+
+def test_material_alias_texturas(tmp_path, monkeypatch):
+    """pilas.materiales['nombre'] resuelve packs de texturas/ por
+    alias de carpeta; los inexistentes devuelven material vacío."""
+    pack = tmp_path / 'texturas' / 'pasto'
+    pack.mkdir(parents=True)
+    (pack / 'suelo_BaseColor.jpg').write_bytes(b'x')
+    monkeypatch.chdir(tmp_path)
+    pilas = crear_pilas()
+    assert 'pasto' in pilas.materiales.lista()
+    mat = pilas.materiales['pasto']
+    assert mat.base.endswith('suelo_BaseColor.jpg')
+    assert pilas.materiales['no_existe_xyz'].base is None

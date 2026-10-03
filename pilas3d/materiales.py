@@ -99,12 +99,42 @@ class Materiales(object):
         return Material(base=base, normal=normal, ao=ao,
                         rugosidad=rugosidad)
 
+    def __getitem__(self, nombre):
+        """``pilas.materiales['pasto']`` — el pack de ``texturas/``
+        por su nombre de carpeta."""
+        return self.desde_carpeta(nombre)
+
+    def lista(self):
+        """Nombres de packs disponibles en ``texturas/`` del
+        proyecto y en ``pilas3d/data/texturas/``."""
+        nombres = set()
+        base = os.path.dirname(os.path.abspath(__file__))
+        for d in ('texturas',
+                  os.path.join(base, 'data', 'texturas')):
+            if os.path.isdir(d):
+                nombres.update(n for n in os.listdir(d)
+                               if os.path.isdir(os.path.join(d, n)))
+        return sorted(nombres)
+
+    def _resolver_directorio(self, nombre):
+        """``nombre`` puede ser la ruta de una carpeta o el alias de
+        un pack en ``texturas/`` (proyecto) o en
+        ``pilas3d/data/texturas/`` (los que vienen con el motor)."""
+        base = os.path.dirname(os.path.abspath(__file__))
+        for cand in (nombre,
+                     os.path.join('texturas', nombre),
+                     os.path.join(base, 'data', 'texturas', nombre)):
+            if os.path.isdir(cand):
+                return cand
+        return nombre            # que dé un material vacío
+
     def desde_carpeta(self, directorio):
         """Detecta los mapas de un directorio por su nombre —
         sirve para packs de Poliigon/ambientCG/Quixel (y para el
         ``.mtlx`` de Poliigon, que no hace falta parsear: los nombres
         de archivo ya dicen qué son)."""
         mat = Material()
+        directorio = self._resolver_directorio(directorio)
         try:
             archivos = os.listdir(directorio)
         except OSError:

@@ -5,14 +5,37 @@ que más cambian una escena de un pack de texturas (Poliigon,
 ambientCG, Quixel, PolyHaven):
 
 ```python
-mat = pilas.materiales.desde_carpeta(
-    'modelos/Poliigon_GrassPatchyGround_4585/2K')
-terreno.material = mat        # detecta base+normal+ao+rugosidad solo
+terreno.material = pilas.materiales['Poliigon_GrassPatchyGround_4585/2K']
 ```
 
-O a mano:
+## Dónde van los packs
+
+Cada pack es **una carpeta por nombre** — el nombre de la carpeta
+es el alias con que lo pedís:
+
+```
+texturas/                          # packs de TU proyecto
+  Poliigon_GrassPatchyGround_4585/   (con su /2K adentro)
+  Tiles144_1K-JPG/
+  pasto/                           (renombrá carpetas libremente)
+
+pilas3d/data/texturas/             # packs que vienen con el motor
+  pasto/  piedra/  agua/           (disponibles en todo proyecto)
+```
+
+`pilas.materiales['nombre']` busca en este orden:
+
+1. la ruta literal (si ya es un directorio)
+2. `texturas/<nombre>` de tu proyecto (cwd)
+3. `pilas3d/data/texturas/<nombre>` (los del motor)
+
+Un nombre que no existe devuelve un material vacío (sin error) —
+`pilas.materiales.lista()` muestra los packs detectados.
+
+O por ruta directa / a mano:
 
 ```python
+mat = pilas.materiales.desde_carpeta('otro/dir/mis_mapas')
 mat = pilas.materiales.cargar(
     base='suelo.png', normal='suelo_n.png',
     ao='suelo_ao.png', rugosidad='suelo_r.png')

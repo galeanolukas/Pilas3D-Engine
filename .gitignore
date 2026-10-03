@@ -11,6 +11,7 @@ _deb_extract/
 modelos/**/*
 !modelos/**/
 !modelos/**/.gitkeep
+texturas/**/*
 
 # Binario de Ollama descargado por los instaladores (MIT, se baja
 # aparte; nunca se commitea por peso y licencia de redistribución)
