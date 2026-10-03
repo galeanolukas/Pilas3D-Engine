@@ -176,6 +176,7 @@ Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 .venv/bin/python ejemplos/escenas.py            # menu -> juego (escenas)
 .venv/bin/python ejemplos/pilascraft.py         # mundo voxel infinito, picar/colocar
 .venv/bin/python ejemplos/terreno.py            # heightmap: colinas, pozos, lago, deformar en vivo
+.venv/bin/python ejemplos/esfera_materiales.py  # texturas compuestas: normal map + rugosidad (packs Poliigon/ambientCG)
 .venv/bin/python ejemplos/pilascraft_red.py     # PilasCraft multijugador
 .venv/bin/python ejemplos/juego_modelos.py      # recolectar gemas con modelos .obj
 .venv/bin/python ejemplos/plataformas.py        # plataformero: PisaPlataformas + salto

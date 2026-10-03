@@ -64,7 +64,7 @@ class Material(object):
 # -- autodetección por nombre de archivo ----------------------------------
 
 _PATRONES = [
-    ('base', ('basecolor', 'albedo', 'diffuse', 'colormap')),
+    ('base', ('basecolor', 'albedo', 'diffuse', 'colormap', 'color')),
     ('normal', ('normal', '_nrm')),
     ('ao', ('ambientocclusion', 'occlusion', '_ao')),
     ('rugosidad', ('roughness', 'rugosidad', 'rough')),
@@ -96,14 +96,23 @@ class Materiales(object):
             archivos = os.listdir(directorio)
         except OSError:
             return mat
+        candidatos = {}
         for nombre in sorted(archivos):
             bajo = nombre.lower()
             if not bajo.endswith(_EXT) or 'preview' in bajo:
                 continue
             ruta = os.path.join(directorio, nombre)
             for slot, patrones in _PATRONES:
-                if getattr(mat, slot) is None and \
-                        any(p in bajo for p in patrones):
-                    setattr(mat, slot, ruta)
+                if any(p in bajo for p in patrones):
+                    candidatos.setdefault(slot, []).append(ruta)
                     break
+        for slot, rutas in candidatos.items():
+            elegida = rutas[0]
+            if slot == 'normal':
+                # OpenGL quiere la variante Y+ (NormalGL); si el pack
+                # trae ambas se evita la DX, y si solo hay DX se usa
+                # igual — las derivadas absorben casi toda la diferencia
+                gl = [r for r in rutas if 'normaldx' not in r.lower()]
+                elegida = (gl or rutas)[0]
+            setattr(mat, slot, elegida)
         return mat
