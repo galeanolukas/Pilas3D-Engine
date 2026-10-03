@@ -32,6 +32,8 @@ Modo terreno (Y: voxels <-> terreno heightmap, *.terreno.json):
 - ENTER o B: colina bajo el cursor - X: pozo (lago si hay agua)
 - P: pinta celdas con la baldosa elegida - 1-3 o ←/→: baldosa
 - Z/C: tamaño del brush - W: poner/sacar el agua - T: lomas azar
+- U: cicla packs de texturas (texturas/ y pilas3d/data/texturas/)
+- H: aplica el heightmap del pack como relieve del terreno
 """
 
 import glob
@@ -407,6 +409,10 @@ def refrescar_ui():
         lineas.append('brush: %d | agua: %s' % (
             estado['brush'],
             estado['terreno'].agua if estado['terreno'] else '-'))
+        pack = getattr(estado['terreno'], '_material_nombre',
+                       None) if estado['terreno'] else None
+        lineas.append('pack: %s (U cicla, H altura)' % (
+            pack or 'baldosas'))
         nspawn = 'sí' if estado['spawn'] else 'no'
         lineas.append('spawn: %s | props: %d' % (nspawn,
                                                len(estado['props'])))
@@ -533,6 +539,28 @@ def cargar_mapa(ruta):
         marca_spawn.transparencia = 0
     else:
         marca_spawn.transparencia = 100
+    refrescar_ui()
+
+
+def _ciclar_pack():
+    """U en modo terreno: recorre los packs de ``pilas.materiales``
+    y tras el último vuelve a las baldosas por celda."""
+    t = estado['terreno']
+    if t is None:
+        return
+    packs = pilas.materiales.lista()
+    if not packs:
+        info.texto = "sin packs: bajalos a texturas/<nombre>/"
+        return
+    actual = getattr(t, '_material_nombre', None)
+    n = packs.index(actual) if actual in packs else -1
+    n += 1
+    if n >= len(packs):
+        t.aplicar_material(None)
+        info.texto = "terreno: baldosas por celda"
+    else:
+        t.aplicar_material(packs[n])
+        info.texto = "material: %s" % packs[n]
     refrescar_ui()
 
 
@@ -729,6 +757,17 @@ def al_pulsar(tecla):
             t.agua = None if t.agua is not None else 0.4
             info.texto = "agua: %s" % (t.agua if t.agua is not None
                                        else 'no')
+    elif tecla == s.u and estado['escenario'] == 'terreno':
+        _ciclar_pack()
+    elif tecla == s.h and estado['escenario'] == 'terreno':
+        t = estado['terreno']
+        hm = getattr(getattr(t, 'material', None), 'heightmap',
+                     None)
+        if t is not None and hm:
+            t.desde_heightmap(hm)
+            info.texto = "relieve desde el heightmap del pack"
+        else:
+            info.texto = "sin pack con heightmap (U cambia)"
     elif tecla == s.q:
         _esculpir(+1)
     elif tecla == s.e:
@@ -841,7 +880,8 @@ def main(directorio='mapas', ejecutar=True):
             "T: base - N: nuevo\n"
             "G/O: guardar - L: cargar",
             "Y: terreno - P: pinta\n"
-            "Z/C brush - W: agua"):
+            "Z/C,W: brush,agua\n"
+            "U/H: pack/heightmap"):
         guias.append(pilas.actores.Texto(txt, tamano=10))
 
     organizar_layout()

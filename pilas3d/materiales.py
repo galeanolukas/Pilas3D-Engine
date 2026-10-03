@@ -128,19 +128,14 @@ class Materiales(object):
                 return cand
         return nombre            # que dé un material vacío
 
-    def desde_carpeta(self, directorio):
-        """Detecta los mapas de un directorio por su nombre —
-        sirve para packs de Poliigon/ambientCG/Quixel (y para el
-        ``.mtlx`` de Poliigon, que no hace falta parsear: los nombres
-        de archivo ya dicen qué son)."""
-        mat = Material()
-        directorio = self._resolver_directorio(directorio)
+    def _detectar(self, directorio):
+        """slot -> [rutas] mirando los nombres de archivo del dir."""
         try:
-            archivos = os.listdir(directorio)
+            archivos = sorted(os.listdir(directorio))
         except OSError:
-            return mat
+            return {}
         candidatos = {}
-        for nombre in sorted(archivos):
+        for nombre in archivos:
             bajo = nombre.lower()
             if not bajo.endswith(_EXT) or 'preview' in bajo:
                 continue
@@ -149,6 +144,28 @@ class Materiales(object):
                 if any(p in bajo for p in patrones):
                     candidatos.setdefault(slot, []).append(ruta)
                     break
+        return candidatos
+
+    def desde_carpeta(self, directorio):
+        """Detecta los mapas de un directorio por su nombre —
+        sirve para packs de Poliigon/ambientCG/Quixel (y para el
+        ``.mtlx`` de Poliigon, que no hace falta parsear: los nombres
+        de archivo ya dicen qué son). Si el dir solo tiene
+        subcarpetas (``2K/`` de Poliigon), baja un nivel."""
+        directorio = self._resolver_directorio(directorio)
+        candidatos = self._detectar(directorio)
+        if not candidatos:
+            try:
+                subs = [d for d in sorted(os.listdir(directorio))
+                        if os.path.isdir(os.path.join(directorio, d))]
+            except OSError:
+                subs = []
+            for sub in subs:
+                candidatos = self._detectar(
+                    os.path.join(directorio, sub))
+                if candidatos:
+                    break
+        mat = Material()
         for slot, rutas in candidatos.items():
             elegida = rutas[0]
             if slot == 'normal':

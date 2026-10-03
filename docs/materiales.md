@@ -30,7 +30,34 @@ pilas3d/data/texturas/             # packs que vienen con el motor
 3. `pilas3d/data/texturas/<nombre>` (los del motor)
 
 Un nombre que no existe devuelve un material vacío (sin error) —
-`pilas.materiales.lista()` muestra los packs detectados.
+`pilas.materiales.lista()` muestra los packs detectados. Si la
+carpeta solo trae subdirectorios (el `2K/` de Poliigon), baja un
+nivel sola.
+
+## Packs en el `Terreno` y en `pilas3d-mapas`
+
+El terreno usa UVs de atlas (cada celda apunta a su baldosa), así
+que no basta `terreno.material = mat`: hay que pasarlo a modo
+"textura única" para que el pack se repita por celda y los mapas
+muestreen bien. Eso lo hace `aplicar_material`:
+
+```python
+terreno.aplicar_material('Tiles144_1K-JPG')   # alias o Material
+terreno.aplicar_material(None)                # vuelve a baldosas
+```
+
+Las baldosas por celda quedan guardadas y se restauran tal cual.
+El alias viaja en el `.terreno.json` (`"material": "Tiles144_1K-JPG"`)
+— al cargar en otra máquina se re-aplica si el pack está en
+`texturas/`; si no, quedan las baldosas.
+
+En el editor de mapas (modo terreno, tecla `Y`):
+
+- **U**: cicla los packs de `materiales.lista()`; después del
+  último vuelve a las baldosas
+- **H**: aplica `mat.heightmap` con `desde_heightmap` — el
+  `Displacement` del pack se convierte en relieve real
+- `G` guarda el alias en el `.terreno.json`
 
 O por ruta directa / a mano:
 

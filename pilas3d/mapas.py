@@ -107,12 +107,27 @@ class Mapas(object):
             terreno.agua = datos['agua']
         terreno._reconstruir_gl()
         self._nombre_spawn(terreno, datos, ruta)
+        if datos.get('material'):
+            # alias de pack en texturas/ — si la máquina no lo tiene
+            # queda un Material vacío y se ven solo las baldosas
+            terreno.aplicar_material(datos['material'])
         return terreno
 
     def guardar_terreno(self, ruta, terreno, nombre=None, spawn=None,
                         props=None):
         """Serializa un :class:`Terreno` a ``*.terreno.json``: alturas
-        por vértice, baldosa por celda, nivel de agua, spawn y props."""
+        por vértice, baldosa por celda, nivel de agua, spawn y props.
+
+        Si el terreno tiene un pack aplicado (``aplicar_material``)
+        se guarda el alias en ``material`` y las baldosas originales,
+        para que al cargar se re-aplique por nombre."""
+        if terreno._tipos_baldosas is not None:
+            tipos = terreno._tipos_baldosas
+            tex = terreno._tex_baldosas
+        else:
+            tipos = terreno.tipos
+            tex = terreno._tex
+        tiles = list(tipos)
         datos = {
             'version': 1,
             'tipo': 'terreno',
@@ -122,9 +137,9 @@ class Mapas(object):
             'tamano_celda': terreno.tamano_celda,
             'x': terreno.x, 'y': terreno.y, 'z': terreno.z,
             'alturas': terreno.alturas,
-            'celdas_tex': [[terreno._tiles[t] for t in fila]
-                           for fila in terreno._tex],
-            'tipos': terreno.tipos,
+            'celdas_tex': [[tiles[t] for t in fila] for fila in tex],
+            'tipos': tipos,
+            'material': terreno._material_nombre,
             'agua': terreno.agua,
             'spawn': list(spawn) if spawn else None,
             'props': props or [],

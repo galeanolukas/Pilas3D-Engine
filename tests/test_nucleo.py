@@ -3540,3 +3540,50 @@ def test_material_alias_texturas(tmp_path, monkeypatch):
     mat = pilas.materiales['pasto']
     assert mat.base.endswith('suelo_BaseColor.jpg')
     assert pilas.materiales['no_existe_xyz'].base is None
+
+
+def test_terreno_aplicar_material(tmp_path, monkeypatch):
+    """Terreno.aplicar_material(alias): pasa a textura única, guarda
+    las baldosas y las restaura con None."""
+    pack = tmp_path / 'texturas' / 'suelo'
+    pack.mkdir(parents=True)
+    png = _png_minimo()
+    (pack / 'suelo_Color.png').write_bytes(png)
+    (pack / 'suelo_NormalGL.png').write_bytes(png)
+    monkeypatch.chdir(tmp_path)
+    pilas = crear_pilas()
+    t = pilas.actores.Terreno(celdas=4)
+    tipos0 = t.tipos
+    t.aplicar_material('suelo')
+    assert t._material_nombre == 'suelo'
+    assert t.tipos['unica'].endswith('suelo_Color.png')
+    assert t.material.normal.endswith('suelo_NormalGL.png')
+    t.aplicar_material(None)
+    assert t.tipos == tipos0 and t.material is None
+
+
+def test_mapa_terreno_persiste_material(tmp_path, monkeypatch):
+    """El .terreno.json guarda el alias del pack; al cargar se
+    re-aplica y las baldosas quedan restaurables."""
+    pack = tmp_path / 'texturas' / 'suelo'
+    pack.mkdir(parents=True)
+    (pack / 'suelo_Color.png').write_bytes(_png_minimo())
+    monkeypatch.chdir(tmp_path)
+    pilas = crear_pilas()
+    t = pilas.actores.Terreno(celdas=4)
+    t.aplicar_material('suelo')
+    ruta = str(tmp_path / 'x.terreno.json')
+    pilas.mapas.guardar_terreno(ruta, t)
+    t2 = pilas.mapas.cargar(ruta)
+    assert t2._material_nombre == 'suelo'
+    assert t2._tipos_baldosas is not None
+
+
+def _png_minimo():
+    """PNG chico válido para tests (el atlas carga la imagen real)."""
+    import io
+    from pyglet.image import create, SolidColorImagePattern
+    img = create(4, 4, SolidColorImagePattern((120, 80, 40, 255)))
+    buf = io.BytesIO()
+    img.save('x.png', file=buf)
+    return buf.getvalue()

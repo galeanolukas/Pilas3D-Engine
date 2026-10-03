@@ -54,6 +54,10 @@ class Terreno(Actor):
         self._tex = [[0] * celdas for _ in range(celdas)]
         self._agua = None
         self._nivel_agua = None
+        # modo "pack de texturas": baldosas guardadas para restaurar
+        self._tipos_baldosas = None
+        self._tex_baldosas = None
+        self._material_nombre = None
         #: Punto de inicio y props — los llena ``mapas.cargar``.
         self.spawn = None
         self.props = []
@@ -215,6 +219,50 @@ class Terreno(Actor):
         self._nivel_agua = nivel
         self._agua.y = self.y + (nivel or 0)
         self._agua.x, self._agua.z = self.x, self.z
+
+    # -- pack de texturas compuestas -------------------------------------------
+
+    def aplicar_material(self, mat):
+        """Aplica un pack de ``pilas.materiales`` a todo el terreno —
+        por :class:`Material` o por alias (str). El terreno pasa a
+        modo "textura única": el ``base`` del pack se repite por
+        celda y los mapas normal/AO/rugosidad muestrean UVs
+        coherentes (con las UVs de atlas se verían mal).
+
+        Las baldosas por celda quedan guardadas:
+        ``aplicar_material(None)`` las restaura tal cual."""
+        if isinstance(mat, str):
+            self._material_nombre = mat
+            mat = self.pilas.materiales[mat]
+        else:
+            self._material_nombre = None
+        if mat is None:
+            self.material = None
+            if self._tipos_baldosas is not None:
+                self.tipos = self._tipos_baldosas
+                self._tex = self._tex_baldosas
+                self._tipos_baldosas = None
+                self._rearmar_tiles()
+            return
+        self.material = mat
+        if self._tipos_baldosas is None:
+            self._tipos_baldosas = self.tipos
+            self._tex_baldosas = [fila[:] for fila in self._tex]
+        if getattr(mat, 'base', None):
+            self.tipos = {'unica': mat.base}
+            self._tex = [[0] * self.celdas
+                         for _ in range(self.celdas)]
+            self._rearmar_tiles()
+
+    def _rearmar_tiles(self):
+        """Reconstruye ``_tiles``/atlas/imagen tras cambiar
+        ``tipos`` — el mismo trabajo que hace ``__init__``."""
+        self._tiles = list(self.tipos)
+        self._imagen_atlas = armar_atlas([
+            self._resolver_baldosa(self.tipos[t])
+            for t in self._tiles])
+        self.imagen = self._imagen_atlas
+        self._reconstruir_gl()
 
     # -- heightmap desde imagen ------------------------------------------------
 

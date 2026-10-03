@@ -58,7 +58,10 @@ t2 = pilas.mapas.cargar('mapas/nivel.terreno.json')   # auto-detecta
 ```
 
 El `.terreno.json` guarda alturas, baldosas por celda, nivel de agua,
-spawn y props — mismo contrato que los `.mapa.json` de voxels.
+spawn y props — mismo contrato que los `.mapa.json` de voxels. Si el
+terreno tiene un pack aplicado (`aplicar_material`), también guarda
+el alias en `"material"` y lo re-aplica al cargar (ver
+`docs/materiales.md`).
 
 ## En el editor (`pilas3d-mapas`)
 
@@ -72,6 +75,8 @@ spawn y props — mismo contrato que los `.mapa.json` de voxels.
 | `P` | pintar la zona del brush con la baldosa elegida |
 | `1`-`3` o `←`/`→` | elegir baldosa |
 | `Z` / `C` | tamaño del brush |
+| `U` | cicla packs de texturas (`texturas/`, `data/texturas/`) |
+| `H` | aplica el heightmap del pack como relieve real |
 | `W` | agua on/off · `T` lomas aleatorias · `S` spawn |
 
 `G` guarda `mapas/<nombre>.terreno.json`, `L` lo carga.
