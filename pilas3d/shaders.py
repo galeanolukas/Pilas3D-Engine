@@ -51,6 +51,31 @@ in vec3 v_posicion;
 uniform sampler2D textura;
 uniform bool usar_textura;
 
+// mapas compuestos opcionales (pilas.materiales)
+uniform sampler2D normal_map;
+uniform bool usar_normal;
+uniform sampler2D ao_map;
+uniform bool usar_ao;
+uniform sampler2D rugosidad_map;
+uniform bool usar_rugosidad;
+
+// Normal map sin tangentes: reconstruye el marco TBN con derivadas
+// de pantalla (Schüler) — funciona para cualquier malla con UVs.
+vec3 perturbar_normal(vec3 n, vec3 pos, vec2 uv)
+{
+    vec3 q0 = dFdx(pos);
+    vec3 q1 = dFdy(pos);
+    vec2 st0 = dFdx(uv);
+    vec2 st1 = dFdy(uv);
+    vec3 s = q0 * st1.t - q1 * st0.t;
+    vec3 t = -q0 * st1.s + q1 * st0.s;
+    vec3 N = normalize(n);
+    if (dot(s, s) < 1e-8 || dot(t, t) < 1e-8)
+        return N;
+    vec3 map_n = texture(normal_map, uv).xyz * 2.0 - 1.0;
+    return normalize(mat3(normalize(s), normalize(t), N) * map_n);
+}
+
 uniform vec3 luz_dir;          // dirección HACIA la luz direccional
 uniform vec3 luz_dir_color;
 uniform float luz_ambiente;
@@ -79,16 +104,33 @@ void main()
     vec3 luz_rgb = vec3(1.0);
     if (!sin_luz && length(v_normal) > 0.001) {
         vec3 n = normalize(v_normal);
-        luz_rgb = vec3(luz_ambiente);
-        luz_rgb += luz_dir_color
-                   * max(dot(n, normalize(luz_dir)), 0.0) * 0.65;
+        if (usar_normal)
+            n = perturbar_normal(v_normal, v_posicion, v_tex);
+        // oclusión ambiental: solo atenúa la luz ambiente y parte
+        // de las puntuales (aproximación educativa, no SSAO)
+        float ao = usar_ao ? texture(ao_map, v_tex).r : 1.0;
+        float rugosidad = usar_rugosidad
+                          ? texture(rugosidad_map, v_tex).r : 1.0;
+        luz_rgb = vec3(luz_ambiente) * ao;
+        float dif_dir = max(dot(n, normalize(luz_dir)), 0.0);
+        luz_rgb += luz_dir_color * dif_dir * 0.65;
         for (int i = 0; i < cantidad_puntuales; i++) {
             vec3 d = luz_posicion[i] - v_posicion;
             float aten = clamp(1.0 - length(d) / luz_alcance[i],
                              0.0, 1.0);
             luz_rgb += luz_color[i]
                        * max(dot(n, normalize(d)), 0.0)
-                       * aten * aten * 0.65;
+                       * aten * aten * 0.65 * (0.5 + 0.5 * ao);
+        }
+        // especular Blinn-Phong solo de la direccional, guiado por
+        // rugosidad (liso = brillo fino e intenso, rugoso = casi nada)
+        if (dif_dir > 0.0) {
+            vec3 vista = normalize(cam_pos - v_posicion);
+            vec3 h = normalize(normalize(luz_dir) + vista);
+            float pot = mix(64.0, 8.0, rugosidad);
+            float inten = mix(0.4, 0.05, rugosidad);
+            luz_rgb += luz_dir_color
+                       * pow(max(dot(n, h), 0.0), pot) * inten;
         }
     }
     vec3 rgb = difuso.rgb * luz_rgb;

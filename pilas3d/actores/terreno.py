@@ -216,6 +216,26 @@ class Terreno(Actor):
         self._agua.y = self.y + (nivel or 0)
         self._agua.x, self._agua.z = self.x, self.z
 
+    # -- heightmap desde imagen ------------------------------------------------
+
+    def desde_heightmap(self, ruta, altura=3.0):
+        """Carga la rejilla de alturas desde una imagen en grises —
+        los ``Displacement``/``Height`` de los packs de texturas
+        (PNG/JPG; los ``.tiff`` hay que convertirlos). La columna x de
+        la imagen va al eje i y la fila al eje k; blanco = más alto."""
+        from pyglet.image import load
+        img = load(self._resolver_imagen(ruta)).get_image_data()
+        ancho, alto = img.width, img.height
+        pix = img.get_data('L', ancho)
+        n = self.celdas + 1
+        for i in range(n):
+            for k in range(n):
+                px = min(ancho - 1, int(i * ancho / float(n)))
+                pk = min(alto - 1, int(k * alto / float(n)))
+                self.alturas[i][k] = \
+                    pix[pk * ancho + px] / 255.0 * altura
+        self._reconstruir_gl()
+
     # -- guardar ---------------------------------------------------------------
 
     def guardar(self, ruta, nombre=None):

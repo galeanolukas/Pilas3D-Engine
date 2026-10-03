@@ -248,6 +248,7 @@ bloquear con `ejecutar()`:
 | —                             | `ModeloGLTF('x.glb')` — glTF 2.0 con skinning por CPU, `.animar()`, poses y keyframes propios (ver [docs/modelos-rendimiento.md](docs/modelos-rendimiento.md)) |
 | —                             | `Mundo()` — voxels tipo Minecraft; `ModeloJSON()` bloques |
 | —                             | `Terreno()` — heightmap deformable: montañas/pozos/lagos, baldosa por celda, `altura_suelo`, `.terreno.json` ([docs/terreno.md](docs/terreno.md)) |
+| —                             | `pilas.materiales` — texturas compuestas (normal/AO/rugosidad) de packs Poliigon/ambientCG autodetectadas por carpeta ([docs/materiales.md](docs/materiales.md)) |
 | —                             | `pilas.luces` — sol + hasta 8 puntuales; `escena.niebla` |
 | —                             | `pilas.red.hospedar/conectar` — multijugador simple |
 | `Mono`/`Robot`/...            | `Robot`/`Humanoide`/`Mono`/`Arania`/`Espectro` + `Bot()` |

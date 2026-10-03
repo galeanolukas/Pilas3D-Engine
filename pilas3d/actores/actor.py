@@ -7,7 +7,8 @@ Equivalente a ``pilasengine.actores.actor.Actor`` pero con geometría
 
 import math
 
-from pyglet.gl import glBindTexture, glTexParameteri
+from pyglet.gl import glActiveTexture, glBindTexture, \
+    glTexParameteri, GL_TEXTURE0
 from pyglet.gl import GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T
 from pyglet.gl import GL_REPEAT
 from pyglet.math import Mat4, Vec3
@@ -46,6 +47,9 @@ class Actor(object):
         self._color = colores.blanco
         self._imagen = None
         self._textura = None
+        #: Material compuesto opcional (normal/AO/rugosidad) —
+        #: ``actor.material = pilas.materiales.desde_carpeta(dir)``.
+        self.material = None
         self._uv_escala = (1.0, 1.0)
         self._uv_desplazamiento = (0.0, 0.0)
 
@@ -559,12 +563,36 @@ class Actor(object):
         programa["uv_escala"] = self._uv_escala
         programa["uv_desplazamiento"] = self._uv_desplazamiento
         programa["sin_luz"] = self.sin_luz
+        mat = self.material
+        # la base del material reemplaza a imagen si no hay una
+        textura_base = None
         if self._imagen is not None:
             if self._textura is None:
                 self._cargar_textura()
-            glBindTexture(GL_TEXTURE_2D, self._textura.id)
+            textura_base = self._textura
+        elif mat is not None:
+            textura_base = mat.textura('base')
+        glActiveTexture(GL_TEXTURE0)
+        if textura_base is not None:
+            glBindTexture(GL_TEXTURE_2D, textura_base.id)
             programa["textura"] = 0
             programa["usar_textura"] = True
         else:
             programa["usar_textura"] = False
+        # mapas compuestos en las unidades 1-3 (normal, AO, rugosidad)
+        for unidad, slot, unif in (
+                (1, 'normal', 'normal_map'),
+                (2, 'ao', 'ao_map'),
+                (3, 'rugosidad', 'rugosidad_map')):
+            tex = mat.textura(slot) if mat is not None else None
+            programa["usar_" + slot] = tex is not None
+            if tex is not None:
+                glActiveTexture(GL_TEXTURE0 + unidad)
+                glBindTexture(GL_TEXTURE_2D, tex.id)
+                glTexParameteri(GL_TEXTURE_2D,
+                                GL_TEXTURE_WRAP_S, GL_REPEAT)
+                glTexParameteri(GL_TEXTURE_2D,
+                                GL_TEXTURE_WRAP_T, GL_REPEAT)
+                programa[unif] = unidad
+        glActiveTexture(GL_TEXTURE0)
         self._vertex_list.draw(self._modo)

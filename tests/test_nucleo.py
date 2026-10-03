@@ -3473,3 +3473,43 @@ def test_terreno_guardar_cargar(tmp_path):
     assert t2._tiles[t2._tex[6][6]] == 'agua'
     assert t2.agua == pytest.approx(0.4)
     assert t2.spawn == (0.0, 1.0, 0.0)
+
+
+# -- materiales compuestos ---------------------------------------------------
+
+def test_material_desde_carpeta(tmp_path):
+    """desde_carpeta detecta los mapas de un pack por nombre."""
+    d = tmp_path / 'pack'
+    d.mkdir()
+    for n in ('X_BaseColor.jpg', 'X_Normal.png',
+              'X_AmbientOcclusion.jpg', 'X_Roughness.jpg',
+              'X_Metallic.jpg', 'X_Displacement.png',
+              'X_Preview1.png'):
+        (d / n).write_bytes(b'x')
+    mat = crear_pilas().materiales.desde_carpeta(str(d))
+    assert mat.base.endswith('BaseColor.jpg')
+    assert mat.normal.endswith('Normal.png')
+    assert mat.ao.endswith('AmbientOcclusion.jpg')
+    assert mat.rugosidad.endswith('Roughness.jpg')
+    assert mat.metalico.endswith('Metallic.jpg')
+    assert mat.heightmap.endswith('Displacement.png')
+    assert 'Preview' not in mat.base
+
+
+def test_terreno_desde_heightmap(tmp_path):
+    """desde_heightmap convierte la luminancia de la imagen en
+    alturas de la rejilla."""
+    from pyglet.image import ImageData
+    px = []
+    for k in range(8):
+        for i in range(8):
+            v = int(i * 255 / 7)
+            px += [v, v, v, 255]
+    ruta = str(tmp_path / 'h.png')
+    ImageData(8, 8, 'RGBA', bytes(px)).save(ruta)
+    pilas = crear_pilas()
+    t = pilas.actores.Terreno(celdas=7)
+    t.desde_heightmap(ruta, altura=2.0)
+    assert t.alturas[0][0] == pytest.approx(0)
+    assert t.alturas[7][0] == pytest.approx(2.0)
+    assert t.alturas[3][0] == pytest.approx(3 / 7.0 * 2.0, abs=0.02)

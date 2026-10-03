@@ -252,6 +252,8 @@ class Pilas(object):
         self.musica = _Musica(self)
         from pilas3d.mapas import Mapas
         self.mapas = Mapas(self)
+        from pilas3d.materiales import Materiales
+        self.materiales = Materiales(self)
         self.interpolaciones = interpolaciones
         from pilas3d import colisiones
         self.colisiones = colisiones
