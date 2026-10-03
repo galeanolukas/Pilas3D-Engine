@@ -13,13 +13,13 @@ se guardan en `mapas/<nombre>.mapa.json` y los juegos los cargan con
 
 | Entrada | Acción |
 |---|---|
-| click izquierdo | poner bloque en la celda marcada |
-| click medio o `X` | sacar el bloque golpeado |
-| `ESPACIO` + mover mouse | orbitar la cámara (rueda: zoom; click derecho + drag también funciona) |
+| `ENTER` o `B` | poner bloque en la celda marcada (`CTRL+click` también) |
+| `X` | sacar el bloque golpeado |
+| cualquier botón + drag | orbitar la cámara (`ESPACIO` + mover el mouse también; rueda: zoom) |
 | `←` / `→` | cambiar tipo de bloque / prop en la paleta |
 | `M` | alternar paleta: bloques ↔ props (`modelos/props/*.glb/.gltf/.obj`) |
 | `R` | girar el prop bajo el cursor 45° (paleta props) |
-| `D` | agarrar el prop bajo el cursor — sigue al mouse como fantasma; `D` o click suelta |
+| `D` | agarrar el prop bajo el cursor — sigue al mouse como fantasma; `D` o `ENTER` suelta |
 | `F` / `V` | subir / bajar el prop en Y (0.5 por pulsación) |
 | `Z` / `C` | achicar / agrandar el prop |
 | `Q` / `E` | subir / bajar la columna bajo el cursor (esculpir terreno) |
@@ -66,7 +66,7 @@ for prop in mundo.props:            # modelos estáticos del mapa
   coordenadas de `Mundo.poner_bloque`
 - `props`: modelos `.glb`/`.gltf`/`.obj` posicionados encima del
   terreno (árboles, farolas...). El editor los coloca desde la paleta
-  de props (`M`) con click, los saca con `X` y los gira con `R`.
+  de props (`M`) con `ENTER`, los saca con `X` y los gira con `R`.
   Se guardan con `ruta`, `x/y/z`, `escala` y `rotacion_y`; el
   prop "objetivo" es el agarrado (`D`) o el más cercano al cursor.
   Las rutas relativas se resuelven junto al `.mapa.json` si no están
@@ -85,6 +85,6 @@ for prop in mundo.props:            # modelos estáticos del mapa
 ## Modo terreno (heightmap)
 
 Con `Y` el editor cambia de voxels a **terreno continuo**: rejilla
-deformable con click (colinas), pozos, lagos con agua y baldosa por
+deformable con `ENTER` (colinas), pozos, lagos con agua y baldosa por
 celda. Guarda `*.terreno.json` — `pilas.mapas.cargar()` detecta el
 formato solo. Guía completa: [docs/terreno.md](terreno.md).

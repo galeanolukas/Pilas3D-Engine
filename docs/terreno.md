@@ -66,8 +66,8 @@ spawn y props — mismo contrato que los `.mapa.json` de voxels.
 
 | Entrada | Acción |
 |---|---|
-| click izquierdo | colina bajo el cursor |
-| click medio o `X` | pozo |
+| `ENTER` o `B` | colina bajo el cursor (`CTRL+click` también) |
+| `X` | pozo — con agua queda lleno |
 | `Q` / `E` | subir / bajar un vértice |
 | `P` | pintar la zona del brush con la baldosa elegida |
 | `1`-`3` o `←`/`→` | elegir baldosa |

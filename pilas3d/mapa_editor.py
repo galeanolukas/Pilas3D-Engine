@@ -13,25 +13,25 @@ en ``mapas/<nombre>.mapa.json`` y los juegos lo cargan con
 
 Controles:
 
-- click izquierdo: poner bloque   - click medio o X: sacar bloque
-- espacio + mover mouse: orbitar (click derecho + drag también)
-  rueda: acercar/alejar
+- el mouse es solo cámara: cualquier botón + drag orbita, rueda zoom,
+  espacio + mover el mouse también orbita
+- ENTER o B: poner bloque / prop / colina en la celda marcada
+  (CTRL+click hace lo mismo como atajo)
+- X: sacar el bloque/prop - Q/E: subir/bajar la columna o vértice
 - ←/→ o números 1-5: tipo de bloque en la paleta
 - S: marcar/quitar el punto de inicio (spawn) bajo el cursor
 - G: guardar (al path actual o pide nombre) - O: guardar como...
-- L: explorador para cargar cualquier .mapa.json
+- L: explorador para cargar cualquier .mapa.json/.terreno.json
 - R: gira el prop 45° - D: agarra/suelta el prop para moverlo
 - F/V: subir/bajar el prop - Z/C: achicar/agrandar (paleta props)
 - N: mapa nuevo (vacío)           - T: terreno procedural de base
 - M: paleta bloques <-> props (modelos .glb/.obj de modelos/props/)
-- Q / E: subir / bajar la columna bajo el cursor (esculpir terreno)
 
 Modo terreno (Y: voxels <-> terreno heightmap, *.terreno.json):
 
-- click izquierdo: sube una colina suave - click medio o X: pozo
-- Q/E: subir/bajar un vértice - P: pinta celdas con la baldosa elegida
-- Z/C: achicar/agrandar el brush - W: poner/sacar el agua (lagos)
-- 1-3 o ←/→: baldosa (pasto/piedra/agua) - T: lomas aleatorias
+- ENTER o B: colina bajo el cursor - X: pozo (lago si hay agua)
+- P: pinta celdas con la baldosa elegida - 1-3 o ←/→: baldosa
+- Z/C: tamaño del brush - W: poner/sacar el agua - T: lomas azar
 """
 
 import glob
@@ -237,6 +237,9 @@ def _prop_cercano(celda, radio=1.6):
     """El prop más cercano al centro de la celda (o None)."""
     if celda is None:
         return None
+    if estado['escenario'] == 'terreno':
+        x, y, z = _punto_terreno(celda)
+        return _prop_cercano_xyz(x, y, z, radio)
     i, j, k = celda
     return _prop_cercano_xyz(i + 0.5, j + 0.5, k + 0.5, radio)
 
@@ -256,7 +259,7 @@ def _prop_objetivo():
 
 
 def _agarrar_prop():
-    """D: toma el prop bajo el cursor; vuelve a soltar con D/click."""
+    """D: toma el prop bajo el cursor; vuelve a soltar con D/ENTER."""
     if estado['agarrado'] is not None:
         _soltar_prop()
         return
@@ -266,7 +269,7 @@ def _agarrar_prop():
         return
     estado['agarrado'] = prop
     prop.transparencia = 60          # fantasma mientras se arrastra
-    info.texto = "moviendo %s - D/click suelta" % \
+    info.texto = "moviendo %s - D/ENTER suelta" % \
         os.path.basename(getattr(prop, 'ruta', 'prop'))
 
 
@@ -343,24 +346,23 @@ def _esculpir(delta):
     _info_extra()
 
 
-def al_click(x, y, boton, _mod):
+def al_click(x, y, boton, mod):
+    """El mouse es solo para orbitar: poner/sacar va por teclado
+    (ENTER/B y X). ``CTRL+click`` queda como atajo de precisión."""
     if estado['modo'] != 'editar':
         return None
-    from pyglet.window import mouse
+    from pyglet.window import mouse, key
     # fuera del area 3D (paneles laterales/inferior) no se edita
     ax, ay, aw, ah = pilas.ventana.area_3d or (0, 0, 10 ** 9, 10 ** 9)
     if not (ax <= x < ax + aw and ay <= y < ay + ah):
         return None
-    # boton es el valor del boton pulsado (no mascara): comparar ==.
-    # Con &, un driver que reporte el derecho como 5/7/9 lo tomaria
-    # como izquierdo y colocaria un bloque al orbitar.
-    if boton == mouse.LEFT:
+    if boton == mouse.LEFT and (mod & key.MOD_CTRL):
         _poner_bloque()
         return True
-    if boton == mouse.MIDDLE:
+    if boton == mouse.MIDDLE and (mod & key.MOD_CTRL):
         _sacar_bloque()
         return True
-    return None                 # derecho: orbitar
+    return None
 
 
 # -- UI -------------------------------------------------------------------
@@ -673,7 +675,9 @@ def al_pulsar(tecla):
     if estado['modo'] != 'editar':
         return
     digitos = [s._1, s._2, s._3, s._4, s._5]
-    if tecla in digitos and estado['paleta'] == 'bloques':
+    if tecla == s.ENTER or tecla == s.b:
+        _poner_bloque()
+    elif tecla in digitos and estado['paleta'] == 'bloques':
         if estado['escenario'] == 'terreno':
             tiles = _tiles_terreno()
             if tiles:
@@ -828,17 +832,16 @@ def main(directorio='mapas', ejecutar=True):
     info.color = pilas.colores.amarillo
     del guias[:]
     for txt in (
-            "click: poner - X: sacar\n"
-            "espacio+mouse: orbitar",
+            "ENTER/B: poner - X: sacar\n"
+            "drag o espacio: orbitar",
             "M: paleta - 1-5: elegir\n"
             "R: girar - D: agarrar",
             "F/V Z/C: alto/escala\n"
             "Q/E: columna - S: spawn",
             "T: base - N: nuevo\n"
             "G/O: guardar - L: cargar",
-            "Y: modo terreno\n"
-            "click colina X pozo P pinta\n"
-            "Z/C brush W agua"):
+            "Y: terreno - P: pinta\n"
+            "Z/C brush - W: agua"):
         guias.append(pilas.actores.Texto(txt, tamano=10))
 
     organizar_layout()
@@ -858,7 +861,12 @@ def main(directorio='mapas', ejecutar=True):
     camara = pilas.escena.camara
     camara.posicion = (18, 14, 18)
     camara.objetivo = (0, 0, 0)
-    camara.usar_control_orbital(boton=pilas.simbolos.BOTON_DERECHO,
+    # cualquier botón + drag orbita (el mouse ya no pone bloques);
+    # espacio + mover el mouse sigue funcionando sin click
+    botones = (pilas.simbolos.BOTON_IZQUIERDO |
+               pilas.simbolos.BOTON_MEDIO |
+               pilas.simbolos.BOTON_DERECHO)
+    camara.usar_control_orbital(boton=botones,
                                 tecla=pilas.simbolos.ESPACIO)
 
     if ejecutar:

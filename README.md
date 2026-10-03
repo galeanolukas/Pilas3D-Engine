@@ -35,7 +35,7 @@ comando:
 | `pilas3d-ide` | **IDE integrado**: vista 3D + consola Python en la misma ventana | multilínea, historial, `Ctrl+S` guarda |
 | `pilas3d-editor` | **Editor de personajes**: posar huesos `.glb`, keyframes, animar | guarda `.anim.json` |
 | `pilas3d-bloques` | **Blockly web**: bloques tipo Scratch → Python real | ejemplos precargados, Run/Stop |
-| `pilas3d-mapas` | **Editor de mapas**: voxels con click **y terreno deformable** (`Y`), spawn, props | guarda `.mapa.json` y `.terreno.json` |
+| `pilas3d-mapas` | **Editor de mapas**: voxels y **terreno deformable** (`Y`), spawn, props | mouse orbita, teclas editan — `.mapa.json` y `.terreno.json` |
 
 ### Editor de personajes (`pilas3d-editor`)
 
