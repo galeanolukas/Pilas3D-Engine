@@ -170,6 +170,7 @@ class Actores(object):
              color=None, seleccionado=None, titulo=None,
              guardar_en=None, fondo=None, fondo_imagen=None,
              pantalla_completa=False, centrado=False, margen=24,
+             fuente=None,
              sonido_mover=None, sonido_elegir=None):
         """Menú navegable (flechas/ENTER o mouse) con opciones
         ``[(texto, funcion), ...]``. Con ``guardar_en`` persiste los
@@ -187,7 +188,7 @@ class Actores(object):
                     guardar_en=guardar_en, fondo=fondo,
                     fondo_imagen=fondo_imagen,
                     pantalla_completa=pantalla_completa,
-                    centrado=centrado, margen=margen,
+                    centrado=centrado, margen=margen, fuente=fuente,
                     sonido_mover=sonido_mover,
                     sonido_elegir=sonido_elegir)
 
@@ -195,11 +196,16 @@ class Actores(object):
         return Mapa(self._pilas, matriz, simbolos,
                     tamano_celda=tamano_celda, x=x, y=y, z=z)
 
-    def Texto(self, texto="", x=10, y=10, tamano=18, ancho=None):
+    def Texto(self, texto="", x=10, y=10, tamano=18, ancho=None,
+              fuente=None):
         """Texto en overlay 2D; con saltos de línea ('\\n') se dibuja
-        multilínea y ``ancho`` limita el ancho en píxeles."""
+        multilínea y ``ancho`` limita el ancho en píxeles.
+
+        ``fuente`` acepta un archivo .ttf ('Arcade.ttf' — se busca en
+        ``fonts/`` y ``pilas3d/data/fonts/``) o el nombre de una
+        familia instalada ('DejaVu Sans')."""
         return Texto(self._pilas, texto=texto, x=x, y=y, tamano=tamano,
-                     ancho=ancho)
+                     ancho=ancho, fuente=fuente)
 
     def Panel(self, x=0, y=0, ancho=200, alto=200, color=None,
               opacidad=255):
@@ -216,14 +222,16 @@ class Actores(object):
         )
 
     def Globo(self, actor=None, texto='', x=0, y=0, alto=2.2,
-              tamano=14, duracion=0.0):
+              tamano=14, duracion=0.0, fuente=None):
         """Bocadillo de diálogo que flota sobre un actor (overlay 2D).
 
         Sigue la posición proyectada de ``actor``; con ``actor=None``
         queda fijo en el píxel ``(x, y)``. ``duracion`` > 0 lo oculta
-        solo al cabo de esos segundos (ver ``globo.decir``)."""
+        solo al cabo de esos segundos (ver ``globo.decir``).
+        ``fuente`` acepta un .ttf o un nombre de familia."""
         return Globo(self._pilas, actor=actor, texto=texto, x=x, y=y,
-                     alto=alto, tamano=tamano, duracion=duracion)
+                     alto=alto, tamano=tamano, duracion=duracion,
+                     fuente=fuente)
 
     def Chat(self, npc=None, tecla='t', etiqueta=None,
              nombre='jugador', log=True):
