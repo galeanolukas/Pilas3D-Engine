@@ -114,21 +114,39 @@ class Efectos(object):
         return actor
 
     def estela(self, actor, color=None, tamano=5.0, vida=0.5,
-               cantidad=80):
-        """Estela de partículas pegada al actor (velocidad, magia).
+               cantidad=80, detras=0.45):
+        """Estela de partículas que quedan donde el actor PASÓ
+        (velocidad, magia). Emite un poco detrás (según
+        ``rotacion_y``) para no nacer dentro del cuerpo.
+
+        Las partículas del ``emisor`` viven en su espacio local, así
+        que al perseguir al actor hay que compensarlas: si no, la
+        estela entera se movería con él (un punto pegado al centro).
         Devuelve el emisor — ``emisor.eliminar()`` la quita; si el
         actor sale de escena se apaga sola."""
         emisor = self.pilas.actores.Particulas(
-            cantidad=cantidad, vida=vida, velocidad=0.0,
-            dispersion=0.15, tamano=tamano,
+            cantidad=cantidad, vida=vida, velocidad=0.2,
+            dispersion=0.5, tamano=tamano,
             color=color if color is not None else actor.color,
-            ciclico=True)
+            ciclico=True, x=actor.x, y=actor.y, z=actor.z)
 
         def seguir():
             if not actor.esta_en_escena():
                 emisor.eliminar()
                 return False
-            emisor.posicion = actor.posicion
+            rad = math.radians(getattr(actor, 'rotacion_y', 0))
+            nx = actor.x + math.sin(rad) * detras
+            nz = actor.z - math.cos(rad) * detras
+            dx, dy, dz = nx - emisor.x, actor.y - emisor.y, \
+                nz - emisor.z
+            if dx or dy or dz:
+                # conserva el mundo: al mover el emisor, corre las
+                # partículas en sentido contrario
+                for i in range(emisor.cantidad):
+                    emisor._px[i] -= dx
+                    emisor._py[i] -= dy
+                    emisor._pz[i] -= dz
+                emisor.posicion = (nx, actor.y, nz)
             return True
 
         self.pilas.tareas.condicional(0, seguir)

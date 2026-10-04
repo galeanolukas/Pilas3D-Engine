@@ -3667,12 +3667,19 @@ def test_efectos_camara_tiempo_estela():
     assert pilas.tareas.contador_de_tiempo == pytest.approx(t0)
     time.sleep(0.06)
     assert pilas.efectos.tiempo_escala() == 1.0
-    # estela: sigue al actor y se apaga si él sale de escena
+    # estela: emite detrás del actor y se apaga si él sale de escena
     a = pilas.actores.Cubo()
     emisor = pilas.efectos.estela(a)
     a.posicion = (3, 1, 0)
     pilas.tareas.actualizar(0.01)
-    assert emisor.posicion == (3, 1, 0)
+    # rotacion_y=0 -> punto de emisión (x, y, z - detras)
+    assert emisor.posicion == pytest.approx((3, 1, -0.45))
+    # la estela no se arrastra: las partículas quedan en el mundo
+    emisor._px[0] = 1.0
+    mundo_antes = emisor.x + emisor._px[0]
+    a.x = 6.0
+    pilas.tareas.actualizar(0.01)
+    assert emisor.x + emisor._px[0] == pytest.approx(mundo_antes)
     a.eliminar()
     pilas.tareas.actualizar(0.01)
     assert not emisor.esta_en_escena()
