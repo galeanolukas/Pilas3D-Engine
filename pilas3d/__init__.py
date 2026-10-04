@@ -258,6 +258,8 @@ class Pilas(object):
         self.fuentes = Fuentes(self)
         from pilas3d.imagenes import Imagenes
         self.imagenes = Imagenes(self)
+        from pilas3d.efectos import Efectos
+        self.efectos = Efectos(self)
         self.interpolaciones = interpolaciones
         from pilas3d import colisiones
         self.colisiones = colisiones

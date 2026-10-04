@@ -186,6 +186,7 @@ Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 .venv/bin/python ejemplos/cerebro.py            # NPC con Cerebro: decide con el LLM local
 .venv/bin/python ejemplos/niebla.py             # escena.niebla: abierta/cerrada/noche
 .venv/bin/python ejemplos/vida_y_zonas.py       # Vida + Zona + máquina de estados + Barra
+.venv/bin/python ejemplos/efectos.py            # jugo: parpadear, temblar, flotar, pulsar, flash
 ```
 
 ## Modo interactivo manual

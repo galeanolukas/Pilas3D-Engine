@@ -3603,3 +3603,46 @@ def test_fuentes_lista():
     """pilas.fuentes.lista() incluye las fuentes del motor."""
     pilas = crear_pilas()
     assert 'DejaVuSansMono.ttf' in pilas.fuentes.lista()
+
+
+def test_efectos_sobre_actor():
+    """pilas.efectos: parpadear restaura la transparencia, temblar
+    vuelve a la posición, flotar devuelve una tarea cancelable."""
+    pilas = crear_pilas()
+    a = pilas.actores.Cubo()
+    # parpadear: alterna y termina restaurando
+    pilas.efectos.parpadear(a, veces=2, cada=0.05)
+    for _ in range(10):
+        pilas.tareas.actualizar(0.1)
+    assert a.transparencia == 0
+    # temblar: al acabar vuelve a la posición original
+    a.posicion = (1, 0, 2)
+    pilas.efectos.temblar(a, duracion=0.2)
+    for _ in range(10):
+        pilas.tareas.actualizar(0.1)
+    assert a.posicion == (1, 0, 2)
+    # flotar: mueve y, la tarea se puede eliminar
+    t = pilas.efectos.flotar(a, altura=0.5)
+    pilas.tareas.actualizar(0.1)
+    t.eliminar()
+    n = pilas.tareas.obtener_cantidad_de_tareas_planificadas()
+    pilas.tareas.actualizar(0.1)
+    assert pilas.tareas.obtener_cantidad_de_tareas_planificadas() <= n
+
+
+def test_efectos_tweens():
+    """pulsar/desvanecer/aparecer interpolan escala y transparencia;
+    flash restaura el color original."""
+    pilas = crear_pilas()
+    a = pilas.actores.Cubo()
+    pilas.efectos.pulsar(a, escala=1.5)
+    assert a._interpolaciones        # tween en curso sobre escala
+    pilas.efectos.desvanecer(a, duracion=0.5)
+    assert any(t.atributo == 'transparencia'
+               for t in a._interpolaciones)
+    a.color = pilas.colores.verde
+    pilas.efectos.flash(a, pilas.colores.rojo, duracion=0.1)
+    assert a.color == pilas.colores.rojo
+    for _ in range(5):
+        pilas.tareas.actualizar(0.1)
+    assert a.color == pilas.colores.verde
