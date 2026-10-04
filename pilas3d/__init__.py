@@ -482,7 +482,8 @@ class Pilas(object):
 
     def _tick(self, dt):
         # escena.actualizar actualiza self.dt
-        self._escena_actual.actualizar(dt)
+        self._escena_actual.actualizar(
+            dt * self.efectos.tiempo_escala())
         self.fisica._actualizar()
         self.red._actualizar()
 

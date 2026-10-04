@@ -3646,3 +3646,33 @@ def test_efectos_tweens():
     for _ in range(5):
         pilas.tareas.actualizar(0.1)
     assert a.color == pilas.colores.verde
+
+
+def test_efectos_camara_tiempo_estela():
+    """temblar_pantalla no deriva la cámara; hit_stop escala el dt;
+    estela persigue al actor y muere con él."""
+    import time
+    pilas = crear_pilas()
+    cam = pilas.escena.camara
+    cam.posicion = (0, 5, 12)
+    pilas.efectos.temblar_pantalla(0.4, 0.3)
+    for _ in range(30):
+        cam.actualizar(0.05)   # 1.5s — el temblor ya terminó
+    assert cam.x == pytest.approx(0) and cam.y == pytest.approx(5)
+    # hit_stop: el reloj del juego se congela, no el de pared
+    pilas.efectos.hit_stop(0.05, escala=0.0)
+    assert pilas.efectos.tiempo_escala() == 0.0
+    t0 = pilas.tareas.contador_de_tiempo
+    pilas._tick(0.016)
+    assert pilas.tareas.contador_de_tiempo == pytest.approx(t0)
+    time.sleep(0.06)
+    assert pilas.efectos.tiempo_escala() == 1.0
+    # estela: sigue al actor y se apaga si él sale de escena
+    a = pilas.actores.Cubo()
+    emisor = pilas.efectos.estela(a)
+    a.posicion = (3, 1, 0)
+    pilas.tareas.actualizar(0.01)
+    assert emisor.posicion == (3, 1, 0)
+    a.eliminar()
+    pilas.tareas.actualizar(0.01)
+    assert not emisor.esta_en_escena()

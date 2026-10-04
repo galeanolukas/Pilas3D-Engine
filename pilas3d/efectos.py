@@ -19,6 +19,7 @@ el efecto muere solo (salvo restauraciones, que se guardan).
 
 import math
 import random
+import time
 
 
 class Efectos(object):
@@ -26,6 +27,8 @@ class Efectos(object):
 
     def __init__(self, pilas):
         self.pilas = pilas
+        self._escala = 1.0
+        self._escala_hasta = 0.0
 
     # -- transparencia ---------------------------------------------------
 
@@ -107,6 +110,48 @@ class Efectos(object):
         y0 = actor.y
         actor.y = ([y0 + altura, y0], duracion)
         return actor
+
+    def estela(self, actor, color=None, tamano=5.0, vida=0.5,
+               cantidad=80):
+        """Estela de partículas pegada al actor (velocidad, magia).
+        Devuelve el emisor — ``emisor.eliminar()`` la quita; si el
+        actor sale de escena se apaga sola."""
+        emisor = self.pilas.actores.Particulas(
+            cantidad=cantidad, vida=vida, velocidad=0.0,
+            dispersion=0.15, tamano=tamano,
+            color=color if color is not None else actor.color,
+            ciclico=True)
+
+        def seguir():
+            if not actor.esta_en_escena():
+                emisor.eliminar()
+                return False
+            emisor.posicion = actor.posicion
+            return True
+
+        self.pilas.tareas.condicional(0, seguir)
+        return emisor
+
+    # -- cámara y tiempo ---------------------------------------------------
+
+    def temblar_pantalla(self, intensidad=0.4, duracion=0.5):
+        """Shake de cámara (explosión, golpe fuerte): decae solo y
+        no deja la cámara desplazada."""
+        self.pilas.escena.camara.temblor(intensidad, duracion)
+
+    def hit_stop(self, duracion=0.08, escala=0.05):
+        """Micro-pausa de impacto: el mundo corre a ``escala`` del
+        tiempo durante ``duracion`` segundos reales — el golpe
+        "pega". No afecta al reloj de pared, solo al dt del juego."""
+        self._escala = escala
+        self._escala_hasta = time.time() + duracion
+
+    def tiempo_escala(self):
+        """Multiplicador de dt vigente (1.0 = normal); el bucle de
+        juego lo aplica para ``hit_stop``."""
+        if time.time() < self._escala_hasta:
+            return self._escala
+        return 1.0
 
     # -- color -----------------------------------------------------------
 

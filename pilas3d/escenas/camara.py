@@ -35,6 +35,7 @@ class Camara(object):
         self._temblor_restante = 0.0
         self._temblor_duracion = 1.0
         self._temblor_intensidad = 0.0
+        self._temblor_off = (0.0, 0.0, 0.0)
 
     @property
     def posicion(self):
@@ -244,15 +245,26 @@ class Camara(object):
         self._aplicar_temblor(dt)
 
     def _aplicar_temblor(self, dt):
+        # deshace el offset del frame anterior: el temblor no debe
+        # derivar la posición real de la cámara
+        ox, oy, oz = self._temblor_off
+        self.x -= ox
+        self.y -= oy
+        self.z -= oz
+        self._temblor_off = (0.0, 0.0, 0.0)
         if self._temblor_restante <= 0:
             return
         import random
         self._temblor_restante -= dt
         k = self._temblor_intensidad * max(
             0.0, self._temblor_restante / self._temblor_duracion)
-        self.x += random.uniform(-k, k)
-        self.y += random.uniform(-k, k)
-        self.z += random.uniform(-k, k)
+        ox = random.uniform(-k, k)
+        oy = random.uniform(-k, k)
+        oz = random.uniform(-k, k)
+        self.x += ox
+        self.y += oy
+        self.z += oz
+        self._temblor_off = (ox, oy, oz)
 
     # -- control orbital con el mouse -------------------------------------
 
