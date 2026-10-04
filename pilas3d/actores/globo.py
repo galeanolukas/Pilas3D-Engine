@@ -44,12 +44,15 @@ class Globo(Actor):
     es_overlay = True
 
     def __init__(self, pilas, actor=None, texto='', x=0, y=0,
-                 alto=2.2, tamano=14, duracion=0.0):
+                 alto=2.2, tamano=14, duracion=0.0, fuente=None):
         #: Actor al que sigue (None = posición fija en x, y).
         self.actor = actor
         #: Metros sobre los pies del actor donde flota el globo.
         self.alto = alto
         self.tamano = tamano
+        #: Fuente del texto: familia instalada o .ttf (fonts/,
+        #: data/fonts/) — ver :mod:`pilas3d.fuentes`.
+        self.fuente = fuente
         #: Segundos que permanece visible tras ``decir`` (0 = siempre).
         self.duracion = duracion
         self._texto = texto
@@ -138,7 +141,9 @@ class Globo(Actor):
         if self._label is None:
             from pyglet.text import Label
             from pyglet.shapes import Rectangle, Triangle
+            from pilas3d import fuentes
             self._label = Label('', font_size=self.tamano,
+                                font_name=fuentes.familia(self.fuente),
                                 anchor_x='center', anchor_y='bottom',
                                 multiline=True, width=4096)
             self._fondo = Rectangle(0, 0, 1, 1, color=(255, 255, 255))

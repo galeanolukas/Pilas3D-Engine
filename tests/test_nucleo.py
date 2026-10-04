@@ -3587,3 +3587,19 @@ def _png_minimo():
     buf = io.BytesIO()
     img.save('x.png', file=buf)
     return buf.getvalue()
+
+
+def test_fuentes_familia():
+    """fuentes.familia: nombre de familia pasa igual; un .ttf de
+    data/fonts/ se registra y devuelve su familia real (tabla name)."""
+    from pilas3d import fuentes
+    assert fuentes.familia('DejaVu Sans') == 'DejaVu Sans'
+    assert fuentes.familia('DejaVuSansMono.ttf') == 'DejaVu Sans Mono'
+    assert fuentes.familia(None) is None
+    assert fuentes.familia('no_existe.ttf') == 'no_existe.ttf'
+
+
+def test_fuentes_lista():
+    """pilas.fuentes.lista() incluye las fuentes del motor."""
+    pilas = crear_pilas()
+    assert 'DejaVuSansMono.ttf' in pilas.fuentes.lista()

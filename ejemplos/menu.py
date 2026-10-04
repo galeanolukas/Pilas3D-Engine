@@ -32,7 +32,10 @@ lampara = pilas.actores.Lampara(x=3, y=2.5, z=2, alcance=9)
 lampara.color = pilas.colores.naranja
 
 estado = {'jugando': False, 'menu': None, 'robot': None}
-hud = pilas.actores.Texto('', x=10, y=10, tamano=15)
+# fuentes: archivos .ttf de pilas3d/data/fonts/ (pilas.fuentes.lista()
+# muestra todas); también vale un nombre de familia instalada
+hud = pilas.actores.Texto('', x=10, y=10, tamano=15,
+                          fuente='DejaVuSansMono.ttf')
 saludo = pilas.actores.Texto('', x=10, y=32, tamano=18)
 saludo.color = pilas.colores.celeste
 
@@ -179,6 +182,7 @@ def crear_menu():
             ("Salir", pilas.terminar),
         ],
         tamano=20,
+        fuente='Blox2.ttf',            # fuente pixel del paquete
         centrado=True,
         fondo=(0, 0, 0, 150),          # panel oscuro semitransparente
         sonido_mover=True,             # 'tick.wav' al navegar

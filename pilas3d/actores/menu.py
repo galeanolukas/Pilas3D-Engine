@@ -71,6 +71,7 @@ class Menu(Actor):
                  tamano=22, color=None, seleccionado=None, titulo=None,
                  guardar_en=None, fondo=None, fondo_imagen=None,
                  pantalla_completa=False, centrado=False, margen=24,
+                 fuente=None,
                  sonido_mover=None, sonido_elegir=None):
         super(Menu, self).__init__(pilas)
         self.radio_de_colision = 0.0
@@ -78,6 +79,7 @@ class Menu(Actor):
         self.color_sel = seleccionado or colores.amarillo
         self.separacion = separacion
         self.tamano = tamano
+        self.fuente = fuente
         self.margen = margen
         self.pantalla_completa = pantalla_completa
         self._opciones = [self._normalizar(o) for o in opciones]
@@ -104,7 +106,8 @@ class Menu(Actor):
 
         y0 = y
         if titulo:
-            t = Texto(pilas, titulo, x=x, y=y, tamano=tamano + 10)
+            t = Texto(pilas, titulo, x=x, y=y, tamano=tamano + 10,
+                      fuente=fuente)
             t.color = self.color_sel
             self._titulo = t
             y0 -= separacion * 1.6
@@ -116,7 +119,8 @@ class Menu(Actor):
         self._textos = []
         for i, op in enumerate(self._opciones):
             item = Texto(pilas, '', x=x,
-                         y=y0 - i * separacion, tamano=tamano)
+                         y=y0 - i * separacion, tamano=tamano,
+                         fuente=fuente)
             self._textos.append(item)
         if centrado or pantalla_completa:
             self.centrar()

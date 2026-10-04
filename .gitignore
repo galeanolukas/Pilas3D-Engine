@@ -12,6 +12,9 @@ modelos/**/*
 !modelos/**/
 !modelos/**/.gitkeep
 texturas/**/*
+# packs de fuentes descargados (dafont etc.): licencias varias, no se
+# suben — solo los .ttf sueltos de data/fonts/ (DejaVu/Liberation)
+pilas3d/data/fonts/*/
 
 # Binario de Ollama descargado por los instaladores (MIT, se baja
 # aparte; nunca se commitea por peso y licencia de redistribución)

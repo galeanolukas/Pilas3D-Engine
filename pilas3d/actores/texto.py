@@ -13,16 +13,28 @@ class Texto(Actor):
     es_overlay = True
 
     def __init__(self, pilas, texto="", x=10, y=10, tamano=18,
-                 ancho=None):
+                 ancho=None, fuente=None):
         self._texto = texto
         self.tamano = tamano
         #: Ancho máximo en píxeles (solo para texto multilínea);
         #: las líneas más largas se recortan ahí.
         self.ancho = ancho
+        #: Fuente: nombre de familia ('DejaVu Sans') o archivo .ttf
+        #: ('Arcade.ttf' — se busca en fonts/ y data/fonts/).
+        self._fuente = fuente
         self._label = None
         self._multi = None
         super(Texto, self).__init__(pilas, x=x, y=y, z=0)
         self.radio_de_colision = 0.0
+
+    @property
+    def fuente(self):
+        return self._fuente
+
+    @fuente.setter
+    def fuente(self, valor):
+        self._fuente = valor
+        self._label = None            # se recrea con la nueva fuente
 
     @property
     def texto(self):
@@ -44,9 +56,11 @@ class Texto(Actor):
             if ancho is None:
                 ventana = self.pilas.ventana
                 ancho = ventana.width - self._x if ventana else 4096
+            from pilas3d import fuentes
             self._label = Label(
                 self._texto,
                 font_size=self.tamano,
+                font_name=fuentes.familia(self._fuente),
                 x=self._x,
                 y=self._y,
                 anchor_y="baseline",
