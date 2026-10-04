@@ -35,6 +35,12 @@ ALT = _k.LALT
 SHIFT = _k.LSHIFT
 CAPSLOCK = _k.CAPSLOCK
 
+# modificadores (para el segundo argumento de los handlers: click,
+# tecla...): ``if mod & pilas.simbolos.MOD_CTRL``
+MOD_CTRL = _k.MOD_CTRL
+MOD_SHIFT = _k.MOD_SHIFT
+MOD_ALT = _k.MOD_ALT
+
 # funciones
 F1, F2, F3, F4 = _k.F1, _k.F2, _k.F3, _k.F4
 F5, F6, F7, F8 = _k.F5, _k.F6, _k.F7, _k.F8

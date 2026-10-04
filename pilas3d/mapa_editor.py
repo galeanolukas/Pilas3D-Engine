@@ -353,15 +353,15 @@ def al_click(x, y, boton, mod):
     (ENTER/B y X). ``CTRL+click`` queda como atajo de precisión."""
     if estado['modo'] != 'editar':
         return None
-    from pyglet.window import mouse, key
+    s = pilas.simbolos
     # fuera del area 3D (paneles laterales/inferior) no se edita
     ax, ay, aw, ah = pilas.ventana.area_3d or (0, 0, 10 ** 9, 10 ** 9)
     if not (ax <= x < ax + aw and ay <= y < ay + ah):
         return None
-    if boton == mouse.LEFT and (mod & key.MOD_CTRL):
+    if boton == s.BOTON_IZQUIERDO and (mod & s.MOD_CTRL):
         _poner_bloque()
         return True
-    if boton == mouse.MIDDLE and (mod & key.MOD_CTRL):
+    if boton == s.BOTON_MEDIO and (mod & s.MOD_CTRL):
         _sacar_bloque()
         return True
     return None

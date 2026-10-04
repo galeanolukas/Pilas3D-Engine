@@ -55,9 +55,7 @@ al activarla.
 import json
 import os
 
-from pyglet.window import key, mouse
-
-from pilas3d import colores
+from pilas3d import colores, simbolos
 from pilas3d.actores.actor import Actor
 from pilas3d.actores.texto import Texto
 
@@ -393,19 +391,20 @@ class Menu(Actor):
     def _al_pulsar(self, simbolo, modificadores):
         if not self.esta_en_escena():
             return
+        s = simbolos
         if self._editando is not None:
-            if simbolo == key.ENTER:
+            if simbolo == s.ENTER:
                 self.confirmar_edicion()
-            elif simbolo == key.ESCAPE:
+            elif simbolo == s.ESCAPE:
                 self.cancelar_edicion()
-            elif simbolo == key.BACKSPACE:
+            elif simbolo == s.BACKSPACE:
                 self.escribir('\b')
             return True                     # no propaga (ESC no cierra)
-        if simbolo in (key.UP, key.W):
+        if simbolo in (s.ARRIBA, s.w):
             self.mover('arriba')
-        elif simbolo in (key.DOWN, key.S):
+        elif simbolo in (s.ABAJO, s.s):
             self.mover('abajo')
-        elif simbolo in (key.ENTER, key.SPACE):
+        elif simbolo in (s.ENTER, s.ESPACIO):
             self.elegir()
 
     def _al_texto(self, texto):
@@ -434,7 +433,7 @@ class Menu(Actor):
     def _al_click_mouse(self, x, y, button, modifiers):
         if not self.esta_en_escena() or self._editando is not None:
             return
-        if button & mouse.LEFT:
+        if button & simbolos.BOTON_IZQUIERDO:
             i = self._bajo_mouse(x, y)
             if i is not None:
                 self._sel = i
