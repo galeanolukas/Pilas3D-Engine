@@ -120,9 +120,19 @@ def ciclar_resolucion():
     res_idx[0] = (res_idx[0] + 1) % len(RESOLUCIONES)
     ancho, alto = RESOLUCIONES[res_idx[0]]
     if pilas.ventana is not None:
+        if pilas.ventana.fullscreen:
+            # pyglet no permite set_size en fullscreen: se sale
+            # primero y el check del menú se sincroniza sin disparar
+            # su función (fijar_valor)
+            pilas.ventana.set_fullscreen(False)
+            if estado['menu'] is not None:
+                estado['menu'].fijar_valor('Pantalla completa',
+                                           False)
         pilas.ventana.set_size(ancho, alto)
-        if estado['menu'] is not None:
-            estado['menu'].centrar()     # re-centra tras el resize
+        menu = estado['menu']
+        if menu is not None:
+            # el resize es asíncrono: re-centra cuando ya aplicó
+            pilas.tareas.una_vez(0.3, menu.centrar)
     return "Resolución: %dx%d" % (ancho, alto)
 
 
@@ -141,8 +151,9 @@ def ciclar_calidad():
 def al_pantalla_completa(activo):
     if pilas.ventana is not None:
         pilas.ventana.set_fullscreen(activo)
-        if estado['menu'] is not None:
-            estado['menu'].centrar()
+        menu = estado['menu']
+        if menu is not None:
+            pilas.tareas.una_vez(0.3, menu.centrar)
 
 
 def al_sonar(activo):

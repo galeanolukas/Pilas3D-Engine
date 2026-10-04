@@ -345,14 +345,27 @@ class Menu(Actor):
 
     def fijar_texto(self, i, texto):
         """Cambia la etiqueta de la opción ``i`` (o por nombre)."""
-        if isinstance(i, str):
-            for n, (t, _tipo, _v, _f) in enumerate(self._opciones):
-                if t.startswith(i) or i in t:
-                    i = n
-                    break
+        i = self._indice(i)
         op = self._opciones[i]
         self._opciones[i] = (texto, op[1], op[2], op[3])
         self._pintar()
+
+    def _indice(self, i):
+        if isinstance(i, str):
+            for n, (t, _tipo, _v, _f) in enumerate(self._opciones):
+                if t.startswith(i) or i in t:
+                    return n
+        return i
+
+    def fijar_valor(self, i, valor):
+        """Pone el valor de una opción 'check'/'input' SIN ejecutar
+        su función — para sincronizar el menú cuando el estado
+        cambió por fuera (ej.: la resolución salió de fullscreen)."""
+        i = self._indice(i)
+        texto, tipo, _v, fn = self._opciones[i]
+        self._opciones[i] = (texto, tipo, valor, fn)
+        self._pintar()
+        self.guardar()
 
     # -- edición de texto ----------------------------------------------------
 
