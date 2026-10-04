@@ -256,6 +256,44 @@ var EJEMPLOS = [
       '</block></statement></block>' +
       '</xml>',
   },
+  // Efectos de jugo: la moneda flota sola y al pulsar E el robot
+  // hace el combo clásico — parpadeo + flash + hit-stop.
+  {
+    nombre: 'Efectos de jugo',
+    xml:
+      '<xml>' +
+      '<block type="p3d_al_iniciar" x="30" y="30">' +
+      '<statement name="HACER"><block type="p3d_crear_escenario">' +
+      '<field name="TIPO">Piso</field><field name="NOMBRE">piso</field>' +
+      '<next><block type="p3d_crear_actor">' +
+      '<field name="TIPO">Robot</field><field name="NOMBRE">robi</field>' +
+      '<next><block type="p3d_crear_actor">' +
+      '<field name="TIPO">Esfera</field><field name="NOMBRE">moneda</field>' +
+      '<field name="X">3</field><field name="Y">0.6</field>' +
+      '<next><block type="p3d_color">' +
+      '<field name="NOMBRE">moneda</field><field name="COLOR">amarillo</field>' +
+      '<next><block type="p3d_ef_flotar">' +
+      '<field name="NOMBRE">moneda</field><field name="ALT">0.4</field>' +
+      '<next><block type="p3d_ef_estela">' +
+      '<field name="NOMBRE">robi</field><field name="COLOR">celeste</field>' +
+      '<next><block type="p3d_camara_orbital"></block>' +
+      '</next></block></next></block></next></block></next></block>' +
+      '</next></block></next></block></statement></block>' +
+
+      '<block type="p3d_al_pulsar" x="30" y="260">' +
+      '<field name="TECLA">e</field>' +
+      '<statement name="HACER"><block type="p3d_ef_parpadear">' +
+      '<field name="NOMBRE">robi</field>' +
+      '<field name="VEC">6</field><field name="SEG">0.12</field>' +
+      '<next><block type="p3d_ef_flash">' +
+      '<field name="NOMBRE">robi</field><field name="COLOR">rojo</field>' +
+      '<field name="SEG">0.15</field>' +
+      '<next><block type="p3d_ef_hitstop">' +
+      '<field name="SEG">0.08</field>' +
+      '</block></next></block></next></block></statement></block>' +
+      '</xml>',
+  },
+
   {
     nombre: 'NPC con cerebro (IA)',
     xml:

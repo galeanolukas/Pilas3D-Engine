@@ -304,6 +304,122 @@ Blockly.defineBlocksWithJsonArray([
     previousStatement: null, nextStatement: null,
     colour: 60,
   },
+
+  // -- efectos (pilas.efectos) ---------------------------------------------
+  {
+    type: 'p3d_ef_parpadear',
+    message0: 'que %1 parpadee %2 veces cada %3 s',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_number', name: 'VEC', value: 6, min: 1 },
+      { type: 'field_number', name: 'SEG', value: 0.12, min: 0.03 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 40,
+    tooltip: 'Flash de invencibilidad: desaparece y reaparece',
+  },
+  {
+    type: 'p3d_ef_temblar',
+    message0: 'que %1 tiemble %2 s con fuerza %3',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_number', name: 'SEG', value: 0.4, min: 0.05 },
+      { type: 'field_number', name: 'INT', value: 0.25, min: 0 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 40,
+    tooltip: 'Sacudida de impacto; vuelve a su posición',
+  },
+  {
+    type: 'p3d_ef_flotar',
+    message0: 'que %1 flote con altura %2',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_number', name: 'ALT', value: 0.3, min: 0 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 40,
+    tooltip: 'Vaivén suave en y — pickups, fantasmas',
+  },
+  {
+    type: 'p3d_ef_pulsar',
+    message0: 'que %1 pulse hasta escala %2',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_number', name: 'ESC', value: 1.25, min: 0.1 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 40,
+    tooltip: 'Squash & stretch: crece y vuelve',
+  },
+  {
+    type: 'p3d_ef_salto',
+    message0: 'que %1 dé un saltito de %2 de alto',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_number', name: 'ALT', value: 1.5, min: 0 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 40,
+    tooltip: 'Sube y baja al punto de partida',
+  },
+  {
+    type: 'p3d_ef_flash',
+    message0: 'que %1 brille %2 por %3 s',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_dropdown', name: 'COLOR', options: COLORES },
+      { type: 'field_number', name: 'SEG', value: 0.15, min: 0.05 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 40,
+    tooltip: 'Tinte de daño/curación un instante',
+  },
+  {
+    type: 'p3d_ef_fundido',
+    message0: 'que %1 %2 en %3 s',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_dropdown', name: 'QUE', options: [
+        ['aparezca suave', 'aparecer'],
+        ['desaparezca suave', 'desvanecer'],
+        ['desaparezca y se borre', 'desvanecer_elim'],
+      ] },
+      { type: 'field_number', name: 'SEG', value: 1, min: 0.05 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 40,
+    tooltip: 'Fundido de entrada/salida',
+  },
+  {
+    type: 'p3d_ef_estela',
+    message0: 'que %1 deje una estela %2',
+    args0: [
+      { type: 'field_dropdown', name: 'NOMBRE',
+        options: actores_opciones },
+      { type: 'field_dropdown', name: 'COLOR', options: COLORES },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 40,
+    tooltip: 'Rastro de partículas donde el actor pasa',
+  },
+  {
+    type: 'p3d_ef_hitstop',
+    message0: 'congelar el juego %1 s',
+    args0: [
+      { type: 'field_number', name: 'SEG', value: 0.08, min: 0 },
+    ],
+    previousStatement: null, nextStatement: null,
+    colour: 40,
+    tooltip: 'Micro-pausa de impacto (hit-stop)',
+  },
   {
     type: 'p3d_guardar',
     message0: 'guardar partida en %1',
@@ -981,6 +1097,59 @@ registrar('p3d_temblor', function (block) {
          ', ' + block.getFieldValue('SEG') + ')\n';
 });
 
+// -- efectos ----------------------------------------------------------------
+
+registrar('p3d_ef_parpadear', function (block) {
+  return 'pilas.efectos.parpadear(' + campo_nombre(block) +
+         ', veces=' + block.getFieldValue('VEC') +
+         ', cada=' + block.getFieldValue('SEG') + ')\n';
+});
+
+registrar('p3d_ef_temblar', function (block) {
+  return 'pilas.efectos.temblar(' + campo_nombre(block) +
+         ', duracion=' + block.getFieldValue('SEG') +
+         ', intensidad=' + block.getFieldValue('INT') + ')\n';
+});
+
+registrar('p3d_ef_flotar', function (block) {
+  return 'pilas.efectos.flotar(' + campo_nombre(block) +
+         ', altura=' + block.getFieldValue('ALT') + ')\n';
+});
+
+registrar('p3d_ef_pulsar', function (block) {
+  return 'pilas.efectos.pulsar(' + campo_nombre(block) +
+         ', escala=' + block.getFieldValue('ESC') + ')\n';
+});
+
+registrar('p3d_ef_salto', function (block) {
+  return 'pilas.efectos.saltar(' + campo_nombre(block) +
+         ', altura=' + block.getFieldValue('ALT') + ')\n';
+});
+
+registrar('p3d_ef_flash', function (block) {
+  return 'pilas.efectos.flash(' + campo_nombre(block) +
+         ', pilas.colores.' + block.getFieldValue('COLOR') +
+         ', duracion=' + block.getFieldValue('SEG') + ')\n';
+});
+
+registrar('p3d_ef_fundido', function (block) {
+  var que = block.getFieldValue('QUE');
+  var d = ', duracion=' + block.getFieldValue('SEG');
+  if (que === 'desvanecer_elim')
+    return 'pilas.efectos.desvanecer(' + campo_nombre(block) +
+           d + ', eliminar=True)\n';
+  return 'pilas.efectos.' + que + '(' + campo_nombre(block) + d + ')\n';
+});
+
+registrar('p3d_ef_estela', function (block) {
+  return 'pilas.efectos.estela(' + campo_nombre(block) +
+         ', color=pilas.colores.' + block.getFieldValue('COLOR') + ')\n';
+});
+
+registrar('p3d_ef_hitstop', function (block) {
+  return 'pilas.efectos.hit_stop(' + block.getFieldValue('SEG') + ')\n';
+});
+
 registrar('p3d_guardar', function (block) {
   return 'pilas.guardar_partida(' +
          GEN.quote_(block.getFieldValue('RUTA')) + ')\n';
@@ -1373,6 +1542,18 @@ var TOOLBOX = {
         { kind: 'block', type: 'p3d_saltar' },
         { kind: 'block', type: 'p3d_guardar' },
         { kind: 'block', type: 'p3d_cargar' },
+      ] },
+    { kind: 'category', name: 'Efectos', colour: '40',
+      contents: [
+        { kind: 'block', type: 'p3d_ef_parpadear' },
+        { kind: 'block', type: 'p3d_ef_temblar' },
+        { kind: 'block', type: 'p3d_ef_flotar' },
+        { kind: 'block', type: 'p3d_ef_pulsar' },
+        { kind: 'block', type: 'p3d_ef_salto' },
+        { kind: 'block', type: 'p3d_ef_flash' },
+        { kind: 'block', type: 'p3d_ef_fundido' },
+        { kind: 'block', type: 'p3d_ef_estela' },
+        { kind: 'block', type: 'p3d_ef_hitstop' },
       ] },
     { kind: 'category', name: 'Cámara', colour: '60',
       contents: [

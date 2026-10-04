@@ -182,6 +182,61 @@ registrar_js('p3d_temblor', function (block) {
          ', ' + block.getFieldValue('SEG') + ');\n';
 });
 
+// -- efectos (pilas.efectos del runtime web) --------------------------------
+
+registrar_js('p3d_ef_parpadear', function (block) {
+  return 'pilas.efectos.parpadear(' + campo_nombre(block) + ', ' +
+         block.getFieldValue('VEC') + ', ' +
+         block.getFieldValue('SEG') + ');\n';
+});
+
+registrar_js('p3d_ef_temblar', function (block) {
+  return 'pilas.efectos.temblar(' + campo_nombre(block) + ', ' +
+         block.getFieldValue('SEG') + ', ' +
+         block.getFieldValue('INT') + ');\n';
+});
+
+registrar_js('p3d_ef_flotar', function (block) {
+  return 'pilas.efectos.flotar(' + campo_nombre(block) + ', ' +
+         block.getFieldValue('ALT') + ');\n';
+});
+
+registrar_js('p3d_ef_pulsar', function (block) {
+  return 'pilas.efectos.pulsar(' + campo_nombre(block) + ', ' +
+         block.getFieldValue('ESC') + ');\n';
+});
+
+registrar_js('p3d_ef_salto', function (block) {
+  return 'pilas.efectos.saltar(' + campo_nombre(block) + ', ' +
+         block.getFieldValue('ALT') + ');\n';
+});
+
+registrar_js('p3d_ef_flash', function (block) {
+  return 'pilas.efectos.flash(' + campo_nombre(block) +
+         ', pilas.colores.' + block.getFieldValue('COLOR') + ', ' +
+         block.getFieldValue('SEG') + ');\n';
+});
+
+registrar_js('p3d_ef_fundido', function (block) {
+  var que = block.getFieldValue('QUE');
+  var d = ', ' + block.getFieldValue('SEG');
+  if (que === 'desvanecer_elim')
+    return 'pilas.efectos.desvanecer(' + campo_nombre(block) + d +
+           ', true);\n';
+  return 'pilas.efectos.' + que + '(' + campo_nombre(block) + d +
+         ');\n';
+});
+
+registrar_js('p3d_ef_estela', function (block) {
+  return 'pilas.efectos.estela(' + campo_nombre(block) +
+         ', pilas.colores.' + block.getFieldValue('COLOR') + ');\n';
+});
+
+registrar_js('p3d_ef_hitstop', function (block) {
+  return 'pilas.efectos.hit_stop(' + block.getFieldValue('SEG') +
+         ');\n';
+});
+
 registrar_js('p3d_guardar', function (block) {
   return 'pilas.guardar_partida(' +
          JSGEN.quote_(block.getFieldValue('RUTA')) + ');\n';

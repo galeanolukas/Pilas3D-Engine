@@ -43,6 +43,7 @@ como XML de Blockly — para agregar uno, otra entrada en `EJEMPLOS`.
 | **Movimiento** | `mover <a> en <eje> <n>` (`a.x += 0.05`), `llevar a x y z`, `girar en <eje> <grados>` |
 | **Apariencia** | `poner de color`, `mostrar texto`, `escribir en consola` (print → aparece en "Resultado"), `hacer que <a> diga <texto>` (globo de diálogo), `animar <modelo>`, `reproducir sonido`, `crear menú` + `opción` (navegable con flechas/ENTER o mouse) |
 | **Tiempo** | `llevar suave a x y z en N s` con curva a elección (normal, suave al arrancar/frenar, rebote, elástica), `esperar N s y hacer`, `cada N s hacer` |
+| **Efectos** | `que <a> parpadee N veces`, `que <a> tiemble`, `que <a> flote`, `que <a> pulse`, `que <a> dé un saltito`, `que <a> brille <color>`, `que <a> aparezca/desaparezca suave`, `que <a> deje una estela`, `congelar el juego N s` — envuelven `pilas.efectos` |
 | **Cámara** | `cámara orbital con el mouse`, `la cámara sigue a <a>` (primera/de frente/tercera), `soltar la cámara` |
 | **Sensores** | `tecla <t> pulsada`, `botón del mouse pulsado`, `posición x/y del mouse`, `<a> toca a <b>`, comparaciones lógicas |
 | **Control** | `si`, `repetir N`, números |

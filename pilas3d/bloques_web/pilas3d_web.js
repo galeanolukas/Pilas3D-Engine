@@ -157,7 +157,7 @@ var pilas = (function () {
   // -- escena --------------------------------------------------------
   var canvas, gl, prog, uMVP, uColor, uAlfa, uLuz;
   var actores = [], tareas = [], colisiones = [], clicks = [];
-  var dt = 0, tAhora = 0, fondo = [0.05, 0.07, 0.1];
+  var dt = 0, tAhora = 0, escala_t = 1, fondo = [0.05, 0.07, 0.1];
   var HUD;                               // div para Texto/globos/menú
   var cam = { yaw: -35, pitch: 28, dist: 14, centro: [0, 0, 0],
               siguiendo: null, modo: 'tercera', temblor: 0, temblor_t: 0 };
@@ -804,6 +804,121 @@ var pilas = (function () {
     },
   };
 
+  // -- efectos (subset web de pilas.efectos) --------------------------
+  // Tarea con eliminar(): el runtime solo conoce tareas por objeto.
+  function _agendar(t) {
+    tareas.push(t);
+    t.eliminar = function () {
+      var i = tareas.indexOf(t);
+      if (i >= 0) tareas.splice(i, 1);
+    };
+    return t;
+  }
+
+  api.efectos = {
+    parpadear: function (a, veces, cada) {
+      var orig = a.alfa, n = 0;
+      a.alfa = 0;
+      _agendar({ seg: cada || 0.12, t: 0, fn: function () {
+        n += 1;
+        if (n >= (veces || 6) * 2 || !a.vivo) { a.alfa = orig; return true; }
+        a.alfa = n % 2 ? 0 : orig;
+        return false;
+      } });
+    },
+    aparecer: function (a, dur) {
+      a.alfa = 0;
+      api.interpolar(a, 'alfa', 1, dur || 1);
+    },
+    desvanecer: function (a, dur, eliminar) {
+      api.interpolar(a, 'alfa', 0, dur || 1);
+      if (eliminar)
+        api.tareas.una_vez(dur || 1, function () { a.eliminar(); });
+    },
+    temblar: function (a, dur, inten) {
+      var ox = a.x, oy = a.y, oz = a.z, t = 0, k = inten || 0.25;
+      _agendar({ seg: 0, t: 0, fn: function () {
+        t += dt;
+        if (t >= (dur || 0.4) || !a.vivo) {
+          a.x = ox; a.y = oy; a.z = oz;
+          return true;
+        }
+        a.x = ox + (Math.random() * 2 - 1) * k;
+        a.y = oy + (Math.random() * 2 - 1) * k * 0.5;
+        a.z = oz + (Math.random() * 2 - 1) * k;
+        return false;
+      } });
+    },
+    flotar: function (a, altura, vel) {
+      var y0 = a.y, t = 0;
+      return _agendar({ seg: 0, t: 0, fn: function () {
+        t += dt;
+        a.y = y0 + Math.sin(t * (vel || 1.5) * 2 * Math.PI) *
+              (altura || 0.3);
+        return !a.vivo;
+      } });
+    },
+    pulsar: function (a, esc, dur) {
+      var orig = a.escala, d = dur || 0.3, t = 0;
+      _agendar({ seg: 0, t: 0, fn: function () {
+        t += dt;
+        var p = Math.min(t / d, 1);
+        a.escala = orig * (1 + ((esc || 1.25) - 1) *
+                     Math.sin(p * Math.PI));
+        return p >= 1;
+      } });
+    },
+    saltar: function (a, altura, dur) {
+      var y0 = a.y, d = dur || 0.5, t = 0;
+      _agendar({ seg: 0, t: 0, fn: function () {
+        t += dt;
+        var p = Math.min(t / d, 1);
+        a.y = y0 + (altura || 1.5) * Math.sin(p * Math.PI);
+        return p >= 1;
+      } });
+    },
+    flash: function (a, color, dur) {
+      var orig = a.color;
+      a.color = color || api.colores.rojo;
+      api.tareas.una_vez(dur || 0.15, function () {
+        if (a.vivo) a.color = orig;
+      });
+    },
+    estela: function (a, color) {
+      return _agendar({ seg: 0.05, t: 0, fn: function () {
+        if (!a.vivo) return true;
+        var c = new Actor('Esfera', { malla: 'esfera', x: a.x,
+                          y: a.y + 0.3, z: a.z, escala: 0.15,
+                          color: color || a.color });
+        c.sin_luz = true;
+        var v = 0.5;
+        _agendar({ seg: 0, t: 0, fn: function () {
+          v -= dt;
+          c.alfa = Math.max(0, v / 0.5);
+          if (v <= 0) { c.eliminar(); return true; }
+          return false;
+        } });
+        return false;
+      } });
+    },
+    temblar_pantalla: function (inten, dur) {
+      api.camara.temblor(inten, dur);
+    },
+    hit_stop: function (seg, escala) {
+      // el reloj de pared restaura la escala: si la consultara el
+      // juego congelado, la pausa duraría para siempre
+      var hasta = performance.now() / 1000 + (seg || 0.08);
+      escala_t = escala === undefined ? 0.05 : escala;
+      _agendar({ seg: 0, t: 0, fn: function () {
+        if (performance.now() / 1000 >= hasta) {
+          escala_t = 1;
+          return true;
+        }
+        return false;
+      } });
+    },
+  };
+
   api.sonidos = {
     cargar: function (ruta) {
       return { reproducir: function () {
@@ -862,7 +977,7 @@ var pilas = (function () {
   function frame(tMs) {
     requestAnimationFrame(frame);
     var nuevo = tMs / 1000;
-    dt = Math.min(0.05, nuevo - tAhora || 0.016);
+    dt = Math.min(0.05, nuevo - tAhora || 0.016) * escala_t;
     tAhora = nuevo;
 
     canvas.width = canvas.clientWidth;
