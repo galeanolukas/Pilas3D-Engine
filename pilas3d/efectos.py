@@ -32,9 +32,11 @@ class Efectos(object):
 
     # -- transparencia ---------------------------------------------------
 
-    def parpadear(self, actor, veces=6, cada=0.12):
-        """Flash de invencibilidad: alterna la transparencia del
-        actor ``veces`` veces y la deja como estaba."""
+    def parpadear(self, actor, veces=6, cada=0.12, nivel=100):
+        """Flash de invencibilidad: el actor desaparece y reaparece
+        ``veces`` veces y la transparencia queda como estaba.
+        ``nivel`` es cuán transparente llega en la mitad "apagada"
+        (100 = invisible del todo, ~60 = fantasma tenue)."""
         orig = actor.transparencia
         estado = {'n': 0}
 
@@ -43,10 +45,10 @@ class Efectos(object):
             if estado['n'] >= veces * 2:
                 actor.transparencia = orig
                 return False
-            actor.transparencia = 60 if estado['n'] % 2 else orig
+            actor.transparencia = nivel if estado['n'] % 2 else orig
             return actor.esta_en_escena()
 
-        actor.transparencia = 60
+        actor.transparencia = nivel
         return self.pilas.tareas.condicional(cada, tick)
 
     def aparecer(self, actor, duracion=1.0):

@@ -3676,3 +3676,21 @@ def test_efectos_camara_tiempo_estela():
     a.eliminar()
     pilas.tareas.actualizar(0.01)
     assert not emisor.esta_en_escena()
+
+
+def test_asignacion_directa_corta_tween():
+    """actor.x = 5 con un tween corriendo sobre x lo cancela: la
+    escritura directa gana (evita que un desvanecer viejo pise
+    un parpadear nuevo). El propio tween no se auto-cancela."""
+    pilas = crear_pilas()
+    a = pilas.actores.Cubo()
+    a.transparencia = ([100], 5.0)          # tween largo en curso
+    assert a._interpolaciones
+    a.transparencia = 30                    # asignación directa
+    assert not a._interpolaciones           # tween cancelado
+    a.pre_actualizar()
+    assert a.transparencia == 30            # nadie lo pisa
+    # y un tween sigue pudiendo avanzar sin suicidarse
+    a.x = ([10], 0.5)
+    a.pre_actualizar()
+    assert a._interpolaciones               # vivo tras el paso

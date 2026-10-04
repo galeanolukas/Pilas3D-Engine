@@ -73,7 +73,12 @@ class _Tween(object):
         local = min((self.t - indice * paso) / paso, 1.0)
         destino = float(self.valores[indice])
         valor = self.desde + (destino - self.desde) * self.easing(local)
-        setattr(self.actor, self.atributo, valor)
+        # la escritura del tween no debe cancelarse a sí misma
+        self.actor._desde_tween = True
+        try:
+            setattr(self.actor, self.atributo, valor)
+        finally:
+            self.actor._desde_tween = False
         return self.t >= self.duracion
 
 

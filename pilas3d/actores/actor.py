@@ -117,6 +117,12 @@ class Actor(object):
             valores, duracion = valor
             Lineal(valores, duracion=duracion).iniciar(self, atributo)
         else:
+            # una asignación directa pisa la interpolación en curso
+            # sobre ese atributo (la del tween no: se auto-cancelaría)
+            if not getattr(self, '_desde_tween', False):
+                self._interpolaciones = [
+                    t for t in self._interpolaciones
+                    if t.atributo != atributo]
             return False
         return True
 
