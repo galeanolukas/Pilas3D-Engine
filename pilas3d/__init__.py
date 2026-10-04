@@ -256,6 +256,8 @@ class Pilas(object):
         self.materiales = Materiales(self)
         from pilas3d.fuentes import Fuentes
         self.fuentes = Fuentes(self)
+        from pilas3d.imagenes import Imagenes
+        self.imagenes = Imagenes(self)
         self.interpolaciones = interpolaciones
         from pilas3d import colisiones
         self.colisiones = colisiones

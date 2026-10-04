@@ -94,9 +94,8 @@ class Menu(Actor):
             self._fondo_rgba = (f + (255,))[:4]
         if fondo_imagen is not None:
             try:
-                import pyglet
-                self._imagen = pyglet.image.load(fondo_imagen)
-            except Exception:
+                self._imagen = pilas.imagenes.cargar(fondo_imagen)
+            except (IOError, OSError):
                 self._imagen = None
         self._snd_mover = self._cargar_efecto(sonido_mover, 'tick.wav')
         self._snd_elegir = self._cargar_efecto(sonido_elegir,
