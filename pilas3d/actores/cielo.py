@@ -154,11 +154,13 @@ class Cielo(Actor):
 
         d = self.pilas.luces.direccional
         d.direccion = (-dir_sol[0], -dir_sol[1], -dir_sol[2])
-        d.color = color_sol
+        # los colores de las luces van 0-255 como pilas.colores
+        d.color = tuple(min(255.0, c * 255.0) for c in color_sol)
         lum = medio[0] * 0.3 + medio[1] * 0.6 + medio[2] * 0.1
         d.ambiente = min(0.75, max(0.15, lum))
         m = max(medio) or 1.0
-        d.ambiente_color = (medio[0] / m, medio[1] / m, medio[2] / m)
+        d.ambiente_color = tuple(
+            min(255.0, c / m * 255.0) for c in medio)
 
     def _generar_geometria(self):
         posiciones, normales, modo, _, uvs = mallas.esfera(

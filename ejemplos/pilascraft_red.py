@@ -220,8 +220,8 @@ class Jugador(Esfera):
                 self.pilas.actores.Particulas.explosion(
                     self.pilas, x=bloque[0] + 0.5, y=bloque[1] + 0.5,
                     z=bloque[2] + 0.5, cantidad=25, velocidad=3,
-                    tamano=4, color=(0.45, 0.33, 0.2),
-                    color_final=(0.3, 0.3, 0.3))
+                    tamano=4, color=(115, 84, 51),
+                    color_final=(77, 77, 77))
                 if son_picar:
                     random.choice(son_picar).reproducir()
         if c.boton_derecho and not self._click_der:

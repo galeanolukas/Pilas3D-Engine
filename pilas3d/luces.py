@@ -6,7 +6,7 @@ Uso::
     pilas.luces.direccional.ambiente = 0.5
     pilas.luces.direccional.color = pilas.colores.azul
     pilas.luces.agregar(pilas3d.luces.LuzPuntual(x=2, y=3, z=0,
-                                               color=(1, 0.8, 0.6),
+                                               color=(255, 204, 153),
                                                alcance=8))
     pilas.luces.limpiar()       # quita las puntuales
 
@@ -21,12 +21,15 @@ MAX_PUNTUALES = 8
 class LuzDireccional(object):
     """Luz infinita con dirección (como el sol).
 
-    ``ambiente`` es la intensidad base; ``ambiente_color`` la tiñe
-    (``Cielo.iluminar_escena`` la extrae de un fondo ``.hdr``).
+    ``color`` y ``ambiente_color`` son colores 0-255 como los de
+    ``pilas.colores`` (``aplicar`` los normaliza). ``ambiente`` es la
+    intensidad base 0-1; ``ambiente_color`` la tiñe — por ejemplo
+    con el promedio de un fondo ``.hdr`` (``Cielo.iluminar_escena``).
     """
 
-    def __init__(self, direccion=(-0.4, -0.8, -0.5), color=(1, 1, 1),
-                 ambiente=0.45, ambiente_color=(1, 1, 1)):
+    def __init__(self, direccion=(-0.4, -0.8, -0.5),
+                 color=(255, 255, 255), ambiente=0.45,
+                 ambiente_color=(255, 255, 255)):
         self.direccion = direccion
         self.color = color
         self.ambiente = ambiente
@@ -36,7 +39,8 @@ class LuzDireccional(object):
 class LuzPuntual(object):
     """Luz que emite desde un punto y decae con la distancia."""
 
-    def __init__(self, x=0, y=2, z=0, color=(1, 1, 1), alcance=10.0):
+    def __init__(self, x=0, y=2, z=0, color=(255, 255, 255),
+                 alcance=10.0):
         self.x = x
         self.y = y
         self.z = z

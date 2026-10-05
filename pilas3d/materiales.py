@@ -77,8 +77,12 @@ class Material(object):
 # -- autodetección por nombre de archivo ----------------------------------
 
 _PATRONES = [
-    ('base', ('basecolor', 'albedo', 'diffuse', 'colormap', 'color')),
-    ('normal', ('normal', '_nrm')),
+    # nombres de Poliigon/ambientCG/Quixel + los de Poly Haven
+    # (diff/nor_gl/rough/disp), que también vienen dentro de los
+    # packs .gltf (textures/*.jpg)
+    ('base', ('basecolor', 'albedo', 'diffuse', 'colormap', 'color',
+              '_diff')),
+    ('normal', ('normal', '_nrm', 'nor_gl', 'nor_dx', '_nor')),
     ('ao', ('ambientocclusion', 'occlusion', '_ao')),
     ('rugosidad', ('roughness', 'rugosidad', 'rough')),
     ('metalico', ('metallic', 'metalness', 'metal')),
@@ -169,10 +173,11 @@ class Materiales(object):
         for slot, rutas in candidatos.items():
             elegida = rutas[0]
             if slot == 'normal':
-                # OpenGL quiere la variante Y+ (NormalGL); si el pack
-                # trae ambas se evita la DX, y si solo hay DX se usa
-                # igual — las derivadas absorben casi toda la diferencia
-                gl = [r for r in rutas if 'normaldx' not in r.lower()]
+                # OpenGL quiere la variante Y+ (NormalGL / nor_gl);
+                # se evita la DX y si solo hay DX se usa igual —
+                # las derivadas absorben casi toda la diferencia
+                gl = [r for r in rutas
+                      if 'dx' not in os.path.basename(r).lower()]
                 elegida = (gl or rutas)[0]
             setattr(mat, slot, elegida)
         return mat

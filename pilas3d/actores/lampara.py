@@ -27,11 +27,11 @@ class Lampara(Actor):
         self.radio_de_colision = 0.2
         #: La ``LuzPuntual`` que ilumina (por si querés tunearla).
         self.luz = LuzPuntual(x=x, y=y, z=z,
-                              color=(1.0, 0.9, 0.7), alcance=alcance)
+                              color=(255, 230, 178), alcance=alcance)
         if color is not None:
             self.color = color
         else:
-            self.color = (1.0, 0.9, 0.7)
+            self.color = (255, 230, 178)
         if not visible:
             self.transparencia = 100      # luz invisible: solo alumbra
         escena = pilas.escena_actual()

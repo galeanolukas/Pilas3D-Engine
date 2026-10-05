@@ -3779,7 +3779,8 @@ def test_cielo_iluminar_escena(tmp_path):
     d = pilas.luces.direccional
     assert d.direccion[1] < 0        # la luz baja desde el cenit
     assert 0.15 <= d.ambiente <= 0.75
-    assert max(d.ambiente_color) == pytest.approx(1.0)
+    assert max(d.ambiente_color) == pytest.approx(255.0)
+    assert max(d.color) == pytest.approx(255.0)   # colores 0-255
 
 
 def test_cielo_iluminar_escena_sin_hdr_falla():

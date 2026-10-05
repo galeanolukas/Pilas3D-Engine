@@ -184,7 +184,7 @@ pilas.escena.niebla = (NEGRO, 4, 20)
 
 # linterna: luz puntual cálida que sigue a la cámara
 linterna = pilas.luces.agregar(LuzPuntual(
-    x=0, y=2, z=0, alcance=12, color=(1, 0.9, 0.7)))
+    x=0, y=2, z=0, alcance=12, color=(255, 230, 178)))
 
 jugador = Jugador(pilas, enemigos)
 jugador_inicio = spawn['pos']

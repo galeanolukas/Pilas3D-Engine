@@ -47,7 +47,7 @@ for actor in (arbol, luna, farola):
 pilas.luces.direccional.ambiente = 0.18
 pilas.luces.direccional.color = pilas.colores.gris
 pilas.luces.agregar(pilas3d.luces.LuzPuntual(
-    x=3, y=4, z=3, color=(1.0, 0.75, 0.4), alcance=12))
+    x=3, y=4, z=3, color=(255, 191, 102), alcance=12))
 
 camara = pilas.escena_actual().camara
 camara.posicion = (0, 6, 16)

@@ -160,7 +160,7 @@ Luces y sombras
     pilas.luces.direccional.color = pilas.colores.blanco  # el "sol"
     pilas.luces.direccional.ambiente = 0.2     # luz ambiente (0..1)
     pilas.luces.agregar(pilas3d.luces.LuzPuntual(x=2, y=4, z=0,
-        color=(1, 0.7, 0.3), alcance=10))      # hasta 8 puntuales
+        color=(255, 178, 77), alcance=10))   # hasta 8 puntuales
     pilas.luces.quitar(luz) / pilas.luces.limpiar()
     pilas.actores.Sombra(actor)                # sombra falsa en el piso
     pilas.actores.Cielo()                      # cielo estrellado
