@@ -7,6 +7,8 @@ textura float y el shader lo comprime a pantalla. Además,
 ambiente del propio mapa — el fondo y la escena quedan integrados.
 
 Caminá con las flechas. Con M/N subís y bajás la exposición.
+Con el botón izquierdo del mouse orbitás la cámara alrededor del
+robot para recorrer el hall — el domo sigue la cámara solo.
 """
 
 import pilas3d
@@ -16,6 +18,10 @@ pilas = pilas3d.iniciar()
 # Fondo HDR (data/hdr/mirrored_hall_2k.hdr, CC0 de Poly Haven).
 cielo = pilas.actores.Cielo('mirrored_hall_2k.hdr')
 cielo.iluminar_escena()              # sol + ambiente salen del mapa
+
+camara = pilas.escena_actual().camara
+camara.posicion = (0, 4, 10)
+camara.usar_control_orbital()        # drag orbita, rueda zoom
 
 pilas.actores.Piso()
 robot = pilas.actores.Robot()
