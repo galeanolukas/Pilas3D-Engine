@@ -187,7 +187,23 @@ Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 .venv/bin/python ejemplos/niebla.py             # escena.niebla: abierta/cerrada/noche
 .venv/bin/python ejemplos/vida_y_zonas.py       # Vida + Zona + máquina de estados + Barra
 .venv/bin/python ejemplos/efectos.py            # jugo: parpadear, temblar, flotar, hit-stop, estela
+.venv/bin/python ejemplos/cielo_hdr.py          # fondo .hdr equirect + luz extraída del mapa
 ```
+
+### Fondos HDR
+
+`Cielo` acepta `.hdr` Radiance equirectangulares (los de
+[Poly Haven](https://polyhaven.com/hdris), CC0) en `data/hdr/`:
+
+```python
+cielo = pilas.actores.Cielo('mirrored_hall_2k.hdr')
+cielo.iluminar_escena()     # sol + ambiente salen del propio mapa
+cielo.exposicion = 1.3      # brillo del fondo (tone mapping)
+```
+
+El `.hdr` se sube como textura float y `iluminar_escena` extrae la
+dirección del sol y el color del ambiente — el fondo y la escena
+quedan integrados sin tocar `pilas.luces` a mano.
 
 ## Modo interactivo manual
 

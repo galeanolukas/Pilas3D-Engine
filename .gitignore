@@ -16,6 +16,10 @@ texturas/**/*
 # suben — solo los .ttf sueltos de data/fonts/ (DejaVu/Liberation)
 pilas3d/data/fonts/*/
 
+# mapas HDR de fondo (Poly Haven, ~7MB c/u) — se bajan aparte,
+# el .gitkeep conserva el directorio
+pilas3d/data/hdr/*.hdr
+
 # Binario de Ollama descargado por los instaladores (MIT, se baja
 # aparte; nunca se commitea por peso y licencia de redistribución)
 pilas3d/_vendor/

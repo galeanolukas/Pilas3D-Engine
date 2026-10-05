@@ -19,13 +19,18 @@ MAX_PUNTUALES = 8
 
 
 class LuzDireccional(object):
-    """Luz infinita con dirección (como el sol)."""
+    """Luz infinita con dirección (como el sol).
+
+    ``ambiente`` es la intensidad base; ``ambiente_color`` la tiñe
+    (``Cielo.iluminar_escena`` la extrae de un fondo ``.hdr``).
+    """
 
     def __init__(self, direccion=(-0.4, -0.8, -0.5), color=(1, 1, 1),
-                 ambiente=0.45):
+                 ambiente=0.45, ambiente_color=(1, 1, 1)):
         self.direccion = direccion
         self.color = color
         self.ambiente = ambiente
+        self.ambiente_color = ambiente_color
 
 
 class LuzPuntual(object):
@@ -74,6 +79,8 @@ class Luces(object):
         programa["luz_dir"] = (-dx / norma, -dy / norma, -dz / norma)
         programa["luz_dir_color"] = tuple(colores.normalizar(d.color))
         programa["luz_ambiente"] = float(d.ambiente)
+        programa["luz_ambiente_color"] = \
+            tuple(colores.normalizar(d.ambiente_color))
 
         n = min(len(self.puntuales), MAX_PUNTUALES)
         programa["cantidad_puntuales"] = n

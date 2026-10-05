@@ -7,6 +7,12 @@ frame para que el jugador nunca "llegue" al borde.
 
 >>> pilas.actores.Cielo()                    # cielo estrellado
 >>> pilas.actores.Cielo('mi_cielo.png')      # textura propia
+>>> pilas.actores.Cielo('cielo.hdr')         # fondo HDR equirect
+>>>                                          # (Poly Haven)
+>>> cielo.iluminar_escena()                  # la luz sale del .hdr
+
+Los ``.hdr`` Radiance se suben como textura float y el shader los
+comprime a pantalla con tone mapping (``exposicion`` lo ajusta).
 """
 
 import math
@@ -112,6 +118,7 @@ class Cielo(Actor):
         self.escala = radio
         self.radio_de_colision = 0.0
         self.color = colores.blanco
+        self.exposicion = 1.0        # brillo del tone mapping HDR
         self.tipo = imagen
 
     @property
@@ -121,8 +128,37 @@ class Cielo(Actor):
     @tipo.setter
     def tipo(self, valor):
         self._tipo = valor
+        # los .hdr necesitan tone mapping; las texturas comunes no
+        self.tonemap = str(valor).lower().endswith('.hdr')
         generador = _CIELOS.get(valor)
         self.imagen = generador() if generador else valor
+
+    def iluminar_escena(self):
+        """Saca la iluminación del propio ``.hdr`` del cielo.
+
+        La zona más brillante del mapa marca la dirección y el color
+        del sol; el promedio tiñe la luz ambiente. Así el fondo y la
+        escena quedan integrados sin tocar la direccional a mano.
+        """
+        from pilas3d import hdr
+        from pilas3d.imagenes import resolver
+
+        ruta = str(self._imagen)
+        if not ruta.lower().endswith('.hdr'):
+            raise ValueError(
+                "iluminar_escena() necesita un Cielo con un .hdr "
+                "(p. ej. Cielo('mirrored_hall_2k.hdr'))")
+        ancho, alto, datos = hdr.cargar(resolver(ruta))
+        dir_sol, color_sol = hdr.direccion_sol(ancho, alto, datos)
+        medio = hdr.promedio(ancho, alto, datos)
+
+        d = self.pilas.luces.direccional
+        d.direccion = (-dir_sol[0], -dir_sol[1], -dir_sol[2])
+        d.color = color_sol
+        lum = medio[0] * 0.3 + medio[1] * 0.6 + medio[2] * 0.1
+        d.ambiente = min(0.75, max(0.15, lum))
+        m = max(medio) or 1.0
+        d.ambiente_color = (medio[0] / m, medio[1] / m, medio[2] / m)
 
     def _generar_geometria(self):
         posiciones, normales, modo, _, uvs = mallas.esfera(

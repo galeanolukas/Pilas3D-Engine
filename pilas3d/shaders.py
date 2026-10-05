@@ -79,8 +79,11 @@ vec3 perturbar_normal(vec3 n, vec3 pos, vec2 uv)
 uniform vec3 luz_dir;          // dirección HACIA la luz direccional
 uniform vec3 luz_dir_color;
 uniform float luz_ambiente;
+uniform vec3 luz_ambiente_color;  // tinte del ambiente (de un .hdr)
 uniform bool sin_luz;          // el actor se dibuja a color plano
                               // (lámparas, sprites brillantes)
+uniform bool tonemap;          // HDR: comprime rgb >1 a pantalla
+uniform float exposicion;      // cuanta luz HDR entra (1 = normal)
 uniform int cantidad_puntuales;
 uniform vec3 luz_posicion[MAX_LUCES];
 uniform vec3 luz_color[MAX_LUCES];
@@ -111,7 +114,7 @@ void main()
         float ao = usar_ao ? texture(ao_map, v_tex).r : 1.0;
         float rugosidad = usar_rugosidad
                           ? texture(rugosidad_map, v_tex).r : 1.0;
-        luz_rgb = vec3(luz_ambiente) * ao;
+        luz_rgb = luz_ambiente * luz_ambiente_color * ao;
         float dif_dir = max(dot(n, normalize(luz_dir)), 0.0);
         luz_rgb += luz_dir_color * dif_dir * 0.65;
         for (int i = 0; i < cantidad_puntuales; i++) {
@@ -134,6 +137,12 @@ void main()
         }
     }
     vec3 rgb = difuso.rgb * luz_rgb;
+    // Fondos HDR (texturas float GL_RGBA16F): curva de exposición
+    // + paso a sRGB — solo donde el actor lo pide (domo del Cielo).
+    if (tonemap) {
+        rgb = vec3(1.0) - exp(-rgb * exposicion);
+        rgb = pow(rgb, vec3(1.0 / 2.2));
+    }
     // Niebla lineal solo sobre fragmentos iluminados (el cielo y las
     // líneas de debug no tienen normal y quedan limpios).
     if (usar_niebla && length(v_normal) > 0.001) {

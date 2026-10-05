@@ -481,6 +481,10 @@ class Actor(object):
         if hasattr(self._imagen, "get_texture"):
             # Ya es una imagen/textura de pyglet (p. ej. generada).
             self._textura = self._imagen.get_texture()
+        elif str(self._imagen).lower().endswith('.hdr'):
+            from pilas3d.imagenes import textura_hdr
+            self._textura = textura_hdr(
+                self._resolver_imagen(self._imagen))
         else:
             from pyglet.image import load
 
@@ -495,6 +499,7 @@ class Actor(object):
         base = os.path.dirname(os.path.dirname(__file__))
         for candidato in (ruta,
                           os.path.join(base, 'data', ruta),
+                          os.path.join(base, 'data', 'hdr', ruta),
                           os.path.join(base, ruta)):
             if os.path.exists(candidato):
                 return candidato
@@ -569,6 +574,8 @@ class Actor(object):
         programa["uv_escala"] = self._uv_escala
         programa["uv_desplazamiento"] = self._uv_desplazamiento
         programa["sin_luz"] = self.sin_luz
+        programa["tonemap"] = getattr(self, 'tonemap', False)
+        programa["exposicion"] = float(getattr(self, 'exposicion', 1.0))
         mat = self.material
         # la base del material reemplaza a imagen si no hay una
         textura_base = None

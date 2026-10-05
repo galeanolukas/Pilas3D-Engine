@@ -3701,3 +3701,95 @@ def test_asignacion_directa_corta_tween():
     a.x = ([10], 0.5)
     a.pre_actualizar()
     assert a._interpolaciones               # vivo tras el paso
+
+
+# -- Fondos HDR (.hdr Radiance / RGBE) -----------------------------------
+
+def _hdr_plano(ancho, alto, pixeles):
+    """Arma un .hdr mínimo en formato plano (sin RLE)."""
+    enc = b"#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n-Y %d +X %d\n" % (
+        alto, ancho)
+    cuerpo = b"".join(bytes(p) for p in pixeles)
+    return enc + cuerpo
+
+
+def _hdr_rle(ancho, filas):
+    """Arma un .hdr con scanlines RLE: cada fila es una lista de
+    (rgb byte, exponente) corridas de ``ancho`` píxeles."""
+    enc = b"#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n-Y 1 +X %d\n" % ancho
+    cuerpo = b""
+    for (r, g, b, e) in filas:
+        cuerpo += bytes([2, 2, ancho >> 8, ancho & 0xff])
+        for v in (r, g, b, e):
+            cuerpo += bytes([128 + ancho, v])   # corrida pura
+    return enc + cuerpo
+
+
+def test_hdr_decodifica_plano(tmp_path):
+    from pilas3d import hdr
+    # e=136 -> factor 2^0 = 1: el byte ES el float (200 = HDR real)
+    p = tmp_path / "f.hdr"
+    p.write_bytes(_hdr_plano(4, 2, [(200, 100, 50, 136)] * 8))
+    ancho, alto, datos = hdr.cargar(str(p))
+    assert (ancho, alto) == (4, 2)
+    assert datos[0:4] == pytest.approx((200.0, 100.0, 50.0, 1.0))
+
+
+def test_hdr_decodifica_rle(tmp_path):
+    from pilas3d import hdr
+    p = tmp_path / "r.hdr"
+    p.write_bytes(_hdr_rle(8, [(255, 128, 0, 136)]))
+    ancho, alto, datos = hdr.cargar(str(p))
+    assert (ancho, alto) == (8, 1)
+    assert datos[0:4] == pytest.approx((255.0, 128.0, 0.0, 1.0))
+    assert datos[-4:] == pytest.approx((255.0, 128.0, 0.0, 1.0))
+
+
+def test_hdr_direccion_sol_y_promedio(tmp_path):
+    from pilas3d import hdr
+    # un pixel brillante arriba a la izquierda; el resto oscuro
+    px = [(10, 10, 10, 128)] * 8
+    px[0] = (255, 100, 50, 140)      # sol rojizo brillante (e=140)
+    p = tmp_path / "s.hdr"
+    p.write_bytes(_hdr_plano(4, 2, px))
+    ancho, alto, datos = hdr.cargar(str(p))
+    dir_sol, color_sol = hdr.direccion_sol(ancho, alto, datos)
+    assert dir_sol[1] > 0.5          # el sol está arriba (cenit)
+    medio = hdr.promedio(ancho, alto, datos)
+    assert medio[0] > medio[2]       # el sol rojizo tiñe el promedio
+
+
+def test_cielo_hdr_activa_tonemap_y_exposicion():
+    pilas = crear_pilas()
+    c = pilas.actores.Cielo('mirrored_hall_2k.hdr')
+    assert c.tonemap is True
+    assert c.exposicion == 1.0
+    c.tipo = 'estrellas'
+    assert c.tonemap is False        # vuelve al modo normal
+
+
+def test_cielo_iluminar_escena(tmp_path):
+    pilas = crear_pilas()
+    px = [(10, 10, 10, 128)] * 8
+    px[0] = (255, 240, 200, 140)
+    p = tmp_path / "cielo.hdr"
+    p.write_bytes(_hdr_plano(4, 2, px))
+    c = pilas.actores.Cielo(str(p))
+    c.iluminar_escena()
+    d = pilas.luces.direccional
+    assert d.direccion[1] < 0        # la luz baja desde el cenit
+    assert 0.15 <= d.ambiente <= 0.75
+    assert max(d.ambiente_color) == pytest.approx(1.0)
+
+
+def test_cielo_iluminar_escena_sin_hdr_falla():
+    pilas = crear_pilas()
+    c = pilas.actores.Cielo('estrellas')
+    with pytest.raises(ValueError):
+        c.iluminar_escena()
+
+
+def test_imagenes_resolver_encuentra_data_hdr():
+    from pilas3d.imagenes import resolver
+    ruta = resolver('mirrored_hall_2k.hdr')
+    assert ruta.endswith('mirrored_hall_2k.hdr')
