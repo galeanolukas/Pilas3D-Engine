@@ -178,8 +178,8 @@ def on_posicion(datos, de):
 
 def on_bloque(datos, de):
     i, j, k = (int(v) for v in datos['pos'])
-    if datos.get('tipo'):
-        mundo.poner_bloque(i, j, k, datos['tipo'])
+    if datos.get('mat'):
+        mundo.poner_bloque(i, j, k, datos['mat'])
     else:
         mundo.sacar_bloque(i, j, k)
 
@@ -216,7 +216,7 @@ class Jugador(Esfera):
                 camara.posicion, camara.direccion(), alcance=6)
             if bloque:
                 self.mundo.sacar_bloque(*bloque)
-                self.red.enviar('bloque', pos=list(bloque), tipo=None)
+                self.red.enviar('bloque', pos=list(bloque), mat=None)
                 self.pilas.actores.Particulas.explosion(
                     self.pilas, x=bloque[0] + 0.5, y=bloque[1] + 0.5,
                     z=bloque[2] + 0.5, cantidad=25, velocidad=3,
@@ -233,7 +233,7 @@ class Jugador(Esfera):
                 if donde not in ((px, py, pz), (px, py + 1, pz)):
                     self.mundo.poner_bloque(*donde, tipo='ladrillo')
                     self.red.enviar('bloque', pos=list(donde),
-                                    tipo='ladrillo')
+                                    mat='ladrillo')
                     if son_poner:
                         son_poner.reproducir()
         self._click_izq = c.boton_izquierdo
