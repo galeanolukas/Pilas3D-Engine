@@ -3793,3 +3793,20 @@ def test_imagenes_resolver_encuentra_data_hdr():
     from pilas3d.imagenes import resolver
     ruta = resolver('mirrored_hall_2k.hdr')
     assert ruta.endswith('mirrored_hall_2k.hdr')
+
+
+def test_hdr_cache_binario_acelera_recargas(tmp_path):
+    from pilas3d import hdr
+    p = tmp_path / "c.hdr"
+    p.write_bytes(_hdr_plano(4, 2, [(200, 100, 50, 136)] * 8))
+    a1 = hdr.cargar(str(p))          # decodifica y guarda .cache
+    assert (tmp_path / "c.hdr.cache").exists()
+    hdr._cache.clear()
+    a2 = hdr.cargar(str(p))          # lee el dump, sin decodificar
+    assert a1 == a2
+    # un .hdr más nuevo que el .cache invalida y redecodifica
+    p.write_bytes(_hdr_plano(4, 2, [(1, 2, 3, 136)] * 8))
+    os.utime(p, (9e9, 9e9))
+    hdr._cache.clear()
+    a3 = hdr.cargar(str(p))
+    assert a3[2][0] == pytest.approx(1.0)

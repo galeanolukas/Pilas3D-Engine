@@ -17,8 +17,10 @@ texturas/**/*
 pilas3d/data/fonts/*/
 
 # mapas HDR de fondo (Poly Haven, ~7MB c/u) — se bajan aparte,
-# el .gitkeep conserva el directorio
+# el .gitkeep conserva el directorio. Los *.cache son dumps de
+# floats regenerables (los crea pilas3d.hdr al primer uso).
 pilas3d/data/hdr/*.hdr
+pilas3d/data/hdr/*.cache
 
 # Binario de Ollama descargado por los instaladores (MIT, se baja
 # aparte; nunca se commitea por peso y licencia de redistribución)

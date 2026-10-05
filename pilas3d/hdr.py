@@ -17,8 +17,15 @@ También extrae datos de iluminación del mapa (``promedio`` y
 import array
 import math
 import os
+import struct
 
 _cache = {}
+
+# Caché binario junto al .hdr (``<archivo>.hdr.cache``): guarda los
+# floats ya decodificados — la primera carga de un 4K tarda ~9s pero
+# las siguientes leen el dump directo (<1s). Se regenera si el .hdr
+# es más nuevo que el .cache.
+_MAGIA = b'P3DHDR01'
 
 # RGBE: exponente compartido; 136 = 128 (bias) + 8 (mantisa /256)
 _TABLA_E = [0.0] + [math.ldexp(1.0, e - 136) for e in range(1, 256)]
@@ -32,9 +39,47 @@ def cargar(ruta):
     """
     ruta = os.path.abspath(ruta)
     if ruta not in _cache:
-        with open(ruta, 'rb') as f:
-            _cache[ruta] = _decodificar(f.read())
+        _cache[ruta] = _cargar_con_cache(ruta)
     return _cache[ruta]
+
+
+def _cargar_con_cache(ruta):
+    cache = ruta + '.cache'
+    try:
+        if os.path.getmtime(cache) >= os.path.getmtime(ruta):
+            res = _leer_cache(cache)
+            if res is not None:
+                return res
+    except OSError:
+        pass
+    with open(ruta, 'rb') as f:
+        res = _decodificar(f.read())
+    _guardar_cache(cache, res)
+    return res
+
+
+def _leer_cache(cache):
+    with open(cache, 'rb') as f:
+        cab = f.read(16)
+        if len(cab) != 16 or cab[:8] != _MAGIA:
+            return None
+        ancho, alto = struct.unpack('<II', cab[8:16])
+        datos = array.array('f')
+        try:
+            datos.fromfile(f, ancho * alto * 4)
+        except EOFError:
+            return None          # cache truncado: redecodificar
+        return ancho, alto, datos
+
+
+def _guardar_cache(cache, res):
+    ancho, alto, datos = res
+    try:
+        with open(cache, 'wb') as f:
+            f.write(_MAGIA + struct.pack('<II', ancho, alto))
+            datos.tofile(f)
+    except OSError:
+        pass                     # dir de solo lectura: sin cache
 
 
 def _decodificar(buf):
