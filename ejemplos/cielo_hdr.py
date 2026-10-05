@@ -15,8 +15,9 @@ import pilas3d
 
 pilas = pilas3d.iniciar()
 
-# Fondo HDR (data/hdr/mirrored_hall_2k.hdr, CC0 de Poly Haven).
-cielo = pilas.actores.Cielo('mirrored_hall_2k.hdr')
+# Fondo HDR (data/hdr/, CC0 de Poly Haven).
+cielo = pilas.actores.Cielo('kloofendal_48d_partly_cloudy_puresky_2k.hdr')
+# cielo = pilas.actores.Cielo('mirrored_hall_2k.hdr')   # interior
 cielo.iluminar_escena()              # sol + ambiente salen del mapa
 
 camara = pilas.escena_actual().camara
