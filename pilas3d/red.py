@@ -98,14 +98,14 @@ class Servidor(_Conexion):
         """Ids de los clientes conectados (sin contar al que hospeda)."""
         return sorted(self._clientes)
 
-    def enviar(self, nombre, **datos):
+    def enviar(self, tipo_mensaje, **datos):
         """Broadcast a todos los clientes conectados.
 
-        ``nombre`` es el tipo de mensaje ('posicion', 'bloque'…); el
-        payload puede usar cualquier clave, incluso ``tipo=``.
+        ``tipo_mensaje`` es el tipo ('posicion', 'bloque'…); el
+        payload puede usar cualquier clave — ``tipo=``, ``nombre=``…
         """
         for cid in list(self._clientes):
-            self._mandar_a(cid, nombre, datos)
+            self._mandar_a(cid, tipo_mensaje, datos)
 
     def _mandar_a(self, cid, nombre, datos):
         try:
@@ -193,11 +193,11 @@ class Cliente(_Conexion):
         self._hilo.daemon = True
         self._hilo.start()
 
-    def enviar(self, nombre, **datos):
+    def enviar(self, tipo_mensaje, **datos):
         """Envía un mensaje al servidor (mismo criterio que
-        ``Servidor.enviar``: el payload puede usar ``tipo=``)."""
+        ``Servidor.enviar``: el payload puede usar cualquier clave)."""
         with self._lock:
-            _mandar(self._sock, nombre, datos)
+            _mandar(self._sock, tipo_mensaje, datos)
 
     def _escuchar(self):
         try:
