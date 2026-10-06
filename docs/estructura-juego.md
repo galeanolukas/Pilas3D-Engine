@@ -52,6 +52,7 @@ en `.gitignore`: son assets locales pesados — no viajan al repo.
 | Fuente | `.ttf`, `.otf`, `.ttc` | `fonts/`, `data/fonts/` | `Texto(fuente='X.ttf')` |
 | Sonido | `.wav` (recomendado) | cwd, `data/` | `pilas.sonidos.cargar` |
 | Mapa | `.mapa.json` / `.terreno.json` | `mapas/` | `pilas.mapas.cargar` |
+| Gamepad USB | cualquiera XInput/DirectInput | automático | `pilas.mandos` |
 
 ## Personajes y animaciones
 

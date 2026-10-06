@@ -121,12 +121,19 @@ Física 2D (pymunk — 'pip install pymunk')
     pilas.fisica.cuando_colisionan(a, b, fn)   desvincular(actor)
 
 Entrada
-    pilas.control.arriba/abajo/izquierda/derecha   (flechas + WASD)
+    pilas.control.arriba/abajo/izquierda/derecha   (flechas+WASD+mando)
     pilas.simbolos.t  .ESPACIO  .ENTER  .a-.z  ._1-._9  .F1-F12
     escena.cuando_pulsa_tecla = fn   # recibe el simbolo pulsado
     pilas.control.mouse_x/y  boton_izquierdo/derecho/medio
     pilas.cuando_hace_click(f)    # f(actor, punto) al hacer click
     pilas.cuando_suelta_click(f)  cuando_mueve_mouse(f)
+
+Mandos (gamepads USB — pyglet.input, layout estándar)
+    pilas.mandos.cantidad()  .obtener(i)  .cuando_conecta(fn)
+    mando.arriba/…  a b x y  start select  bumper_izq/der
+    mando.stick_izq/der (x,y)  gatillo_izq/der (0..1)  vibrar()
+    control.arriba ya incluye dpad/stick — los juegos de teclado
+    funcionan con mando sin cambiar código
 
 Menu (overlay 2D, teclado+mouse)
     pilas.actores.Menu(opciones=[("Jugar", fn), ("Salir", fn)],
@@ -275,11 +282,15 @@ class Pilas(object):
         if sin_ventana:
             self.ventana = None
             self.control = ControlNulo()
+            from pilas3d.mandos import MandosNulo
+            self.mandos = MandosNulo()
         else:
             from pilas3d.ventana import Ventana
+            from pilas3d.mandos import Mandos
 
             self.ventana = Ventana(self, ancho, alto, titulo)
-            self.control = Control(self.ventana)
+            self.mandos = Mandos(self.ventana)
+            self.control = Control(self.ventana, self.mandos)
 
         self.escenas.Normal()
 

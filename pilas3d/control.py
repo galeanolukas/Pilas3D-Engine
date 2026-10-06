@@ -9,29 +9,47 @@ from pyglet.window import key, mouse
 
 
 class Control(object):
-    """Envuelve el estado de entrada de la ventana."""
+    """Envuelve el estado de entrada de la ventana.
 
-    def __init__(self, ventana):
+    Las direcciones fusionan teclado + el primer mando conectado
+    (``pilas.mandos``): un juego que lea ``control.arriba`` ya
+    responde al dpad/stick sin cambiar código.
+    """
+
+    def __init__(self, ventana, mandos=None):
         self._ventana = ventana
         self._teclas = ventana.teclas
+        self._mandos = mandos
 
-    # -- teclado ------------------------------------------------------------
+    def _mando(self):
+        """El primer mando conectado, o None."""
+        return self._mandos.obtener() if self._mandos else None
+
+    # -- teclado + mando ------------------------------------------------------
 
     @property
     def izquierda(self):
-        return bool(self._teclas[key.LEFT] or self._teclas[key.A])
+        m = self._mando()
+        return bool(self._teclas[key.LEFT] or self._teclas[key.A]
+                    or (m and m.izquierda))
 
     @property
     def derecha(self):
-        return bool(self._teclas[key.RIGHT] or self._teclas[key.D])
+        m = self._mando()
+        return bool(self._teclas[key.RIGHT] or self._teclas[key.D]
+                    or (m and m.derecha))
 
     @property
     def arriba(self):
-        return bool(self._teclas[key.UP] or self._teclas[key.W])
+        m = self._mando()
+        return bool(self._teclas[key.UP] or self._teclas[key.W]
+                    or (m and m.arriba))
 
     @property
     def abajo(self):
-        return bool(self._teclas[key.DOWN] or self._teclas[key.S])
+        m = self._mando()
+        return bool(self._teclas[key.DOWN] or self._teclas[key.S]
+                    or (m and m.abajo))
 
     def simbolo(self, tecla):
         """Consulta cualquier tecla por su constante de pyglet.window.key."""

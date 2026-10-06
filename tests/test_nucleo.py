@@ -3840,3 +3840,88 @@ def test_pilas3d_init_nombre_directorio():
     from pilas3d.nuevo_juego import _nombre_directorio
     assert _nombre_directorio('Mi Juego!') == 'mi_juego'
     assert _nombre_directorio('  Space Wars 3 ') == 'space_wars_3'
+
+
+# -- Mandos (gamepads) -----------------------------------------------------
+
+class _MandoFalso(object):
+    """Finge un pyglet.input.Controller para probar Mando/Mandos."""
+    def __init__(self):
+        self.name = 'Mando de prueba'
+        self.guid = 'guid-123'
+        self.type = 'XB'
+        self.a = self.b = self.x = self.y = False
+        self.start = self.back = self.guide = False
+        self.leftshoulder = self.rightshoulder = False
+        self.leftstick = self.rightstick = False
+        self.lefttrigger = self.righttrigger = 0.0
+        self.dpadx = self.dpady = 0.0
+        self.leftx = self.lefty = 0.0
+        self.rightx = self.righty = 0.0
+        self.abierto = False
+
+    def open(self, window=None, exclusive=False):
+        self.abierto = True
+
+    def push_handlers(self, **kw):
+        self._handlers = kw
+
+
+def test_mando_direcciones_dpad_y_stick():
+    from pilas3d.mandos import Mando
+    m = Mando(_MandoFalso())
+    assert not m.arriba
+    m._c.dpady = 1                     # dpad arriba
+    assert m.arriba
+    m._c.dpady = 0
+    m._c.lefty = -0.8                  # stick arriba (lefty <0 = arriba)
+    assert m.arriba
+    m._c.lefty = 0.8                   # stick abajo
+    assert m.abajo and not m.arriba
+    m._c.leftx = -0.9                  # stick izquierda
+    m._c.lefty = 0.0
+    assert m.izquierda and not m.abajo
+
+
+def test_mando_botones_sticks_y_vibrar():
+    from pilas3d.mandos import Mando
+    m = Mando(_MandoFalso())
+    m._c.a = True
+    assert m.a and not m.b
+    m._c.leftx, m._c.lefty = 0.5, -1.0
+    assert m.stick_izq == pytest.approx((0.5, 1.0))  # y arriba positivo
+    m._c.righttrigger = 0.7
+    assert m.gatillo_der == pytest.approx(0.7)
+    m.vibrar(1.0)                      # el falso no tiene rumble: ok
+
+
+def test_mandos_sin_ventana_vacio():
+    pilas = crear_pilas()
+    assert pilas.mandos.cantidad() == 0
+    assert pilas.mandos.obtener() is None
+    pilas.mandos.cuando_conecta(lambda m: None)  # no explota
+
+
+def test_mandos_registro_y_control_fusiona():
+    from pilas3d.mandos import Mandos
+    mandos = Mandos()                  # sin ventana, sin mandos reales
+    falso = _MandoFalso()
+    mandos._al_conectar(falso)
+    assert mandos.cantidad() == 1
+    assert falso.abierto               # se abrió al conectar
+    assert mandos.obtener().nombre == 'Mando de prueba'
+    # la fusión: control.arriba lee el mando aunque el teclado esté quieto
+    from pilas3d.control import Control
+    class _V:
+        import collections
+        teclas = collections.defaultdict(bool)
+        mouse_x = mouse_y = mouse_botones = 0
+    control = Control(_V(), mandos)
+    assert not control.arriba
+    falso.dpady = 1
+    assert control.arriba
+    falso.leftx = 0.9
+    assert control.derecha
+    mandos._al_desconectar(falso)
+    assert mandos.cantidad() == 0
+    assert not control.arriba
