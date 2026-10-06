@@ -3811,3 +3811,32 @@ def test_hdr_cache_binario_acelera_recargas(tmp_path):
     hdr._cache.clear()
     a3 = hdr.cargar(str(p))
     assert a3[2][0] == pytest.approx(1.0)
+
+
+def test_pilas3d_init_crea_la_estructura(tmp_path):
+    from pilas3d import nuevo_juego
+    import os
+    viejo = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        base = nuevo_juego.crear('Mi Juego!')
+        assert base == 'mi_juego'
+        for d in ('mapas', 'modelos/personajes', 'modelos/props',
+                  'modelos/fuentes', 'modelos/docs', 'texturas',
+                  'sonidos', 'fonts', 'data/hdr', 'data/imagenes'):
+            assert os.path.isdir(tmp_path / 'mi_juego' / d), d
+        juego = (tmp_path / 'mi_juego' / 'juego.py').read_text()
+        assert 'Mi Juego!' in juego and 'pilas3d.iniciar' in juego
+        compile(juego, 'juego.py', 'exec')           # sintaxis válida
+        assert (tmp_path / 'mi_juego' / 'README.md').exists()
+        # no pisa un proyecto existente con contenido
+        with pytest.raises(IOError):
+            nuevo_juego.crear('Mi Juego!')
+    finally:
+        os.chdir(viejo)
+
+
+def test_pilas3d_init_nombre_directorio():
+    from pilas3d.nuevo_juego import _nombre_directorio
+    assert _nombre_directorio('Mi Juego!') == 'mi_juego'
+    assert _nombre_directorio('  Space Wars 3 ') == 'space_wars_3'

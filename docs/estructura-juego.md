@@ -4,6 +4,12 @@ Cómo ordenar los archivos para un juego con pilas3d — qué formato
 acepta cada subsistema y **dónde tiene que estar** para que el motor
 lo encuentre solo.
 
+Todo el árbol de abajo lo crea el scaffolding:
+
+```bash
+pilas3d-init mi_juego       # crea mi_juego/ con juego.py + README
+```
+
 ## El árbol completo
 
 ```
