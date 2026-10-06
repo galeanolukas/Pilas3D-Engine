@@ -32,10 +32,12 @@ comando:
 | Comando | Herramienta | |
 |---|---|---|
 | `pilas3d` | **Consola interactiva**: ventana 3D + IPython — cada línea refresca la escena | `%ejemplo`, `%ia`, `%make_game` |
+| `pilas3d-init "Título"` | **Proyecto nuevo**: árbol de carpetas + `juego.py` que ya corre + README | ver [docs/estructura-juego.md](docs/estructura-juego.md) |
 | `pilas3d-ide` | **IDE integrado**: vista 3D + consola Python en la misma ventana | multilínea, historial, `Ctrl+S` guarda |
 | `pilas3d-editor` | **Editor de personajes**: posar huesos `.glb`, keyframes, animar | guarda `.anim.json` |
 | `pilas3d-bloques` | **Blockly web**: bloques tipo Scratch → Python real | ejemplos precargados, Run/Stop |
 | `pilas3d-mapas` | **Editor de mapas**: voxels y **terreno deformable** (`Y`), spawn, props | mouse orbita, teclas editan — `.mapa.json` y `.terreno.json` |
+| `pilas3d-empaquetar` | **Ejecutable**: PyInstaller one-file del juego | [docs/empaquetar.md](docs/empaquetar.md) |
 
 ### Editor de personajes (`pilas3d-editor`)
 
@@ -203,7 +205,27 @@ cielo.exposicion = 1.3      # brillo del fondo (tone mapping)
 
 El `.hdr` se sube como textura float y `iluminar_escena` extrae la
 dirección del sol y el color del ambiente — el fondo y la escena
-quedan integrados sin tocar `pilas.luces` a mano.
+quedan integrados sin tocar `pilas.luces` a mano. La primera carga
+decodifica en Python (~2 s para 2K) y guarda un `.hdr.cache` — las
+siguientes arrancan en ~0.04 s. Recomendado: 2K (GPU soporta hasta
+16K pero 4K ya pesa ~64 MB de VRAM).
+
+### Mandos USB (gamepads)
+
+`pilas.mandos` envuelve `pyglet.input` — cualquier mando
+XInput/DirectInput (Xbox, PlayStation, genéricos) con hot-plug:
+
+```python
+mando = pilas.mandos.obtener()       # el primero conectado
+mando.a / b / x / y  .start          # botones
+mando.stick_izq  .gatillo_der        # analógicos
+mando.vibrar(1.0, duracion=0.3)      # rumble
+pilas.mandos.cuando_conecta(fn)      # avisa al enchufar
+```
+
+Lo importante: `pilas.control.arriba`/`abajo`/`izquierda`/`derecha`
+ya **fusionan teclado + mando** — `MoverseConElTeclado` y cualquier
+juego que lea `pilas.control` responde al gamepad sin cambiar código.
 
 ## Modo interactivo manual
 
@@ -237,7 +259,7 @@ bloquear con `ejecutar()`:
 | `actor.rotacion`              | `rotacion_x/y/z` (`rotacion` = eje Y)|
 | `pilas.escenas.Normal()`      | igual + `escenas.vincular(Clase)`, hooks `iniciar`/`terminar`/`cuando_pulsa_tecla`, `pilas.escena`, `pilas.cambiar_escena` |
 | `escena.camara.x/y`           | `camara.x/y/z` + `camara.objetivo`   |
-| `pilas.control.izquierda`…    | igual (flechas + WASD)               |
+| `pilas.control.izquierda`…    | igual (flechas + WASD + **gamepad**: dpad/stick) |
 | `pilas.actores.Texto/Puntaje` | `pilas.actores.Texto()` / `Puntaje()` (overlay 2D, multilínea) |
 | —                             | `pilas.actores.Panel()` + `pilas.ventana.area_3d` (HUD/paneles) |
 | `actor.colisiona_con(otro)`   | igual (esfera-esfera 3D) + `colisiona_en_plano_con` (XZ) |
@@ -269,6 +291,10 @@ bloquear con `ejecutar()`:
 | —                             | `pilas.materiales` — texturas compuestas (normal/AO/rugosidad) de packs Poliigon/ambientCG autodetectadas por carpeta ([docs/materiales.md](docs/materiales.md)) |
 | —                             | `pilas.luces` — sol + hasta 8 puntuales; `escena.niebla` |
 | —                             | `pilas.red.hospedar/conectar` — multijugador simple |
+| —                             | `pilas.mandos` — gamepads USB (botones, sticks, gatillos, rumble, hot-plug) |
+| —                             | `pilas.efectos` — parpadear, temblar, flotar, pulsar, estela, hit-stop |
+| —                             | `pilas.actores.Cielo('x.hdr')` — fondos HDR Radiance + `iluminar_escena()` |
+| —                             | `pilas3d-init "Título"` — proyecto nuevo con estructura lista |
 | `Mono`/`Robot`/...            | `Robot`/`Humanoide`/`Mono`/`Arania`/`Espectro` + `Bot()` |
 | `pilas.ejecutar()`            | `pilas.ejecutar()`                   |
 
