@@ -194,6 +194,7 @@ Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 .venv/bin/python ejemplos/efectos.py            # jugo: parpadear, temblar, flotar, hit-stop, estela
 .venv/bin/python ejemplos/cielo_hdr.py          # fondo .hdr equirect + luz extraída del mapa
 .venv/bin/python ejemplos/crear_personaje.py    # fabrica un .glb riggeado low-poly + camina
+.venv/bin/python ejemplos/servir_web.py         # la escena en el navegador (Three.js por WS)
 ```
 
 ### Fondos HDR
@@ -230,6 +231,24 @@ pilas.mandos.cuando_conecta(fn)      # avisa al enchufar
 Lo importante: `pilas.control.arriba`/`abajo`/`izquierda`/`derecha`
 ya **fusionan teclado + mando** — `MoverseConElTeclado` y cualquier
 juego que lea `pilas.control` responde al gamepad sin cambiar código.
+
+### Render en el navegador (`pilas.web`)
+
+El motor puede servir la escena a cualquier navegador: la lógica
+queda en Python y el dibujo lo hace **Three.js** (WebGL con sombras
+reales, materiales PBR, niebla) vía WebSocket:
+
+```python
+pilas.web.servir()                    # http://localhost:8000/
+pilas.web.servir(publico=True)        # toda la LAN puede ver/jugar
+pilas.web.ejecutar()                  # loop headless (sin ventana)
+```
+
+La geometría de cada actor viaja una sola vez (y se reenvía cuando
+cambia: skinning, terreno deformado); las transformaciones fluyen a
+20 Hz. **El juego es jugable desde el browser**: las teclas del
+navegador se fusionan en `pilas.control` igual que el mando USB.
+Demo: `python3 ejemplos/servir_web.py`.
 
 ## Modo interactivo manual
 

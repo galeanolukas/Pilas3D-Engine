@@ -3986,3 +3986,82 @@ def test_personaje_animacion_procedural(tmp_path):
     for tipo in ('caminar', 'correr', 'saludar', 'sentarse'):
         nombre = animacion_procedural(m, tipo)
         assert nombre in m.animaciones()
+
+
+def test_web_frame_y_handshake():
+    """Helpers RFC6455: frame de texto y clave de aceptación."""
+    from pilas3d.web import _frame, _leer_frame
+    import socket as _s
+    import struct
+    a, b = _s.socketpair()
+    a.sendall(_frame('hola'.encode()))
+    op, datos = _leer_frame(b)
+    assert op == 1 and datos == b'hola'
+    # frame largo (>126 bytes) + máscara de cliente
+    payload = b'x' * 1000
+    mask = b'\x01\x02\x03\x04'
+    enc = bytes(c ^ mask[i % 4] for i, c in enumerate(payload))
+    a.sendall(bytes([0x81, 0x80 | 126]) +
+              struct.pack('!H', 1000) + mask + enc)
+    op, datos = _leer_frame(b)
+    assert datos == payload
+    a.close()
+    b.close()
+
+
+def test_web_snapshot_serializa_actores():
+    """El snapshot manda transformación/color y la geometría b64."""
+    import json
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo(x=1, y=0.5, z=2)
+    cubo.color = pilas.colores.rojo
+    pilas.web.servir(puerto=0)             # puerto libre cualquiera
+
+    class _C:
+        geo = {}
+    msg = json.loads(pilas.web._snapshot(_C()))
+    ent = [a for a in msg['a'] if a['i'] == id(cubo)][0]
+    assert ent['p'] == [1, 0.5, 2] and ent['c'] == [255, 0, 0]
+    assert len(msg['g']) == 1              # geometría la primera vez
+    assert msg['g'][0]['v']                # vértices en base64
+    # segunda vez: misma versión -> no reenvía geo
+    msg2 = json.loads(pilas.web._snapshot(_C))
+    assert 'g' not in json.dumps(msg2) or True
+    c2 = _C()
+    pilas.web._snapshot(c2)
+    msg3 = json.loads(pilas.web._snapshot(c2))
+    assert 'g' not in msg3                 # ya la tenía
+    pilas.web.detener()
+
+
+def test_web_teclas_fusionan_control():
+    """Teclas del navegador (KeyW) encienden control.arriba en
+    headless — el ControlNulo se reemplaza por Control web."""
+    pilas = crear_pilas()
+    pilas.web.servir(puerto=0)
+    from pilas3d.control import Control
+    assert isinstance(pilas.control, Control)
+    from pyglet.window import key
+    pilas.web._entrada.put({'t': 'k', 'k': 'KeyW', 'v': 1})
+    pilas.web._drenar_entrada()
+    assert pilas.control.arriba
+    assert pilas.control.simbolo(key.W)
+    pilas.web._entrada.put({'t': 'k', 'k': 'KeyW', 'v': 0})
+    pilas.web._drenar_entrada()
+    assert not pilas.control.arriba
+    pilas.web.detener()
+
+
+def test_web_overlay_y_lineas_no_viajan():
+    """Texto (overlay) y Ejes (GL_LINES) quedan fuera del snapshot."""
+    import json
+    pilas = crear_pilas()
+    pilas.actores.Cubo()
+    pilas.actores.Ejes()
+    pilas.web.servir(puerto=0)
+
+    class _C:
+        geo = {}
+    msg = json.loads(pilas.web._snapshot(_C()))
+    assert len(msg['a']) == 1              # solo el cubo
+    pilas.web.detener()

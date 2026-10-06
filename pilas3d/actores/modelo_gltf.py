@@ -545,6 +545,11 @@ class ModeloGLTF(Actor):
             largo = math.sqrt(ax * ax + ay * ay + az * az) or 1.0
             pos += [x, y, z]
             nor += [ax / largo, ay / largo, az / largo]
+        # posiciones skinneadas de este frame: pilas.web las usa
+        # para reflejar la animación en los navegadores
+        self._pos_skin = pos
+        self._nor_skin = nor
+        self._geo_version = getattr(self, '_geo_version', 0) + 1
         for g, lst in zip(self._grupos, self._listas):
             v0, v1 = g['v0'], g['v1']
             lst['vl'].position[:] = pos[v0 * 3:v1 * 3]

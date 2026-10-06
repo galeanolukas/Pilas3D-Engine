@@ -135,6 +135,11 @@ Mandos (gamepads USB — pyglet.input, layout estándar)
     control.arriba ya incluye dpad/stick — los juegos de teclado
     funcionan con mando sin cambiar código
 
+Web (render en el navegador — Three.js por WebSocket)
+    pilas.web.servir(puerto=8000, publico=False, hz=20)
+    pilas.web.ejecutar()     # loop sin ventana (servidor headless)
+    las teclas del navegador entran a pilas.control
+
 Menu (overlay 2D, teclado+mouse)
     pilas.actores.Menu(opciones=[("Jugar", fn), ("Salir", fn)],
                        titulo="MI JUEGO", x=230, y=300)
@@ -278,6 +283,8 @@ class Pilas(object):
         self.fisica = Fisica(self)
         from pilas3d.ia import IA
         self.ia = IA(self)
+        from pilas3d.web import PuenteWeb
+        self.web = PuenteWeb(self)
 
         if sin_ventana:
             self.ventana = None
@@ -497,6 +504,7 @@ class Pilas(object):
             dt * self.efectos.tiempo_escala())
         self.fisica._actualizar()
         self.red._actualizar()
+        self.web._tick()
 
     def ejecutar(self):
         """Inicia el bucle de juego (llamadas a actualizar + dibujar)."""

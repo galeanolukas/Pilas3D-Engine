@@ -28,7 +28,7 @@ pilas3d-init = "pilas3d.nuevo_juego:cli"
 include = ["pilas3d*"]
 
 [tool.setuptools.package-data]
-pilas3d = ["bloques_web/**/*", "bloques_web/**/**/*", "data/*"]
+pilas3d = ["bloques_web/**/*", "bloques_web/**/**/*", "web/*", "data/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -476,6 +476,9 @@ class Actor(object):
         if self._vertex_list is not None:
             self._vertex_list.delete()
             self._vertex_list = None
+        # la geometría cambió: pilas.web reenvía la malla a los
+        # navegadores conectados
+        self._geo_version = getattr(self, '_geo_version', 0) + 1
 
     def _cargar_textura(self):
         if hasattr(self._imagen, "get_texture"):

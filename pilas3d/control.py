@@ -18,8 +18,23 @@ class Control(object):
 
     def __init__(self, ventana, mandos=None):
         self._ventana = ventana
-        self._teclas = ventana.teclas
+        self._fuentes = [ventana.teclas]
         self._mandos = mandos
+
+    def agregar_fuente(self, teclas):
+        """Suma un dict ``{simbolo: bool}`` como fuente de teclado
+        (lo usa ``pilas.web`` para las teclas del navegador)."""
+        self._fuentes.append(teclas)
+
+    def _tecla(self, codigo):
+        """True si la tecla está pulsada en alguna fuente."""
+        for f in self._fuentes:
+            try:
+                if f[codigo]:
+                    return True
+            except (KeyError, TypeError):
+                pass
+        return False
 
     def _mando(self):
         """El primer mando conectado, o None."""
@@ -30,30 +45,30 @@ class Control(object):
     @property
     def izquierda(self):
         m = self._mando()
-        return bool(self._teclas[key.LEFT] or self._teclas[key.A]
+        return bool(self._tecla(key.LEFT) or self._tecla(key.A)
                     or (m and m.izquierda))
 
     @property
     def derecha(self):
         m = self._mando()
-        return bool(self._teclas[key.RIGHT] or self._teclas[key.D]
+        return bool(self._tecla(key.RIGHT) or self._tecla(key.D)
                     or (m and m.derecha))
 
     @property
     def arriba(self):
         m = self._mando()
-        return bool(self._teclas[key.UP] or self._teclas[key.W]
+        return bool(self._tecla(key.UP) or self._tecla(key.W)
                     or (m and m.arriba))
 
     @property
     def abajo(self):
         m = self._mando()
-        return bool(self._teclas[key.DOWN] or self._teclas[key.S]
+        return bool(self._tecla(key.DOWN) or self._tecla(key.S)
                     or (m and m.abajo))
 
     def simbolo(self, tecla):
         """Consulta cualquier tecla por su constante de pyglet.window.key."""
-        return bool(self._teclas[tecla])
+        return self._tecla(tecla)
 
     # -- mouse ----------------------------------------------------------------
 
