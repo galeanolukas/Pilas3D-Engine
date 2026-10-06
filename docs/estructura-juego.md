@@ -76,6 +76,24 @@ heroe.animar('02_walk_Armature_0', ciclica=True)
 - Ojo: el export a web (`pilas3d-bloques`) **sustituye los modelos
   por primitivas** — glTF es solo del runtime Python.
 
+### Generar un personaje sin modelar
+
+Si no tenés un `.glb` riggeado, el motor fabrica uno low-poly:
+
+```python
+from pilas3d.personaje import crear_personaje
+crear_personaje('modelos/personajes/heroe.glb', alto=1.8,
+                colores={'camisa': (200, 60, 60)})
+```
+
+Es un humanoide de cajas con esqueleto de 19 huesos (rigid
+skinning) y nombres estándar — `mapear_huesos` lo reconoce, así que
+`animacion_procedural` (caminar, correr, saludar...) y
+`pilas3d-editor` funcionan directo. En el editor, la tecla **V**
+crea uno sin salir. Parámetros: `alto`, `ancho`, `cabeza` (>1 =
+chibi) y el dict `colores` (piel/camisa/pantalon/zapatos/ojos/pelo,
+0-255).
+
 ### Animación por secuencia .obj
 
 `ModeloAnimado` toma una lista de `.obj` como cuadros (técnica

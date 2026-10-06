@@ -22,6 +22,8 @@ Carga un modelo glTF riggeado y permite posar sus huesos:
   U: volver a la pose que tenía antes de reproducir (P/L/T)
 - J: guardar la animación con nombre → '<modelo>.<nombre>.anim.json'
   L: cicla las animaciones guardadas del modelo
+- V: crear un personaje low-poly riggeado nuevo (personajeN.glb en
+  el directorio de modelos) y cargarlo para animarlo
 - A: abrir el explorador de archivos para cargar un .glb externo
   (con caja de selección y nombre personalizado para el modelo)
 - K: cambiar la textura del modelo (explorador de imágenes;
@@ -385,6 +387,19 @@ def al_pulsar(tecla):
     if tecla == s.k:
         abrir_explorador('textura')
         return
+    if tecla == s.v:
+        # crear: genera un humanoide low-poly riggeado en el dir de
+        # modelos y lo carga para empezar a animarlo
+        from pilas3d.personaje import crear_personaje
+        base = estado.get('directorio') or 'modelos'
+        i = 1
+        while os.path.exists(os.path.join(base, 'personaje%d.glb' % i)):
+            i += 1
+        ruta = crear_personaje(os.path.join(base, 'personaje%d.glb' % i))
+        MODELOS.append(ruta)
+        cargar_modelo(len(MODELOS) - 1)
+        info.texto = "creado %s — animá con M/T" % ruta
+        return
     if not huesos:
         refrescar_ui()
         return
@@ -492,6 +507,7 @@ def main(directorio='modelos', ejecutar=True):
                             directorio)
         encontrados = buscar_modelos(raiz)
     MODELOS = encontrados
+    estado['directorio'] = directorio
 
     pilas = pilas3d.iniciar(titulo="pilas3d - editor de personaje")
 
@@ -517,6 +533,7 @@ def main(directorio='modelos', ejecutar=True):
         "M/W/B: keyframes - P: play - S: stop - U: volver - "
         "J/L: animaciones\n"
         "A: cargar .glb - K: textura - T: procedural - "
+        "V: crear personaje\n"
         "botón derecho: cámara",
         x=10, y=PIE - 50, tamano=12)
 

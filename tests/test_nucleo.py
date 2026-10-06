@@ -3925,3 +3925,64 @@ def test_mandos_registro_y_control_fusiona():
     mandos._al_desconectar(falso)
     assert mandos.cantidad() == 0
     assert not control.arriba
+
+
+def test_personaje_genera_glb_valido(tmp_path):
+    """crear_personaje escribe un .glb con skin que el cargador lee."""
+    from pilas3d.personaje import crear_personaje
+    ruta = crear_personaje(str(tmp_path / 'p.glb'), alto=1.8)
+    from pilas3d import gltf
+    esc = gltf.cargar(ruta)
+    assert esc['skin'] is not None
+    assert len(esc['skin']['articulaciones']) == 19
+    assert len(esc['skin']['ibm']) == 19
+    assert len(esc['mallas']) == 18          # una parte por caja
+    # todas las primitivas riggeadas con peso 1 a su hueso
+    for m in esc['mallas']:
+        assert m['articulaciones'] and m['pesos']
+        assert all(w[0] == 1.0 for w in m['pesos'])
+
+
+def test_personaje_mapea_huesos_y_skinnea(tmp_path):
+    """El esqueleto generado lo reconoce mapear_huesos y la piel se
+    mueve al rotar un hueso (reposo = identidad)."""
+    from pilas3d.personaje import crear_personaje
+    from pilas3d.esqueleto import mapear_huesos
+    pilas = crear_pilas()
+    m = pilas.actores.ModeloGLTF(
+        crear_personaje(str(tmp_path / 'h.glb')))
+    assert m.es_animado
+    mapa = mapear_huesos(m.huesos())
+    for parte in ('brazo_izq', 'brazo_der', 'pierna_izq',
+                  'pierna_der', 'cabeza', 'columna'):
+        assert len(mapa[parte]) >= 2, parte
+    assert mapa['brazo_izq'] != mapa['brazo_der']
+
+    m._construir_gl()
+    g6 = m._grupos[6]                       # parte del brazo izquierdo
+    bind = m._bind_v[g6['v0']:g6['v1']]
+    m.refrescar_pose()
+    p = m._listas[6]['vl'].position
+    skin = [(p[i], p[i + 1], p[i + 2]) for i in range(0, len(p), 3)]
+    assert all(abs(a - b) < 1e-4 for v1, v2 in zip(bind, skin)
+               for a, b in zip(v1, v2))      # reposo = identidad
+
+    i_arm = [i for i, n in m.huesos() if n == 'LeftArm'][0]
+    m.rotar_hueso(i_arm, 'z', 90)
+    m.refrescar_pose()
+    p = m._listas[6]['vl'].position
+    skin = [(p[i], p[i + 1], p[i + 2]) for i in range(0, len(p), 3)]
+    assert any(abs(a - b) > 0.05 for v1, v2 in zip(bind, skin)
+               for a, b in zip(v1, v2))      # la piel lo siguió
+
+
+def test_personaje_animacion_procedural(tmp_path):
+    """animacion_procedural genera clips sobre el personaje creado."""
+    from pilas3d.personaje import crear_personaje
+    from pilas3d.esqueleto import animacion_procedural
+    pilas = crear_pilas()
+    m = pilas.actores.ModeloGLTF(
+        crear_personaje(str(tmp_path / 'a.glb')))
+    for tipo in ('caminar', 'correr', 'saludar', 'sentarse'):
+        nombre = animacion_procedural(m, tipo)
+        assert nombre in m.animaciones()

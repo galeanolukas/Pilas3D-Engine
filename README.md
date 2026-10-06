@@ -47,7 +47,10 @@ comando:
 
 Carga modelos `.glb` riggeados: rotar/mover huesos, capturar
 keyframes, crear animaciones propias guardadas como `.anim.json`
-junto al modelo — sin Blender. Guía:
+junto al modelo — sin Blender. Con **V** fabrica un personaje
+low-poly riggeado desde cero (`pilas3d.personaje.crear_personaje`):
+19 huesos, cajas por parte, nombres estándar que la animación
+procedural reconoce sola. Guía:
 [docs/editor-personaje.md](docs/editor-personaje.md).
 
 ### Programación por bloques (`pilas3d-bloques`)
@@ -190,6 +193,7 @@ Guía completa: [docs/asistente-ia.md](docs/asistente-ia.md).
 .venv/bin/python ejemplos/vida_y_zonas.py       # Vida + Zona + máquina de estados + Barra
 .venv/bin/python ejemplos/efectos.py            # jugo: parpadear, temblar, flotar, hit-stop, estela
 .venv/bin/python ejemplos/cielo_hdr.py          # fondo .hdr equirect + luz extraída del mapa
+.venv/bin/python ejemplos/crear_personaje.py    # fabrica un .glb riggeado low-poly + camina
 ```
 
 ### Fondos HDR
