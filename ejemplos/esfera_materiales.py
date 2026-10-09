@@ -14,7 +14,7 @@ relieve del normal map + el brillo especular de la rugosidad.
 import pilas3d
 
 pilas = pilas3d.iniciar()
-pilas.escena.fondo = pilas.colores.gris_oscuro
+pilas.escena.fondo = pilas.colores.celeste
 
 # los packs viven en texturas/<alias>/ — por nombre de carpeta
 mat = pilas.materiales['Tiles144_1K-JPG']
@@ -22,13 +22,13 @@ if mat.base is None:
     mat = pilas.materiales['Poliigon_GrassPatchyGround_4585/2K']
 print("material detectado:", mat)
 
-esfera = pilas.actores.Esfera(y=1.5)
+esfera = pilas.actores.Esfera(y=2)
 esfera.escala = 2.0
 esfera.material = mat
 if mat.base:
     esfera.imagen = mat.base      # el color base (igual que antes)
 
-piso = pilas.actores.Plano(y=0, ancho=14, profundidad=14)
+piso = pilas.actores.Plano(y=0, ancho=14, profundidad=16)
 piso.material = mat
 if mat.base:
     piso.imagen = mat.base
