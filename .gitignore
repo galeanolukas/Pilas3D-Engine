@@ -47,3 +47,4 @@ ejemplos/anim-*.json
 
 # proyectos scaffolded con pilas3d-init (juegos del usuario)
 juego_nuevo/
+tests/tmp_test/
