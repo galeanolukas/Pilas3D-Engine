@@ -47,6 +47,9 @@ class Barra(Actor):
                 return 0.0
         if getattr(self.de, 'vivo', True) is False:
             return 0.0
+        # actor sin vida propia -> barra llena (decorativa)
+        if not hasattr(self.de, 'vida'):
+            return 1.0
         maxima = getattr(self.de, 'vida_maxima', 0) or 1
         return max(0.0, min(1.0, self.de.vida / maxima))
 

@@ -4194,3 +4194,11 @@ def test_shader_incluye_sombras():
     for token in ('mapa_sombras', 'usar_sombras', 'factor_sombra',
                   'matriz_luz', 'v_pos_luz', 'textureSize'):
         assert token in shaders.VERTEX_SHADER + shaders.FRAGMENT_SHADER
+
+
+def test_barra_sin_vida_no_crashea():
+    """Barra(de=actor_sin_vida) -> fraccion 1.0, no AttributeError."""
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo()
+    b = pilas.actores.Barra(de=cubo)
+    assert b.fraccion() == 1.0
