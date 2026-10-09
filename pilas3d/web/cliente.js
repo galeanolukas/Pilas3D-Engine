@@ -139,23 +139,42 @@ function geometria(g) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position',
                    new THREE.BufferAttribute(f32(g.v), 3));
-  if (g.n) geo.setAttribute('normal',
-                          new THREE.BufferAttribute(f32(g.n), 3));
-  else geo.computeVertexNormals();
+  // puntos y líneas no usan normales
+  if (g.n && g.m !== 0 && g.m !== 1)
+    geo.setAttribute('normal',
+                     new THREE.BufferAttribute(f32(g.n), 3));
+  else if (g.m !== 0 && g.m !== 1) geo.computeVertexNormals();
   if (g.c) geo.setAttribute('color',
                           new THREE.BufferAttribute(f32(g.c), 4));
   if (g.u) geo.setAttribute('uv', new THREE.BufferAttribute(f32(g.u), 2));
   if (g.x) geo.setIndex(new THREE.BufferAttribute(u32(g.x), 1));
+  geo._modo = g.m === undefined ? 4 : g.m;
   return geo;
 }
 
 function crearMesh(a) {
   const geo = geos.get(a.i);
   if (!geo) return null;                       // la geo llega en 'g'
+  const colores = !!geo.hasAttribute('color');
+  // GL_POINTS / GL_LINES del motor -> Points / LineSegments
+  if (geo._modo === 0) {
+    const m = new THREE.PointsMaterial({
+      vertexColors: colores, size: a.pt || 2.0,
+      sizeAttenuation: false, transparent: true });
+    const pts = new THREE.Points(geo, m);
+    escena3.add(pts);
+    return pts;
+  }
+  if (geo._modo === 1) {
+    const ls = new THREE.LineSegments(
+      geo, new THREE.LineBasicMaterial({ vertexColors: colores }));
+    escena3.add(ls);
+    return ls;
+  }
   const mat = a.l
-    ? new THREE.MeshBasicMaterial({ vertexColors: !!geo.hasAttribute('color') })
+    ? new THREE.MeshBasicMaterial({ vertexColors: colores })
     : new THREE.MeshStandardMaterial({
-        vertexColors: !!geo.hasAttribute('color'),
+        vertexColors: colores,
         roughness: 0.9, metalness: 0.0 });
   if (a.t) mat.map = textura(a.t);
   const mesh = new THREE.Mesh(geo, mat);
@@ -175,8 +194,16 @@ function actualizarMesh(e, a) {
   if (a.t && !m.map) { m.map = textura(a.t); m.needsUpdate = true; }
 }
 
+const _euler = new THREE.Euler();
 function snapshot(msg) {
-  if (msg.g) for (const g of msg.g) geos.set(g.i, geometria(g));
+  if (msg.g) for (const g of msg.g) {
+    const geo = geometria(g);
+    geos.set(g.i, geo);
+    // geometría re-enviada (partículas, skinning): se la cambia al
+    // mesh vivo que referenciaba la versión vieja
+    const e = actores.get(g.i);
+    if (e) { e.mesh.geometry.dispose(); e.mesh.geometry = geo; }
+  }
   const vistos = new Set();
   for (const a of msg.a) {
     vistos.add(a.i);
@@ -184,13 +211,17 @@ function snapshot(msg) {
     if (!e) {
       const mesh = crearMesh(a);
       if (!mesh) continue;
-      e = { mesh, pos: a.p.slice(), rot: a.r.slice(),
-            esc: a.e.slice() };
+      e = { mesh, pos: a.p.slice(), esc: a.e.slice(),
+            quat: new THREE.Quaternion(), nuevo: true };
       mesh.position.set(...a.p);
-      mesh.rotation.set(...a.r.map(THREE.MathUtils.degToRad), 'YXZ');
       mesh.scale.set(...a.e);
       actores.set(a.i, e);
     }
+    // objetivo de rotación como quaternion: el render hace slerp
+    _euler.set(a.r[0] * Math.PI / 180, a.r[1] * Math.PI / 180,
+               a.r[2] * Math.PI / 180, 'YXZ');
+    e.quat.setFromEuler(_euler);
+    if (e.nuevo) { e.mesh.quaternion.copy(e.quat); e.nuevo = false; }
     actualizarMesh(e, a);
   }
   for (const [i, e] of actores) {
@@ -231,10 +262,19 @@ function snapshot(msg) {
     escena3.fog = new THREE.Fog(
       new THREE.Color(c[0] / 255, c[1] / 255, c[2] / 255), ini, fin);
   } else escena3.fog = null;
-  if (msg.fondo) {
+  if (msg.cielo) {
+    // .hdr del motor ya tonemapeado a PNG: fondo equirect + IBL
+    const t = textura(msg.cielo);
+    if (escena3.background !== t) {
+      t.mapping = THREE.EquirectangularReflectionMapping;
+      escena3.background = t;
+      escena3.environment = t;          // iluminación basada en imagen
+    }
+  } else if (msg.fondo) {
     escena3.background = new THREE.Color(msg.fondo[0] / 255,
                                          msg.fondo[1] / 255,
                                          msg.fondo[2] / 255);
+    escena3.environment = null;
   }
   estado.textContent = 'actores: ' + msg.a.length +
     '   (WASD/flechas se envían al motor)';
@@ -288,8 +328,7 @@ function render() {
     m.position.x += (e.pos[0] - m.position.x) * 0.3;
     m.position.y += (e.pos[1] - m.position.y) * 0.3;
     m.position.z += (e.pos[2] - m.position.z) * 0.3;
-    m.rotation.set(e.rot[0] * DEG, e.rot[1] * DEG, e.rot[2] * DEG,
-                   'YXZ');
+    m.quaternion.slerp(e.quat, 0.3);        // giros suaves
     m.scale.set(e.esc[0], e.esc[1], e.esc[2]);
   }
   reanclarGlobos();

@@ -9,6 +9,19 @@ import pytest
 import pilas3d
 from pilas3d import colores
 
+_DIR_TMP = os.path.join(os.path.dirname(__file__), 'tmp_test')
+os.makedirs(_DIR_TMP, exist_ok=True)
+
+
+def _escribir_hdr(ruta, ancho, alto):
+    """Escribe un ``.hdr`` Radiance mínimo (formato plano, todos los
+    píxeles con valor 1.0) para probar el decodificador."""
+    px = bytes([128, 128, 128, 129])      # RGBE de 1.0
+    cab = (b'#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n'
+           + ('-Y %d +X %d\n' % (alto, ancho)).encode())
+    with open(ruta, 'wb') as f:
+        f.write(cab + px * ancho * alto)
+
 
 def crear_pilas():
     return pilas3d.iniciar(sin_ventana=True)
@@ -4052,19 +4065,70 @@ def test_web_teclas_fusionan_control():
     pilas.web.detener()
 
 
-def test_web_overlay_y_lineas_no_viajan():
-    """Texto (overlay) y Ejes (GL_LINES) quedan fuera del snapshot."""
+def test_web_overlay_no_viaja_y_lineas_si():
+    """Texto (overlay) va al HUD y Ejes (GL_LINES) viaja como
+    geometría con modo=1."""
     import json
     pilas = crear_pilas()
     pilas.actores.Cubo()
     pilas.actores.Ejes()
+    pilas.actores.Texto('hud', x=5, y=5)
     pilas.web.servir(puerto=0)
 
     class _C:
         geo = {}
     msg = json.loads(pilas.web._snapshot(_C()))
-    assert len(msg['a']) == 1              # solo el cubo
+    assert len(msg['a']) == 2              # cubo + ejes
+    modos = [g['m'] for g in msg['g']]
+    assert 4 in modos and 1 in modos       # triángulos + líneas
+    assert msg['hud'][0]['s'] == 'hud'
     pilas.web.detener()
+
+
+def test_web_hdr_a_png():
+    """El conversor HDR->PNG produce un PNG 8-bit válido."""
+    from pilas3d.web import _hdr_a_png
+    ruta = os.path.join(_DIR_TMP, 'hdr_test.hdr')
+    _escribir_hdr(ruta, 4, 2)
+    try:
+        png = _hdr_a_png(ruta)
+        assert png[:8] == b'\x89PNG\r\n\x1a\n'
+        assert b'IHDR' in png and b'IDAT' in png
+        # pixel blanco (1.0) -> tonemap+gamma ~207; fila arranca con
+        # el byte de filtro 0x00 y luego RGB
+        import zlib
+        idx = png.index(b'IDAT')
+        raw = zlib.decompress(png[idx + 4:-12])
+        assert raw[0] == 0                       # filtro ninguno
+        assert raw[1] == raw[2] == raw[3] > 180  # pixel claro
+    finally:
+        if os.path.exists(ruta):
+            os.remove(ruta)
+
+
+def test_web_cielo_hdr_se_serializa():
+    """Un Cielo con .hdr viaja como 'cielo' (png registrado)."""
+    import json
+    import os
+    import struct
+    import zlib
+    pilas = crear_pilas()
+    # .hdr mínimo en memoria de test via cache de hdr
+    from pilas3d import hdr as _hdr
+    hdr_path = os.path.join(_DIR_TMP, 'cielo_test.hdr')
+    _escribir_hdr(hdr_path, 4, 2)
+    try:
+        pilas.actores.Cielo(hdr_path)
+        pilas.web.servir(puerto=0)
+
+        class _C:
+            geo = {}
+        msg = json.loads(pilas.web._snapshot(_C()))
+        assert msg['cielo'].startswith('img')
+        assert msg['cielo'].endswith('.png')
+        pilas.web.detener()
+    finally:
+        os.path.exists(hdr_path) and os.remove(hdr_path)
 
 
 def test_web_hud_serializa_overlays():

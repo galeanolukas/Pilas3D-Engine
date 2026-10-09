@@ -45,7 +45,45 @@ _MIME = {'.html': 'text/html; charset=utf-8',
          '.jpeg': 'image/jpeg', '.bmp': 'image/bmp'}
 
 #: clases que dibujan en pantalla, no en el mundo 3D
-_SKIP = ('Ejes', 'Sombra')
+_SKIP = ('Sombra',)
+
+
+def _hdr_a_png(ruta, max_ancho=1024):
+    """Decodifica un ``.hdr`` Radiance y lo convierte a PNG 8-bit
+    (tonemap exponencial + gamma 2.2), bajando la resolución si hace
+    falta — el navegador lo usa como fondo equirectangular."""
+    import math
+    import struct
+    import zlib
+
+    from pilas3d import hdr as _hdr
+
+    ancho, alto, datos = _hdr.cargar(ruta)
+    paso = max(1, ancho // max_ancho)
+    aw, ah = ancho // paso, alto // paso
+    rgb = bytearray(aw * ah * 3)
+    o = 0
+    inv_gamma = 1.0 / 2.2
+    for y in range(ah):
+        for x in range(aw):
+            i = (y * paso * ancho + x * paso) * 4   # rgba floats
+            for c in range(3):
+                v = 1.0 - math.exp(-datos[i + c])     # tonemap
+                rgb[o] = min(255, int(v ** inv_gamma * 255))
+                o += 1
+    # PNG 8-bit RGB: filas con filtro 0, un IDAT zlib
+    def _chunk(tipo, cuerpo):
+        c = tipo + cuerpo
+        return struct.pack('>I', len(cuerpo)) + c + struct.pack(
+            '>I', zlib.crc32(c) & 0xffffffff)
+    crudo = b''.join(
+        b'\x00' + bytes(rgb[y * aw * 3:(y + 1) * aw * 3])
+        for y in range(ah))
+    return (b'\x89PNG\r\n\x1a\n'
+            + _chunk(b'IHDR', struct.pack('>IIBBBBB', aw, ah, 8, 2,
+                                          0, 0, 0))
+            + _chunk(b'IDAT', zlib.compress(crudo, 6))
+            + _chunk(b'IEND', b''))
 
 
 def _mapa_codigos():
@@ -159,6 +197,7 @@ class PuenteWeb(object):
         self._entrada = Queue()    # eventos crudos de los clientes
         self._imagenes = []        # [(nombre_url, ruta|bytes)]
         self._img_indice = {}      # fuente -> nombre_url
+        self._cielos = {}          # ruta .hdr -> nombre_url (png)
         self._srv = None
         self._ultimo = 0.0
         self._vw = None
@@ -317,9 +356,9 @@ class PuenteWeb(object):
             col = datos[3] if len(datos) > 3 else None
             uv = datos[4] if len(datos) > 4 else None
             idx = getattr(actor, '_indices', None)
-        if modo != 4 or not pos:               # solo triángulos (v1)
+        if modo not in (0, 1, 4) or not pos:   # puntos, líneas, tris
             return None
-        g = {'i': id(actor), 'v': _b64f(pos)}
+        g = {'i': id(actor), 'm': modo, 'v': _b64f(pos)}
         if nor:
             g['n'] = _b64f(nor)
         if col:
@@ -361,6 +400,27 @@ class PuenteWeb(object):
                 return None
         return None                 # ImageData pyglet: no servible
 
+    def _cielo_hdr(self, cielo):
+        """Si el Cielo usa un ``.hdr``, lo decodifica una vez,
+        tonemapea a PNG y lo registra como textura servible.
+        Devuelve el nombre URL o None."""
+        ruta = getattr(cielo, '_imagen', None)
+        if not isinstance(ruta, str) \
+                or not ruta.lower().endswith('.hdr'):
+            return None
+        if ruta in self._cielos:
+            return self._cielos[ruta]
+        try:
+            from pilas3d import hdr as _hdr
+            from pilas3d.imagenes import resolver
+            png = _hdr_a_png(resolver(ruta))
+        except (IOError, OSError, ValueError):
+            self._cielos[ruta] = None
+            return None
+        nombre = self._url_imagen(png)
+        self._cielos[ruta] = nombre
+        return nombre
+
     def _describir_overlay(self, a):
         """Actor 2D -> dict para el HUD del navegador (o None)."""
         clase = type(a).__name__
@@ -400,6 +460,7 @@ class PuenteWeb(object):
         pilas = self.pilas
         escena = pilas.escena_actual()
         actores, geos, hud = [], [], []
+        msg_cielo = None
         vivos = set()
         for a in list(escena.actores):
             if getattr(a, 'es_overlay', False):
@@ -412,12 +473,17 @@ class PuenteWeb(object):
                     or type(a).__name__ in _SKIP:
                 continue
             if type(a).__name__ == 'Cielo':
-                # el domo se convierte en color de fondo del cliente
+                # el domo HDR se convierte en fondo/ambiente del
+                # cliente; el generado ('dia'...) sale como color
+                ruta = self._cielo_hdr(a)
+                if ruta:
+                    msg_cielo = ruta
                 continue
             i = id(a)
             vivos.add(i)
             ver = getattr(a, '_geo_version', 0)
-            if cliente.geo.get(i) != ver:
+            dinamico = getattr(a, '_modo', 4) in (0, 1)
+            if cliente.geo.get(i) != ver or dinamico:
                 g = self._extraer_geo(a)
                 if g is None:
                     cliente.geo[i] = ver       # no insistir
@@ -438,6 +504,8 @@ class PuenteWeb(object):
                 entrada['o'] = round(1 - a._transparencia / 100.0, 3)
             if a.sin_luz:
                 entrada['l'] = 1
+            if getattr(a, '_modo', 4) == 0:
+                entrada['pt'] = getattr(a, 'punto_tamano', 1.0)
             fuente = self._resolver_imagen_actor(a)
             if fuente is not None:
                 nombre = self._url_imagen(fuente)
@@ -468,6 +536,8 @@ class PuenteWeb(object):
         fondo = getattr(escena, 'fondo', None)
         if fondo is not None:
             msg['fondo'] = list(fondo)
+        if msg_cielo:
+            msg['cielo'] = msg_cielo
         if hud:
             msg['hud'] = hud
         v = pilas.ventana

@@ -251,6 +251,10 @@ navegador se fusionan en `pilas.control` igual que el mando USB.
 El **HUD 2D también viaja**: `Texto`, `Panel`, `Barra`, `Menu`,
 `Globo` (incluidos los anclados a un actor, que el cliente proyecta
 sobre el modelo cada frame) se dibujan como DOM sobre el canvas.
+Los `Ejes` y `Particulas` llegan como líneas/puntos; el `Cielo`
+`.hdr` se decodifica en el motor, viaja tonemapeado como PNG y el
+cliente lo usa de fondo equirectangular + luz ambiental (IBL).
+Las rotaciones interpolan con slerp — los giros se ven suaves.
 Demo: `python3 ejemplos/servir_web.py`.
 
 ### Sombras reales (`pilas.sombras`)
