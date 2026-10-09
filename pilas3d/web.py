@@ -630,7 +630,16 @@ class PuenteWeb(object):
                 finally:
                     puente._baja(cliente)
 
-        self._srv = ThreadingHTTPServer((host, puerto), Handler)
+        try:
+            self._srv = ThreadingHTTPServer((host, puerto), Handler)
+        except OSError as e:
+            if e.errno == 98:                  # EADDRINUSE
+                raise IOError(
+                    'el puerto %d ya está ocupado — ¿hay otro '
+                    'pilas.web.servir() corriendo? Matá el proceso '
+                    'viejo o pasá otro puerto: servir(puerto=8001)'
+                    % puerto) from e
+            raise
         self._srv.daemon_threads = True
         hilo = threading.Thread(target=self._srv.serve_forever,
                                 daemon=True)
