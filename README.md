@@ -248,7 +248,27 @@ La geometría de cada actor viaja una sola vez (y se reenvía cuando
 cambia: skinning, terreno deformado); las transformaciones fluyen a
 20 Hz. **El juego es jugable desde el browser**: las teclas del
 navegador se fusionan en `pilas.control` igual que el mando USB.
+El **HUD 2D también viaja**: `Texto`, `Panel`, `Barra`, `Menu`,
+`Globo` (incluidos los anclados a un actor, que el cliente proyecta
+sobre el modelo cada frame) se dibujan como DOM sobre el canvas.
 Demo: `python3 ejemplos/servir_web.py`.
+
+### Sombras reales (`pilas.sombras`)
+
+La luz direccional proyecta **shadow map** real: la escena se dibuja
+desde el sol a una textura de profundidad (FBO 2048²) y el shader
+compara cada fragmento con PCF 3×3 y bias por ángulo. Funciona con
+todos los actores 3D — incluidos modelos `.glb` con skinning:
+
+```python
+pilas.sombras.activas = False   # apagar
+pilas.sombras.radio = 30        # área que cubre el sol (default 50)
+escena.sombras = False          # apagar solo en esta escena
+```
+
+El mapa sigue al objetivo de la cámara; fuera de su radio todo queda
+iluminado. El actor `Sombra` (blob) sigue existiendo por compat,
+pero ya no hace falta.
 
 ## Modo interactivo manual
 

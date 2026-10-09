@@ -40,6 +40,84 @@ function bytes(b64) {
 const f32 = b64 => new Float32Array(bytes(b64).buffer);
 const u32 = b64 => new Uint32Array(bytes(b64).buffer);
 
+// -- HUD 2D (overlays como elementos DOM) --------------------------------
+const hudEl = document.getElementById('hud');
+const hudDivs = [];
+const V = new THREE.Vector3();
+const rgb = c => 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+
+function proyectar(p) {          // mundo -> px de pantalla (desde arriba)
+  V.copy(p).project(camara);
+  return [(V.x * 0.5 + 0.5) * innerWidth,
+          (-V.y * 0.5 + 0.5) * innerHeight];
+}
+
+function hud(msg) {
+  const vw = msg.v ? msg.v[0] : 800, vh = msg.v ? msg.v[1] : 600;
+  const sx = innerWidth / vw, sy = innerHeight / vh;
+  const items = msg.hud || [];
+  while (hudDivs.length < items.length) {
+    const d = document.createElement('div');
+    hudEl.appendChild(d);
+    hudDivs.push(d);
+  }
+  while (hudDivs.length > items.length) hudDivs.pop().remove();
+  items.forEach((it, i) => {
+    const d = hudDivs[i];
+    d.className = 'hud-' + it.k;
+    d._ancla = undefined;
+    if (it.x !== undefined) d.style.left = (it.x * sx) + 'px';
+    if (it.y !== undefined) d.style.bottom = (it.y * sy) + 'px';
+    if (it.k === 't') {
+      d.textContent = it.s;
+      d.style.fontSize = Math.round(it.z * sy) + 'px';
+      d.style.color = rgb(it.c);
+      d.style.width = it.w ? (it.w * sx) + 'px' : '';
+    } else if (it.k === 'p') {
+      d.style.width = (it.w * sx) + 'px';
+      d.style.height = (it.h * sy) + 'px';
+      d.style.background = rgb(it.c);
+    } else if (it.k === 'b') {
+      d.style.width = (it.w * sx) + 'px';
+      d.style.height = (it.h * sy) + 'px';
+      let fill = d.firstChild;
+      if (!fill) {
+        fill = document.createElement('i');
+        d.appendChild(fill);
+      }
+      fill.style.width = Math.round(it.f * 100) + '%';
+      fill.style.background = it.c ? rgb(it.c)
+        : it.f > 0.5 ? '#4c4' : it.f > 0.25 ? '#cc4' : '#c44';
+    } else if (it.k === 'g') {
+      d.textContent = it.s;
+      d.style.fontSize = Math.round((it.z || 15) * sy) + 'px';
+      d._ancla = it.a;                       // actor id o undefined
+      d._alto = it.h || 0.4;
+      if (it.a === undefined && it.x !== undefined) {
+        d.style.left = (it.x * sx) + 'px';
+        d.style.top = (vh - it.y) * sy + 'px';
+        d.style.bottom = '';
+      }
+    }
+  });
+}
+
+// los globos anclados persiguen a su actor cada frame render
+function reanclarGlobos() {
+  for (const d of hudDivs) {
+    if (d._ancla === undefined) continue;
+    const e = actores.get(d._ancla);
+    if (!e) { d.style.display = 'none'; continue; }
+    d.style.display = '';
+    V.copy(e.mesh.position);
+    V.y += d._alto;
+    const p = proyectar(V);
+    d.style.left = p[0] + 'px';
+    d.style.top = p[1] + 'px';
+    d.style.bottom = '';
+  }
+}
+
 // -- actores -----------------------------------------------------------
 // id -> {mesh, pos, rot, esc} con pos/rot/esc = objetivos para el lerp
 const actores = new Map();
@@ -160,6 +238,7 @@ function snapshot(msg) {
   }
   estado.textContent = 'actores: ' + msg.a.length +
     '   (WASD/flechas se envían al motor)';
+  hud(msg);
 }
 
 // -- WebSocket ----------------------------------------------------------
@@ -213,6 +292,7 @@ function render() {
                    'YXZ');
     m.scale.set(e.esc[0], e.esc[1], e.esc[2]);
   }
+  reanclarGlobos();
   renderer.render(escena3, camara);
 }
 render();

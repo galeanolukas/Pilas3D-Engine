@@ -285,6 +285,8 @@ class Pilas(object):
         self.ia = IA(self)
         from pilas3d.web import PuenteWeb
         self.web = PuenteWeb(self)
+        from pilas3d.sombras import MapaSombras
+        self.sombras = MapaSombras()
 
         if sin_ventana:
             self.ventana = None

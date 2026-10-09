@@ -4065,3 +4065,68 @@ def test_web_overlay_y_lineas_no_viajan():
     msg = json.loads(pilas.web._snapshot(_C()))
     assert len(msg['a']) == 1              # solo el cubo
     pilas.web.detener()
+
+
+def test_web_hud_serializa_overlays():
+    """Texto/Panel/Barra/Globo viajan como items HUD en el snapshot."""
+    import json
+    pilas = crear_pilas()
+    cubo = pilas.actores.Cubo(y=1)
+    pilas.actores.Texto('Vidas: 3', x=10, y=570)
+    pilas.actores.Panel(x=0, y=540, ancho=200, alto=60)
+    pilas.actores.Barra(de=None, x=10, y=520)
+    pilas.actores.Globo(texto='Fijo', x=300, y=200)
+    pilas.actores.Globo(actor=cubo, texto='Anclado')
+    pilas.web.servir(puerto=0)
+
+    class _C:
+        geo = {}
+    hud = json.loads(pilas.web._snapshot(_C()))['hud']
+    tipos = [it['k'] for it in hud]
+    assert 't' in tipos and 'p' in tipos and 'b' in tipos
+    globos = [it for it in hud if it['k'] == 'g']
+    assert len(globos) == 2
+    assert any('a' in g for g in globos)        # anclado al cubo
+    assert any('x' in g for g in globos)        # posición fija
+    barra = [it for it in hud if it['k'] == 'b'][0]
+    assert barra['f'] == 1.0                    # sin `de` -> llena
+    pilas.web.detener()
+
+
+def test_web_hud_menu_viaja_como_textos():
+    """Las opciones del Menu son Textos internos -> llegan al HUD."""
+    import json
+    pilas = crear_pilas()
+    pilas.actores.Menu(opciones=[
+        ('Jugar', 'accion', None, lambda: None),
+        ('Salir', 'accion', None, lambda: None),
+    ])
+    pilas.web.servir(puerto=0)
+
+    class _C:
+        geo = {}
+    hud = json.loads(pilas.web._snapshot(_C()))['hud']
+    textos = [it['s'] for it in hud if it['k'] == 't']
+    assert any('Jugar' in s for s in textos)
+    assert any('Salir' in s for s in textos)
+    pilas.web.detener()
+
+
+def test_sombras_headless():
+    """pilas.sombras existe sin ventana y no toca GL."""
+    pilas = crear_pilas()
+    s = pilas.sombras
+    assert s.activas and s._fbo is None and s.id_textura == 0
+    assert pilas.escena_actual().sombras is True
+    # la matriz de luz es matemática pura: funciona sin contexto
+    from pyglet.math import Mat4
+    m = s.matriz_luz(pilas.escena_actual())
+    assert isinstance(m, Mat4)
+
+
+def test_shader_incluye_sombras():
+    """El shader compartido declara el shadow map y el PCF."""
+    from pilas3d import shaders
+    for token in ('mapa_sombras', 'usar_sombras', 'factor_sombra',
+                  'matriz_luz', 'v_pos_luz', 'textureSize'):
+        assert token in shaders.VERTEX_SHADER + shaders.FRAGMENT_SHADER

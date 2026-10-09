@@ -20,6 +20,7 @@ in vec2 texcoords;
 uniform mat4 proyeccion;
 uniform mat4 vista;
 uniform mat4 modelo;
+uniform mat4 matriz_luz;         // mundo -> espacio de la sombra
 uniform vec2 uv_escala;
 uniform vec2 uv_desplazamiento;
 uniform float punto_tamano;    // tamaño en px para GL_POINTS
@@ -28,11 +29,13 @@ out vec4 v_color;
 out vec2 v_tex;
 out vec3 v_normal;
 out vec3 v_posicion;
+out vec4 v_pos_luz;
 
 void main()
 {
     gl_Position = proyeccion * vista * modelo * vec4(position, 1.0);
     v_posicion = vec3(modelo * vec4(position, 1.0));
+    v_pos_luz = matriz_luz * vec4(v_posicion, 1.0);
     v_normal = mat3(modelo) * normal;
     v_color = color;
     v_tex = texcoords * uv_escala + uv_desplazamiento;
@@ -95,6 +98,29 @@ uniform float niebla_inicio;
 uniform float niebla_fin;
 uniform vec3 cam_pos;
 
+// shadow map de la direccional (pilas3d.sombras)
+uniform sampler2D mapa_sombras;
+uniform bool usar_sombras;
+in vec4 v_pos_luz;
+
+// factor de luz que llega: 1 = sol pleno, 0 = sombra total
+float factor_sombra(vec3 n, vec3 hacia_luz)
+{
+    vec3 p = v_pos_luz.xyz / v_pos_luz.w * 0.5 + 0.5;
+    if (p.z > 1.0 || p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
+        return 1.0;                          // fuera del mapa
+    // bias proporcional al ángulo (menos en granizo = menos acné)
+    float bias = max(0.0007, 0.003 * (1.0 - dot(n, hacia_luz)));
+    float suma = 0.0;
+    vec2 texel = 1.0 / vec2(textureSize(mapa_sombras, 0));
+    for (int x = -1; x <= 1; ++x)
+        for (int y = -1; y <= 1; ++y)
+            suma += step(p.z - bias,
+                         texture(mapa_sombras,
+                                 p.xy + vec2(x, y) * texel).r);
+    return suma / 9.0;
+}
+
 out vec4 fragmento;
 
 void main()
@@ -115,8 +141,11 @@ void main()
         float rugosidad = usar_rugosidad
                           ? texture(rugosidad_map, v_tex).r : 1.0;
         luz_rgb = luz_ambiente * luz_ambiente_color * ao;
-        float dif_dir = max(dot(n, normalize(luz_dir)), 0.0);
-        luz_rgb += luz_dir_color * dif_dir * 0.65;
+        vec3 hacia_luz = normalize(luz_dir);
+        float dif_dir = max(dot(n, hacia_luz), 0.0);
+        float sombra = usar_sombras ? factor_sombra(n, hacia_luz)
+                                    : 1.0;
+        luz_rgb += luz_dir_color * dif_dir * 0.65 * sombra;
         for (int i = 0; i < cantidad_puntuales; i++) {
             vec3 d = luz_posicion[i] - v_posicion;
             float aten = clamp(1.0 - length(d) / luz_alcance[i],
@@ -129,11 +158,12 @@ void main()
         // rugosidad (liso = brillo fino e intenso, rugoso = casi nada)
         if (dif_dir > 0.0) {
             vec3 vista = normalize(cam_pos - v_posicion);
-            vec3 h = normalize(normalize(luz_dir) + vista);
+            vec3 h = normalize(hacia_luz + vista);
             float pot = mix(64.0, 8.0, rugosidad);
             float inten = mix(0.4, 0.05, rugosidad);
             luz_rgb += luz_dir_color
-                       * pow(max(dot(n, h), 0.0), pot) * inten;
+                       * pow(max(dot(n, h), 0.0), pot) * inten
+                       * sombra;
         }
     }
     vec3 rgb = difuso.rgb * luz_rgb;

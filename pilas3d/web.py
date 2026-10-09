@@ -361,16 +361,54 @@ class PuenteWeb(object):
                 return None
         return None                 # ImageData pyglet: no servible
 
+    def _describir_overlay(self, a):
+        """Actor 2D -> dict para el HUD del navegador (o None)."""
+        clase = type(a).__name__
+        if clase in ('Texto', 'Puntaje', 'Temporizador'):
+            d = {'k': 't', 'x': a.x, 'y': a.y, 's': a.texto,
+                 'z': a.tamano, 'c': list(a.color)}
+            if getattr(a, 'ancho', None):
+                d['w'] = a.ancho
+            return d
+        if clase == 'Panel':
+            d = {'k': 'p', 'x': a.x, 'y': a.y, 'w': a.ancho,
+                 'h': a.alto, 'c': list(a.color)}
+            return d
+        if clase == 'Barra':
+            d = {'k': 'b', 'x': a.x, 'y': a.y, 'w': a.ancho,
+                 'h': a.alto, 'f': a.fraccion()}
+            if a.color_fijo is not None:
+                d['c'] = list(a.color_fijo)
+            return d
+        if clase == 'Globo':
+            if not getattr(a, '_visible', True):
+                return None
+            paginas = getattr(a, '_paginas', None)
+            s = paginas[a._indice] if paginas else a.texto
+            d = {'k': 'g', 's': s, 'z': a.tamano, 'h': a.alto}
+            if getattr(a, 'actor', None) is not None:
+                d['a'] = id(a.actor)      # anclado: el cliente proyecta
+            else:
+                d['x'], d['y'] = a.x, a.y
+            return d
+        # Menu dibuja sus opciones como Textos internos (ya viajan)
+        return None
+
     def _snapshot(self, cliente):
         """JSON del frame para un cliente: actores + geometrías que
-        le falten + cámara + luces + niebla."""
+        le falten + HUD 2D + cámara + luces + niebla."""
         pilas = self.pilas
         escena = pilas.escena_actual()
-        actores, geos = [], []
+        actores, geos, hud = [], [], []
         vivos = set()
         for a in list(escena.actores):
-            if getattr(a, 'es_overlay', False) \
-                    or not getattr(a, 'visible', True) \
+            if getattr(a, 'es_overlay', False):
+                if getattr(a, 'visible', True):
+                    d = self._describir_overlay(a)
+                    if d:
+                        hud.append(d)
+                continue
+            if not getattr(a, 'visible', True) \
                     or type(a).__name__ in _SKIP:
                 continue
             if type(a).__name__ == 'Cielo':
@@ -430,6 +468,10 @@ class PuenteWeb(object):
         fondo = getattr(escena, 'fondo', None)
         if fondo is not None:
             msg['fondo'] = list(fondo)
+        if hud:
+            msg['hud'] = hud
+        v = pilas.ventana
+        msg['v'] = [v.width, v.height] if v is not None else [800, 600]
         return json.dumps(msg, separators=(',', ':'))
 
     # -- HTTP + upgrade WS ------------------------------------------------

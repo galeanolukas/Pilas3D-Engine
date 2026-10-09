@@ -33,6 +33,7 @@ class Escena(object):
         from pilas3d.luces import Luces
         self.luces = Luces()
         self.niebla = None  # o (color, inicio, fin) para niebla lineal
+        self.sombras = True  # shadow map de la luz direccional
         self.pilas._definir_escena(self)
         self.iniciar()
 

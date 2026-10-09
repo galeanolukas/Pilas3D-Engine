@@ -120,10 +120,30 @@ class Ventana(pyglet.window.Window):
             aspecto = self.width / float(self.height)
 
         with programa:
+            # pasada de profundidad: shadow map de la luz direccional
+            sombras = self.pilas.sombras
+            matriz_luz = None
+            if getattr(escena, 'sombras', True) and sombras.activas:
+                if sombras.pasada(escena, programa):
+                    matriz_luz = sombras.matriz_luz(escena)
+                else:
+                    sombras.activas = False      # GL no lo soporta
+
+            # restaurar viewport (la pasada de sombra lo dejó en
+            # el tamaño del mapa de profundidad)
+            if self.area_3d:
+                glViewport(int(vx), int(vy), int(vw), int(vh))
+            else:
+                glViewport(0, 0, self.width, self.height)
+
             programa["proyeccion"] = Mat4.perspective_projection(
                 aspecto, 0.1, 1000.0, fov=60
             )
             programa["vista"] = escena.camara.matriz_vista()
+            if matriz_luz is not None:
+                sombras.usar_en(programa, matriz_luz)
+            else:
+                programa["usar_sombras"] = False
             escena.luces.aplicar(programa)
             programa["cam_pos"] = tuple(escena.camara.posicion)
             niebla = escena.niebla
