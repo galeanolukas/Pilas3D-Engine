@@ -551,6 +551,11 @@ class PuenteWeb(object):
         web = _DIR_WEB
 
         class Handler(SimpleHTTPRequestHandler):
+            # HTTP/1.1: Firefox rechaza upgrades WS respondidos con
+            # 1.0 (Chrome los tolera). Requiere Content-Length en
+            # todas las respuestas — ya lo mandamos siempre.
+            protocol_version = 'HTTP/1.1'
+
             def log_message(self, *args):
                 pass
 
