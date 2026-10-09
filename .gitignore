@@ -44,3 +44,6 @@ Texturas Minecraf/
 ejemplos/config-*.json
 ejemplos/pose-*.json
 ejemplos/anim-*.json
+
+# proyectos scaffolded con pilas3d-init (juegos del usuario)
+juego_nuevo/
