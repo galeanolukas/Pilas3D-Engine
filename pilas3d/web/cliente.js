@@ -298,29 +298,29 @@ function conectar() {
 conectar();
 
 // -- input hacia el motor ------------------------------------------------
+// send() sobre un socket cerrado/conectando tira DOMException:
+// hay que chequear readyState, no solo que ws exista
+function enviar(msg) {
+  if (ws && ws.readyState === WebSocket.OPEN)
+    ws.send(JSON.stringify(msg));
+}
+function raton(ev) {
+  enviar({ t: 'm', x: ev.clientX,
+           y: innerHeight - ev.clientY, b: ev.buttons });
+}
 addEventListener('keydown', ev => {
   if (ev.repeat) return;
-  ws?.send(JSON.stringify({ t: 'k', k: ev.code, v: 1 }));
+  enviar({ t: 'k', k: ev.code, v: 1 });
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
        'Space'].includes(ev.code)) ev.preventDefault();
 });
 addEventListener('keyup', ev =>
-  ws?.send(JSON.stringify({ t: 'k', k: ev.code, v: 0 })));
-addEventListener('pointermove', ev =>
-  ws?.send(JSON.stringify({ t: 'm', x: ev.clientX,
-                            y: innerHeight - ev.clientY,
-                            b: ev.buttons })));
-addEventListener('pointerdown', ev =>
-  ws?.send(JSON.stringify({ t: 'm', x: ev.clientX,
-                            y: innerHeight - ev.clientY,
-                            b: ev.buttons })));
-addEventListener('pointerup', ev =>
-  ws?.send(JSON.stringify({ t: 'm', x: ev.clientX,
-                            y: innerHeight - ev.clientY,
-                            b: ev.buttons })));
+  enviar({ t: 'k', k: ev.code, v: 0 }));
+addEventListener('pointermove', raton);
+addEventListener('pointerdown', raton);
+addEventListener('pointerup', raton);
 
 // -- loop de render: lerp exponencial hacia los objetivos -----------------
-const DEG = Math.PI / 180;
 function render() {
   requestAnimationFrame(render);
   for (const e of actores.values()) {
