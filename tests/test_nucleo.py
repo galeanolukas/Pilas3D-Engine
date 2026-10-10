@@ -4356,6 +4356,21 @@ def test_personaje_sprite_guardar_y_releer(tmp_path):
         pilas.actores.PersonajeSprite('x.png')
 
 
+def test_personaje_sprite_manifiesto_hoja_en_data(tmp_path):
+    """Si la hoja no está junto al JSON, se busca como la resuelve
+    actor.imagen (pilas3d/data/): un manifest guardado en el cwd
+    puede referenciar hojas empaquetadas del motor."""
+    import json
+    (tmp_path / 'p.personaje.json').write_text(json.dumps({
+        'hoja': 'fantasma.png',        # existe en pilas3d/data/
+        'columnas': 8, 'filas': 1}))
+    pilas = crear_pilas()
+    pj = pilas.actores.PersonajeSprite(
+        str(tmp_path / 'p.personaje.json'))
+    assert pj.imagen.endswith('pilas3d/data/fantasma.png')
+    assert os.path.exists(pj.imagen)
+
+
 def test_movimiento_relativo_a_camara():
     """WASD se interpreta en pantalla: 'arriba' se aleja de la
     cámara, 'derecha' va a la derecha de la vista."""

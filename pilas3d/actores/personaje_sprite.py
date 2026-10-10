@@ -119,11 +119,15 @@ class PersonajeSprite(Animacion):
                 'estados': estados}
 
     def guardar(self, ruta):
-        """Escribe el ``.personaje.json`` del personaje. ``hoja``
-        queda como la pasó el constructor — el JSON la resuelve
-        relativa a su propia ubicación."""
+        """Escribe el ``.personaje.json`` del personaje. Si la hoja
+        es una ruta absoluta la guarda relativa al JSON para que el
+        par .png + .json sea portable."""
+        hoja = self.imagen
+        if isinstance(hoja, str) and os.path.isabs(hoja):
+            base = os.path.dirname(os.path.abspath(ruta))
+            hoja = os.path.relpath(hoja, base)
         with open(ruta, 'w') as f:
-            json.dump(self.manifiesto(), f, indent=2)
+            json.dump(self.manifiesto(hoja=hoja), f, indent=2)
         return ruta
 
     # -- dirección / fila ------------------------------------------------
@@ -327,7 +331,17 @@ def _leer_manifiesto(ruta, columnas, filas):
         raise ValueError("%s: el manifiesto no tiene 'hoja'" % ruta)
     hoja = man['hoja']
     if not os.path.isabs(hoja):
-        hoja = os.path.join(os.path.dirname(os.path.abspath(ruta)),
-                            hoja)
+        junto = os.path.join(os.path.dirname(os.path.abspath(ruta)),
+                             hoja)
+        if not os.path.exists(junto):
+            # hoja empaquetada en el motor (pilas3d/data/...) o
+            # encontrable como la resuelve actor.imagen
+            from pilas3d.imagenes import resolver
+            try:
+                hoja = resolver(hoja)
+            except IOError:
+                hoja = junto       # que pyglet dé su error habitual
+        else:
+            hoja = junto
     return man, hoja, man.get('columnas', columnas), \
         man.get('filas', filas)

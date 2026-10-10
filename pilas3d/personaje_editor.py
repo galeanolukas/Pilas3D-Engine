@@ -258,8 +258,13 @@ def cargar(ruta, **kw):
         kw.setdefault('alto', 1.8)
         pj = pilas.actores.PersonajeSprite(
             ruta, y=0.9, velocidad=8, **kw)
-        estado['salida'] = os.path.splitext(ruta)[0] \
-            + '.personaje.json'
+        salida = os.path.splitext(ruta)[0] + '.personaje.json'
+        carpeta = os.path.dirname(salida)
+        if carpeta and not os.path.isdir(carpeta):
+            # ejemplo del motor ('rpg/maton.png'): el json va al
+            # cwd, la hoja la resuelve el fallback a pilas3d/data
+            salida = os.path.basename(salida)
+        estado['salida'] = salida
     pj.aprender(pilas.habilidades.MoverseConElTeclado, velocidad=4)
     estado['pj'] = pj
     estado['hoja'] = os.path.basename(str(ruta))
