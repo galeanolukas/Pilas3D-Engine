@@ -331,6 +331,7 @@ bloquear con `ejecutar()`:
 | `pilas.sonidos.cargar()`      | igual + `pilas.sonidos.volumen`/`.mute` |
 | `pilas.musica.cargar()`       | igual (streaming, bucle por defecto) |
 | `Grilla`/`Animacion`          | `pilas.actores.Animacion(img, columnas, filas)` (billboard) |
+| —                             | `PersonajeSprite()` — personaje 2D con fila por dirección, espejo y estados (atacar/morir) |
 | —                             | `Cartel()`, `Sombra()`, `Cielo()`, `Globo()`, `Chat()` |
 | —                             | `ModeloGLTF('x.glb')` — glTF 2.0 con skinning por CPU, `.animar()`, poses y keyframes propios (ver [docs/modelos-rendimiento.md](docs/modelos-rendimiento.md)) |
 | —                             | `Mundo()` — voxels tipo Minecraft; `ModeloJSON()` bloques |

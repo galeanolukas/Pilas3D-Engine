@@ -56,6 +56,36 @@ en `.gitignore`: son assets locales pesados — no viajan al repo.
 
 ## Personajes y animaciones
 
+### ¿Sprite 2D o modelo 3D?
+
+| Actor | Cuándo |
+|---|---|
+| `Cartel` | imagen estática que mira a la cámara (árbol, item) |
+| `Animacion` | hoja de cuadros genérica (fuego, explosión, prop) |
+| `PersonajeSprite` | **personaje 2D**: fila por dirección, quieto/caminar automático, espejo y estados |
+| `ModeloGLTF` | personaje 3D riggeado con clips |
+
+`PersonajeSprite` usa la convención LPC: la hoja tiene una fila por
+dirección (abajo/izquierda/derecha/arriba) y N cuadros de ciclo:
+
+```python
+pj = pilas.actores.PersonajeSprite('heroe.png', columnas=9, filas=4)
+pj.aprender(pilas.habilidades.MoverseConElTeclado)
+
+# hojas con un solo lateral: la otra dirección sale espejada
+pj2 = pilas.actores.PersonajeSprite('chica.png', columnas=3, filas=3,
+    direcciones={'abajo':0, 'izquierda':1, 'arriba':2},
+    espejar={'derecha':'izquierda'})
+
+# filas extra de la hoja = estados (ataque, muerte, salto)
+pj.agregar_estado('atacar', fila=4, ciclica=False)
+pj.agregar_estado('morir', fila=5, quedarse=True)
+pj.reproducir_estado('atacar')
+```
+
+Ejemplo completo: `ejemplos/personaje_sprite.py`. Las hojas LPC de
+OpenGameArt (9x4 o más) encajan en el mismo formato.
+
 ### El `.glb` es el formato ideal
 
 Un `.glb` autocontenido trae malla + texturas + esqueleto + clips:

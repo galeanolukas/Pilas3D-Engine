@@ -87,7 +87,10 @@ class Actores(object):
                         **kw):
         """Sprite 2D con una fila por dirección (estilo RPG/Doom):
         camina en la dirección del desplazamiento y queda quieto en
-        ``cuadro_quieto`` al parar."""
+        ``cuadro_quieto`` al parar. Acepta ``direcciones`` (mapa
+        nombre->fila), ``espejar`` (dirección reflejada de otra,
+        p. ej. ``{'derecha': 'izquierda'}``) y estados extra con
+        ``agregar_estado``/``reproducir_estado`` ('atacar', 'morir')."""
         return PersonajeSprite(
             self._pilas, imagen, columnas, filas=filas, x=x, y=y,
             z=z, ancho=ancho, alto=alto, velocidad=velocidad, **kw)

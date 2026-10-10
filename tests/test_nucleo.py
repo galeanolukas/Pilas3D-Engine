@@ -4236,3 +4236,58 @@ def test_personaje_sprite_direcciones():
     assert pj.direccion == 'abajo'
     with pytest.raises(ValueError):
         pj.definir_direccion('espacio')
+
+
+def test_personaje_sprite_espejo_y_estados():
+    """PersonajeSprite: espejar una dirección y estados extra."""
+    pilas = crear_pilas()
+    # hoja de 3 filas: abajo, izquierda, arriba; 'derecha' espeja
+    pj = pilas.actores.PersonajeSprite(
+        'sprite_personaje.png', columnas=6, filas=4,
+        direcciones={'abajo': 0, 'izquierda': 1, 'arriba': 3},
+        espejar={'derecha': 'izquierda'})
+    pj.actualizar()                        # ceba la posición previa
+
+    # mover a +x -> dirección 'derecha' pero fila de 'izquierda' (1)
+    pj.x = 1.0
+    pj.actualizar()
+    assert pj.direccion == 'derecha'
+    assert pj.espejado
+    assert pj._uv_escala[0] < 0            # escala U negativa
+    # mover a -x -> izquierda normal, sin espejo
+    pj.x = -0.5
+    pj.actualizar()
+    assert pj.direccion == 'izquierda'
+    assert not pj.espejado
+    assert pj._uv_escala[0] > 0
+
+    # estado 'atacar' no cíclico con callback
+    llamado = []
+    pj.agregar_estado('atacar', fila=2, velocidad=100,
+                      ciclica=False, al_terminar=lambda p: llamado.append(p))
+    pj.reproducir_estado('atacar')
+    assert pj.estado == 'atacar'
+    assert pj._fila == 2
+    for _ in range(60):                    # corre hasta terminar
+        pj.actualizar()
+        if pj.estado != 'atacar':
+            break
+    assert llamado == [pj]
+    assert pj.estado == 'quieto'           # volvió al ciclo normal
+
+    # estado 'morir' queda congelado
+    pj.agregar_estado('morir', fila=3, velocidad=100, quedarse=True)
+    pj.reproducir_estado('morir')
+    for _ in range(60):
+        pj.actualizar()
+        if pj.estado is None:
+            break
+    ultimo_uv = pj._uv_desplazamiento
+    pj.x = 5.0                             # moverse no lo descongela
+    pj.actualizar()
+    assert pj._uv_desplazamiento == ultimo_uv
+    # cancelar manualmente revive
+    pj.reproducir_estado(None)
+    assert pj.estado == 'quieto'
+    with pytest.raises(ValueError):
+        pj.reproducir_estado('volar')
