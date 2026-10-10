@@ -16,6 +16,7 @@ from pilas3d.actores.plano import Plano
 from pilas3d.actores.mapa import Mapa
 from pilas3d.actores.cartel import Cartel
 from pilas3d.actores.animacion import Animacion
+from pilas3d.actores.personaje_sprite import PersonajeSprite
 from pilas3d.actores.modelo import Modelo
 from pilas3d.actores.sombra import Sombra
 from pilas3d.actores.cielo import Cielo
@@ -80,6 +81,16 @@ class Actores(object):
             self._pilas, imagen, columnas, filas=filas, x=x, y=y, z=z,
             ancho=ancho, alto=alto, velocidad=velocidad, ciclica=ciclica,
             eliminar_al_terminar=eliminar_al_terminar)
+
+    def PersonajeSprite(self, imagen, columnas, filas=4, x=0, y=0,
+                        z=0, ancho=1.0, alto=1.0, velocidad=10,
+                        **kw):
+        """Sprite 2D con una fila por dirección (estilo RPG/Doom):
+        camina en la dirección del desplazamiento y queda quieto en
+        ``cuadro_quieto`` al parar."""
+        return PersonajeSprite(
+            self._pilas, imagen, columnas, filas=filas, x=x, y=y,
+            z=z, ancho=ancho, alto=alto, velocidad=velocidad, **kw)
 
     def Modelo(self, ruta, x=0, y=0, z=0, escala=1.0):
         """Modelo estático (.obj). Si la ruta es ``.glb``/``.gltf``

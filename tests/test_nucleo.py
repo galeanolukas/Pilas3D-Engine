@@ -4202,3 +4202,37 @@ def test_barra_sin_vida_no_crashea():
     cubo = pilas.actores.Cubo()
     b = pilas.actores.Barra(de=cubo)
     assert b.fraccion() == 1.0
+
+
+def test_personaje_sprite_direcciones():
+    """PersonajeSprite: la fila sigue al movimiento y quieto ->
+    cuadro_quieto."""
+    pilas = crear_pilas()
+    pj = pilas.actores.PersonajeSprite(
+        'sprite_personaje.png', columnas=6, filas=4)
+    escena = pilas.escena_actual()
+
+    # mover hacia +z -> fila 'abajo' (0) y avanza cuadros
+    pj.x, pj.z = 0, 1.0
+    pj.actualizar()
+    assert pj.direccion == 'abajo'
+    # quieto -> cuadro_quieto (0)
+    pj.actualizar()
+    assert pj.cuadro == 0
+    # mover hacia -x -> izquierda (1)
+    pj.x = -1.0
+    pj.actualizar()
+    assert pj.direccion == 'izquierda'
+    # mover hacia +x -> derecha (2)
+    pj.x = 1.0
+    pj.actualizar()
+    assert pj.direccion == 'derecha'
+    # mover hacia -z -> arriba (3)
+    pj.z = -1.0
+    pj.actualizar()
+    assert pj.direccion == 'arriba'
+    # definir_direccion a mano + error claro
+    pj.definir_direccion('abajo')
+    assert pj.direccion == 'abajo'
+    with pytest.raises(ValueError):
+        pj.definir_direccion('espacio')
