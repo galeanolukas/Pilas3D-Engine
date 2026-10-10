@@ -230,15 +230,27 @@ class PersonajeSprite(Animacion):
             super(PersonajeSprite, self).actualizar()
 
     def _elegir_fila(self, dx, dz):
-        """Del vector de movimiento a la fila más cercana.
-        Convención: +z mira a la cámara ('abajo'), +x a la derecha."""
-        ang = math.degrees(math.atan2(dz, dx))      # +x=0, +z=90
+        """Del desplazamiento a la fila, **relativo a la cámara**:
+        moverse a la derecha de pantalla muestra la fila 'derecha',
+        alejarse 'arriba' (espalda), acercarse 'abajo' (frente)."""
+        cam = self.pilas.escena_actual().camara
+        d = cam.direccion()
+        fx, fz = d.x, d.z
+        n = math.hypot(fx, fz)
+        if n < 1e-4:
+            fx, fz = 0.0, -1.0
+        else:
+            fx, fz = fx / n, fz / n
+        rx, rz = -fz, fx                    # derecha de pantalla
+        lx = dx * rx + dz * rz              # cuánto va a la derecha
+        lz = dx * fx + dz * fz              # cuánto se aleja
+        ang = math.degrees(math.atan2(lz, lx))   # +derecha=0, +lejos=90
         if -45 <= ang < 45:
             nombre = 'derecha'
         elif 45 <= ang < 135:
-            nombre = 'abajo'
-        elif -135 <= ang < -45:
             nombre = 'arriba'
+        elif -135 <= ang < -45:
+            nombre = 'abajo'
         else:
             nombre = 'izquierda'
         if nombre in self._mapa or nombre in self._espejar:

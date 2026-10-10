@@ -23,6 +23,7 @@ pilas3d-ide = "pilas3d.ide:cli"
 pilas3d-mapas = "pilas3d.mapa_editor:cli"
 pilas3d-empaquetar = "pilas3d.empaquetar:cli"
 pilas3d-init = "pilas3d.nuevo_juego:cli"
+pilas3d-sprites = "pilas3d.sprites:cli"
 
 [tool.setuptools.packages.find]
 include = ["pilas3d*"]

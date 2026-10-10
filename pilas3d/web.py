@@ -504,6 +504,11 @@ class PuenteWeb(object):
                 entrada['o'] = round(1 - a._transparencia / 100.0, 3)
             if a.sin_luz:
                 entrada['l'] = 1
+            ue, ud = a._uv_escala, a._uv_desplazamiento
+            if ue != (1.0, 1.0) or ud != (0.0, 0.0):
+                # grilla de sprites: escala/offset del cuadro activo
+                entrada['ue'] = [round(ue[0], 4), round(ue[1], 4)]
+                entrada['ud'] = [round(ud[0], 4), round(ud[1], 4)]
             if getattr(a, '_modo', 4) == 0:
                 entrada['pt'] = getattr(a, 'punto_tamano', 1.0)
             fuente = self._resolver_imagen_actor(a)

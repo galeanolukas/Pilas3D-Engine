@@ -176,7 +176,10 @@ function crearMesh(a) {
     : new THREE.MeshStandardMaterial({
         vertexColors: colores,
         roughness: 0.9, metalness: 0.0 });
-  if (a.t) mat.map = textura(a.t);
+  if (a.t) {
+    mat.map = textura(a.t);
+    mat.alphaTest = 0.3;                 // recorta el alfa del PNG
+  }
   const mesh = new THREE.Mesh(geo, mat);
   mesh.castShadow = mesh.receiveShadow = true;
   escena3.add(mesh);
@@ -191,7 +194,20 @@ function actualizarMesh(e, a) {
   const op = a.o === undefined ? 1 : a.o;
   m.transparent = op < 1;
   m.opacity = op;
-  if (a.t && !m.map) { m.map = textura(a.t); m.needsUpdate = true; }
+  if (a.t && !m.map) { m.map = textura(a.t); m.alphaTest = 0.3;
+                       m.needsUpdate = true; }
+  // cuadro activo de la hoja de sprites: uv_escala/uv_desplazamiento
+  // del shader viajan como repeat/offset de la textura (espejo =
+  // repeat.x negativo)
+  if (a.ue && m.map) {
+    if (!m.map._clon) {
+      m.map = m.map.clone();             // la textura es compartida
+      m.map._clon = true;
+      m.needsUpdate = true;
+    }
+    m.map.repeat.set(a.ue[0], a.ue[1]);
+    m.map.offset.set(a.ud[0], a.ud[1]);
+  }
 }
 
 const _euler = new THREE.Euler();

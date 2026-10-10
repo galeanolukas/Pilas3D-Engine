@@ -38,6 +38,7 @@ comando:
 | `pilas3d-bloques` | **Blockly web**: bloques tipo Scratch → Python real | ejemplos precargados, Run/Stop |
 | `pilas3d-mapas` | **Editor de mapas**: voxels y **terreno deformable** (`Y`), spawn, props | mouse orbita, teclas editan — `.mapa.json` y `.terreno.json` |
 | `pilas3d-empaquetar` | **Ejecutable**: PyInstaller one-file del juego | [docs/empaquetar.md](docs/empaquetar.md) |
+| `pilas3d-sprites` | **Hojas de sprites**: JPG/PNG en grilla regular + fondo liso → PNG con alfa + `.sprites.json` | `pilas3d-sprites img.jpg -o hoja.png -c 5 -f 2` |
 
 ### Editor de personajes (`pilas3d-editor`)
 

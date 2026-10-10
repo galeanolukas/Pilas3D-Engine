@@ -4291,3 +4291,67 @@ def test_personaje_sprite_espejo_y_estados():
     assert pj.estado == 'quieto'
     with pytest.raises(ValueError):
         pj.reproducir_estado('volar')
+
+
+def test_movimiento_relativo_a_camara():
+    """WASD se interpreta en pantalla: 'arriba' se aleja de la
+    cámara, 'derecha' va a la derecha de la vista."""
+    pilas = crear_pilas()
+    a = pilas.actores.Cubo()
+    a.aprender(pilas.habilidades.MoverseConElTeclado, velocidad=10)
+    cam = pilas.escena_actual().camara
+    # cámara en -z mirando a +z (tercera persona con rot_y=0)
+    cam.posicion = (0, 3, -6)
+    cam.objetivo = (0, 0, 0)
+    pilas.dt = 0.1
+    pilas.control.arriba = True
+    a.actualizar_habilidades()
+    assert a.z > 0.9                      # se aleja de la cámara
+    pilas.control.arriba = False
+    pilas.control.derecha = True
+    a.actualizar_habilidades()
+    assert a.x < -0.9                     # su derecha en esa vista
+    # y con la cámara por defecto (+z mirando a -z) es lo de siempre
+    cam.posicion = (0, 5, 12)
+    cam.objetivo = (0, 0, 0)
+    a.x = a.z = 0
+    pilas.control.derecha = False
+    pilas.control.arriba = True
+    a.actualizar_habilidades()
+    assert a.z < -0.9
+    pilas.control.arriba = False
+
+
+def test_cartel_sin_luz_por_defecto():
+    """Los billboards se dibujan a color plano (sprites brillantes)
+    salvo que se pida integrarlos a la luz."""
+    pilas = crear_pilas()
+    c = pilas.actores.Cartel()
+    assert c.sin_luz
+    c.sin_luz = False
+    assert not c.sin_luz
+
+
+def test_web_sprite_uv_viaja():
+    """Animacion/PersonajeSprite mandan el cuadro activo (uv_escala
+    y uv_desplazamiento) dentro del snapshot web."""
+    import json
+    pilas = crear_pilas()
+    an = pilas.actores.Animacion('fantasma.png', columnas=8)
+    an.definir_cuadro(3)
+    pj = pilas.actores.PersonajeSprite(
+        'sprite_personaje.png', columnas=6, filas=4)
+    pj.definir_direccion('izquierda')
+    pj.definir_cuadro(2)
+    pilas.web.servir(puerto=0)
+
+    class _C:
+        geo = {}
+    msg = json.loads(pilas.web._snapshot(_C()))
+    ea = [a for a in msg['a'] if a['i'] == id(an)][0]
+    ep = [a for a in msg['a'] if a['i'] == id(pj)][0]
+    assert ea['ue'] == [0.125, 1.0]          # 1/8 columnas
+    assert ea['ud'][0] == 0.375              # cuadro 3/8
+    assert ep['ue'] == [0.1667, 0.25]        # 6 cols x 4 filas
+    assert ep['ud'][1] == 0.5                # fila 1 (izquierda)
+    pilas.web.detener()

@@ -29,6 +29,10 @@ class Cartel(Actor):
         self.ancho = ancho
         self.alto = alto
         super(Cartel, self).__init__(pilas, x=x, y=y, z=z)
+        #: los billboards se dibujan a color plano: la iluminación de
+        #: la escena oscurecería el arte del sprite. ``False`` si se
+        #: quiere integrarlo a la luz (p. ej. cartel de cartón).
+        self.sin_luz = True
         self.radio_de_colision = max(ancho, alto) / 2.0
 
     def _generar_geometria(self):
