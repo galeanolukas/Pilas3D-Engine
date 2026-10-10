@@ -104,9 +104,11 @@ class PersonajeSprite(Animacion):
         direcciones, espejo, estados y tamaño)."""
         estados = {}
         for n, e in self._estados.items():
-            estados[n] = {k: e[k] for k in
-                          ('fila', 'velocidad', 'ciclica', 'quedarse')
-                          if e.get(k) not in (None, False)}
+            cfg = {'fila': e['fila']}
+            cfg.update({k: e[k] for k in
+                        ('velocidad', 'ciclica', 'quedarse')
+                        if e.get(k) not in (None, False)})
+            estados[n] = cfg
         return {'hoja': hoja or self.imagen,
                 'columnas': self.columnas, 'filas': self.filas,
                 'direcciones': dict(self._mapa),
