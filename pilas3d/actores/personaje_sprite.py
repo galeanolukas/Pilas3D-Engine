@@ -30,7 +30,9 @@ muerte...) que toman el control hasta terminar::
     per.reproducir_estado('atacar')
 """
 
+import json
 import math
+import os
 
 from pilas3d.actores.animacion import Animacion
 
@@ -42,13 +44,36 @@ class PersonajeSprite(Animacion):
     DIRECCIONES = {'abajo': 0, 'izquierda': 1, 'derecha': 2,
                    'arriba': 3}
 
-    def __init__(self, pilas, imagen, columnas, filas=4,
+    def __init__(self, pilas, imagen, columnas=None, filas=4,
                  direcciones=None, espejar=None, cuadro_quieto=0,
                  animar_solo_al_moverse=True, **kw):
-        # mapa nombre_direccion -> indice de fila en la hoja
-        self._mapa = dict(self.DIRECCIONES)
-        if direcciones:
-            self._mapa.update(direcciones)
+        # ``imagen`` puede ser un ``.personaje.json``: el manifiesto
+        # trae hoja, grilla, direcciones, estados y tamaño
+        # (la fábrica pasa None en los kwargs sin tocar: se filtran
+        # para que los valores del manifiesto o los defaults de
+        # Animacion puedan aplicar)
+        kw = {k: v for k, v in kw.items() if v is not None}
+        estados_man = {}
+        if isinstance(imagen, str) and imagen.lower().endswith('.json'):
+            man, imagen, columnas, filas = _leer_manifiesto(
+                imagen, columnas, filas)
+            direcciones = man.get('direcciones', direcciones)
+            espejar = man.get('espejar', espejar)
+            cuadro_quieto = man.get('cuadro_quieto', cuadro_quieto)
+            estados_man = man.get('estados', {})
+            for k in ('ancho', 'alto', 'velocidad'):
+                if k in man:
+                    kw.setdefault(k, man[k])
+        if columnas is None:
+            raise ValueError(
+                "PersonajeSprite necesita 'columnas' (o un "
+                ".personaje.json que las traiga)")
+        # mapa nombre_direccion -> indice de fila en la hoja:
+        # un ``direcciones`` explícito reemplaza todo el mapa (si
+        # no, las filas por defecto apuntarían a filas que la hoja
+        # no tiene); lo espejado vive aparte en ``_espejar``
+        self._mapa = dict(direcciones) if direcciones \
+            else dict(self.DIRECCIONES)
         #: dirección -> dirección de la que toma la fila espejada
         self._espejar = dict(espejar or {})
         #: columna mostrada cuando el personaje no se mueve
@@ -69,6 +94,35 @@ class PersonajeSprite(Animacion):
                               or 'abajo' in self._espejar) \
             else next(iter(self._mapa))
         self.definir_direccion(inicial)
+        for nombre, cfg in estados_man.items():
+            self.agregar_estado(nombre, **cfg)
+
+    # -- manifiesto .personaje.json ---------------------------------------
+
+    def manifiesto(self, hoja=None):
+        """Diccionario serializable del personaje (hoja, grilla,
+        direcciones, espejo, estados y tamaño)."""
+        estados = {}
+        for n, e in self._estados.items():
+            estados[n] = {k: e[k] for k in
+                          ('fila', 'velocidad', 'ciclica', 'quedarse')
+                          if e.get(k) not in (None, False)}
+        return {'hoja': hoja or self.imagen,
+                'columnas': self.columnas, 'filas': self.filas,
+                'direcciones': dict(self._mapa),
+                'espejar': dict(self._espejar),
+                'cuadro_quieto': self.cuadro_quieto,
+                'velocidad': self.velocidad,
+                'ancho': self.ancho, 'alto': self.alto,
+                'estados': estados}
+
+    def guardar(self, ruta):
+        """Escribe el ``.personaje.json`` del personaje. ``hoja``
+        queda como la pasó el constructor — el JSON la resuelve
+        relativa a su propia ubicación."""
+        with open(ruta, 'w') as f:
+            json.dump(self.manifiesto(), f, indent=2)
+        return ruta
 
     # -- dirección / fila ------------------------------------------------
 
@@ -256,3 +310,22 @@ class PersonajeSprite(Animacion):
         if nombre in self._mapa or nombre in self._espejar:
             self.definir_direccion(nombre)
         # si la hoja no tiene esa fila, se queda con la anterior
+
+
+def _leer_manifiesto(ruta, columnas, filas):
+    """Lee un ``.personaje.json`` y devuelve
+    ``(manifiesto, ruta_hoja, columnas, filas)`` con la hoja
+    resuelta relativa al archivo."""
+    with open(ruta) as f:
+        man = json.load(f)
+    if not isinstance(man, dict):
+        raise ValueError("%s: el manifiesto debe ser un objeto JSON"
+                         % ruta)
+    if 'hoja' not in man:
+        raise ValueError("%s: el manifiesto no tiene 'hoja'" % ruta)
+    hoja = man['hoja']
+    if not os.path.isabs(hoja):
+        hoja = os.path.join(os.path.dirname(os.path.abspath(ruta)),
+                            hoja)
+    return man, hoja, man.get('columnas', columnas), \
+        man.get('filas', filas)

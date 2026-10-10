@@ -18,6 +18,12 @@ de las hojas que solo traen un lateral.
 ``data/sprite_personaje.png`` (6x6) es un muñeco mínimo generado
 por script; para pixel art real valen las hojas LPC de OpenGameArt
 en el mismo formato.
+
+La configuración de un personaje (hoja, grilla, filas por
+dirección, espejos, estados, tamaño) también viaja en un
+``.personaje.json``: ``pj.guardar('heroe.personaje.json')`` lo
+escribe, ``PersonajeSprite('heroe.personaje.json')`` lo lee, y el
+editor ``pilas3d-personaje`` lo arma visualmente con preview 3D.
 """
 
 import pilas3d

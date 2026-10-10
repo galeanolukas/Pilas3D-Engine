@@ -86,6 +86,33 @@ pj.reproducir_estado('atacar')
 Ejemplo completo: `ejemplos/personaje_sprite.py`. Las hojas LPC de
 OpenGameArt (9x4 o más) encajan en el mismo formato.
 
+#### `.personaje.json` — manifiesto y editor visual
+
+`pilas3d-personaje` es el editor de personajes-sprite: abre la hoja,
+muestra el billboard caminando en una mini-escena 3D (WASD lo mueve,
+la cámara lo sigue) y deja asignar filas a direcciones/estados con
+teclas mientras se ve el resultado. **G** guarda un
+`.personaje.json` que trae hoja, grilla, direcciones, espejos,
+cuadro quieto, velocidad, tamaño y estados:
+
+```bash
+pilas3d-personaje vikingo.png -c 5 -f 2      # desde la hoja
+pilas3d-personaje vikingo.personaje.json     # reabrir el manifiesto
+```
+
+Y en el juego el personaje se carga ya configurado — el código queda
+en una línea:
+
+```python
+vik = pilas.actores.PersonajeSprite('vikingo.personaje.json')
+```
+
+La hoja se resuelve **relativa a la carpeta del JSON**, así el
+personaje viaja como un par `.png` + `.personaje.json` portable.
+Los kwargs explícitos (`ancho=`, `velocidad=`...) ganan al
+manifiesto. `pj.guardar('nuevo.personaje.json')` escribe uno desde
+código.
+
 ### El `.glb` es el formato ideal
 
 Un `.glb` autocontenido trae malla + texturas + esqueleto + clips:

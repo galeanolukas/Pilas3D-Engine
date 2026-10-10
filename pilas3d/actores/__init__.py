@@ -82,15 +82,17 @@ class Actores(object):
             ancho=ancho, alto=alto, velocidad=velocidad, ciclica=ciclica,
             eliminar_al_terminar=eliminar_al_terminar)
 
-    def PersonajeSprite(self, imagen, columnas, filas=4, x=0, y=0,
-                        z=0, ancho=1.0, alto=1.0, velocidad=10,
-                        **kw):
+    def PersonajeSprite(self, imagen, columnas=None, filas=4, x=0,
+                        y=0, z=0, ancho=None, alto=None,
+                        velocidad=None, **kw):
         """Sprite 2D con una fila por dirección (estilo RPG/Doom):
         camina en la dirección del desplazamiento y queda quieto en
         ``cuadro_quieto`` al parar. Acepta ``direcciones`` (mapa
         nombre->fila), ``espejar`` (dirección reflejada de otra,
         p. ej. ``{'derecha': 'izquierda'}``) y estados extra con
-        ``agregar_estado``/``reproducir_estado`` ('atacar', 'morir')."""
+        ``agregar_estado``/``reproducir_estado`` ('atacar', 'morir').
+        Si ``imagen`` es un ``.personaje.json`` (del editor
+        ``pilas3d-personaje``) trae todo configurado."""
         return PersonajeSprite(
             self._pilas, imagen, columnas, filas=filas, x=x, y=y,
             z=z, ancho=ancho, alto=alto, velocidad=velocidad, **kw)

@@ -4293,6 +4293,69 @@ def test_personaje_sprite_espejo_y_estados():
         pj.reproducir_estado('volar')
 
 
+def test_personaje_sprite_manifiesto(tmp_path):
+    """Un .personaje.json trae hoja, grilla, direcciones, espejo,
+    velocidad/dimensiones y estados; la hoja se resuelve relativa
+    a la carpeta del JSON."""
+    import json
+    (tmp_path / 'hoja.png').write_bytes(b'fake')
+    (tmp_path / 'vikingo.personaje.json').write_text(json.dumps({
+        'hoja': 'hoja.png',
+        'columnas': 5, 'filas': 2,
+        'direcciones': {'abajo': 0, 'derecha': 0, 'arriba': 0},
+        'espejar': {'izquierda': 'derecha'},
+        'cuadro_quieto': 2,
+        'velocidad': 8, 'ancho': 1.4, 'alto': 1.75,
+        'estados': {'atacar': {'fila': 1, 'velocidad': 12},
+                    'morir': {'fila': 1, 'quedarse': True}},
+    }))
+    pilas = crear_pilas()
+    pj = pilas.actores.PersonajeSprite(
+        str(tmp_path / 'vikingo.personaje.json'))
+    assert pj.columnas == 5 and pj.filas == 2
+    assert pj.imagen == str(tmp_path / 'hoja.png')
+    assert pj.velocidad == 8 and pj.ancho == 1.4 and pj.alto == 1.75
+    assert pj.cuadro_quieto == 2
+    assert 'izquierda' not in pj._mapa    # la maneja el espejo
+    assert pj._espejar == {'izquierda': 'derecha'}
+    assert pj._estados['atacar']['velocidad'] == 12
+    assert pj._estados['morir']['quedarse']
+    # kwargs explícitos ganan al manifiesto
+    pj2 = pilas.actores.PersonajeSprite(
+        str(tmp_path / 'vikingo.personaje.json'),
+        ancho=3.0, velocidad=20)
+    assert pj2.ancho == 3.0 and pj2.velocidad == 20
+    # moverse a -x -> 'izquierda' espejada desde 'derecha'
+    pj.x = -1.0
+    pj.actualizar()
+    pj.x = -2.0
+    pj.actualizar()
+    assert pj.direccion == 'izquierda' and pj.espejado
+
+
+def test_personaje_sprite_guardar_y_releer(tmp_path):
+    """guardar() escribe un .personaje.json que vuelve a cargar
+    igual."""
+    pilas = crear_pilas()
+    pj = pilas.actores.PersonajeSprite(
+        'hoja.png', columnas=5, filas=3,
+        espejar={'derecha': 'izquierda'},
+        velocidad=8, ancho=1.4, alto=1.75)
+    pj.agregar_estado('atacar', fila=2, velocidad=12)
+    pj.agregar_estado('morir', fila=2, quedarse=True)
+    ruta = tmp_path / 'hoja.personaje.json'
+    pj.guardar(str(ruta))
+    pj2 = pilas.actores.PersonajeSprite(str(ruta))
+    assert pj2.columnas == 5 and pj2.filas == 3
+    assert pj2._espejar == {'derecha': 'izquierda'}
+    assert pj2.velocidad == 8 and pj2.ancho == 1.4
+    assert pj2._estados['atacar']['velocidad'] == 12
+    assert pj2._estados['morir']['quedarse']
+    # sin columnas ni json -> error claro
+    with pytest.raises(ValueError):
+        pilas.actores.PersonajeSprite('x.png')
+
+
 def test_movimiento_relativo_a_camara():
     """WASD se interpreta en pantalla: 'arriba' se aleja de la
     cámara, 'derecha' va a la derecha de la vista."""

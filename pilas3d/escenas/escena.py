@@ -66,7 +66,8 @@ class Escena(object):
             actor.pre_actualizar()
             actor.actualizar()
         self.camara.actualizar(dt)   # seguimiento de cámara, si hay
-        self.cuando_actualiza()
+        if self.cuando_actualiza:
+            self.cuando_actualiza()
 
     def dibujar(self):
         """Dibuja los actores 3D (los overlays se dibujan aparte)."""
