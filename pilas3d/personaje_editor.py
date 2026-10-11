@@ -267,6 +267,14 @@ def refrescar_ui():
     info.texto = '%s | %s | %s%s' % (
         estado['hoja'] or os.path.basename(str(pj.imagen)),
         _detalle_slot(pj, tipo, nombre), grilla, celda)
+    ayuda.texto = (
+        "↑/↓: elegir slot - +/-: ajustar valor\n"
+        "WASD/flechas: mover - ESPACIO: preview - M: espejo\n"
+        "E/B: estado +/- - X: cíclica - K: quedarse")
+    ayuda2.texto = (
+        "N: siguiente - O: cargar hoja/json\n"
+        "C: agregar capa - B: quitar capa/estado\n"
+        "+/- en capa: su color - T: webp - G: guardar - ESC: salir")
 
 
 # -- carga -------------------------------------------------------------
@@ -333,27 +341,41 @@ def _listar_dir():
     dirs = ['[%s]' % d for d in ent
             if os.path.isdir(os.path.join(exp['dir'], d))]
     archivos = [f for f in ent if f.lower().endswith(
-        ('.png', '.jpg', '.jpeg', '.json'))]
+        ('.png', '.jpg', '.jpeg', '.json', '.webp'))]
     exp['entradas'] = ['..'] + dirs + archivos
-    exp['sel'] = min(exp['sel'], len(exp['entradas']) - 1)
+    exp['sel'] = max(0, min(exp['sel'], len(exp['entradas']) - 1))
 
 
 def _pintar_explorador():
     titulo = ('Elegir hoja para CAPA (ropa, cabello...)'
               if estado['modo'] == 'explorar_capa'
-              else 'Elegir hoja .png/.jpg o .personaje.json')
+              else 'Elegir hoja .png/.jpg/.webp o .personaje.json')
     info.texto = "%s - dir: %s" % (titulo, exp['dir'])
     ini = max(0, min(exp['sel'] - 7, len(exp['entradas']) - 14))
     lista.texto = '\n'.join(
         ('>> ' if ini + k == exp['sel'] else '   ') + e
         for k, e in enumerate(exp['entradas'][ini:ini + 14]))
+    ayuda.texto = (
+        "ENTER / ESPACIO / →: seleccionar archivo o carpeta\n"
+        "↑ / ↓ / rueda: mover selección - RePág/AvPág: saltar 10\n"
+        "ESC / ←: cancelar y volver a la edición")
+    ayuda2.texto = (
+        "Click en la lista: elegir con el mouse\n"
+        "Doble click: confirmar selección")
 
 
 def abrir_explorador(para_capa=False):
     estado['modo'] = 'explorar_capa' if para_capa else 'explorar'
     if estado['pj'] is not None:
-        exp['dir'] = os.path.dirname(
-            os.path.abspath(str(estado['pj'].imagen))) or exp['dir']
+        try:
+            ruta_act = str(estado['pj'].imagen)
+            if not os.path.exists(ruta_act):
+                from pilas3d import imagenes
+                ruta_act = imagenes.resolver(ruta_act)
+            if os.path.exists(ruta_act):
+                exp['dir'] = os.path.dirname(os.path.abspath(ruta_act))
+        except Exception:
+            pass
     exp['sel'] = 0
     _listar_dir()
     _pintar_explorador()
@@ -361,13 +383,33 @@ def abrir_explorador(para_capa=False):
 
 def _tecla_explorador(t):
     s = pilas.simbolos
-    if t == s.ESCAPE:
+    teclas_elegir = (s.ENTER, getattr(s, 'NUM_ENTER', s.ENTER),
+                     getattr(s, 'RETURN', s.ENTER), s.ESPACIO, s.DERECHA)
+    teclas_atras = (s.ESCAPE, s.BACKSPACE)
+    repag = getattr(s, 'PAGEUP', None)
+    avpag = getattr(s, 'PAGEDOWN', None)
+
+    if t in teclas_atras:
         estado['modo'] = 'editar'
+    elif t == s.IZQUIERDA:
+        padre = os.path.dirname(exp['dir'].rstrip(os.sep))
+        if padre and padre != exp['dir']:
+            exp['dir'] = padre
+            exp['sel'] = 0
+            _listar_dir()
+        else:
+            estado['modo'] = 'editar'
     elif t == s.ARRIBA:
-        exp['sel'] = (exp['sel'] - 1) % len(exp['entradas'])
+        exp['sel'] = (exp['sel'] - 1) % max(1, len(exp['entradas']))
     elif t == s.ABAJO:
-        exp['sel'] = (exp['sel'] + 1) % len(exp['entradas'])
-    elif t == s.ENTER:
+        exp['sel'] = (exp['sel'] + 1) % max(1, len(exp['entradas']))
+    elif repag and t == repag:
+        exp['sel'] = max(0, exp['sel'] - 10)
+    elif avpag and t == avpag:
+        exp['sel'] = min(max(0, len(exp['entradas']) - 1), exp['sel'] + 10)
+    elif t in teclas_elegir:
+        if not exp['entradas']:
+            return
         e = exp['entradas'][exp['sel']]
         if e == '..':
             exp['dir'] = os.path.dirname(
@@ -381,16 +423,27 @@ def _tecla_explorador(t):
         else:
             destino = estado['modo']
             estado['modo'] = 'editar'
+            ruta = os.path.join(exp['dir'], e)
             try:
-                ruta = os.path.join(exp['dir'], e)
                 if destino == 'explorar_capa':
                     estado['pj'].agregar_capa(ruta)
-                    info.texto = 'capa + %s' % e
+                    slots = _slots()
+                    try:
+                        estado['sel'] = slots.index(
+                            ('capa', len(estado['pj']._capas) - 1))
+                    except ValueError:
+                        pass
+                    refrescar_ui()
+                    info.texto = 'capa agregada: %s (slot capa %d)' % (
+                        e, len(estado['pj']._capas))
                     return
                 cargar(ruta)
+                info.texto = 'cargado: %s' % e
             except Exception as ex:
+                refrescar_ui()
                 info.texto = 'no se pudo cargar: %s' % ex
             return
+
     if estado['modo'].startswith('explorar'):
         _pintar_explorador()
     else:
@@ -403,6 +456,37 @@ def _al_pulsar_overlay(simbolo, _mod):
         return None
     _tecla_explorador(simbolo)
     return True
+
+
+def _al_click_mouse(x, y, boton, _mod):
+    if boton != pilas.simbolos.BOTON_IZQUIERDO:
+        return None
+    if estado['modo'].startswith('explorar'):
+        w, h = pilas.ventana.width, pilas.ventana.height
+        if x >= w - PANEL and y >= PIE:
+            dy = (h - 25) - y
+            linea = int(dy // 16)
+            ini = max(0, min(exp['sel'] - 7, len(exp['entradas']) - 14))
+            idx = ini + linea
+            if 0 <= idx < len(exp['entradas']):
+                if exp['sel'] == idx:
+                    _tecla_explorador(pilas.simbolos.ENTER)
+                else:
+                    exp['sel'] = idx
+                    _pintar_explorador()
+            return True
+    return None
+
+
+def _al_scroll_mouse(_x, _y, _sx, sy):
+    if estado['modo'].startswith('explorar'):
+        if sy > 0:
+            exp['sel'] = (exp['sel'] - 1) % max(1, len(exp['entradas']))
+        elif sy < 0:
+            exp['sel'] = (exp['sel'] + 1) % max(1, len(exp['entradas']))
+        _pintar_explorador()
+        return True
+    return None
 
 
 # -- teclas principales -------------------------------------------------
@@ -557,7 +641,10 @@ def main(archivo=None, salida=None, ejecutar=True):
     cam.usar_control_orbital(boton=pilas.simbolos.BOTON_DERECHO)
 
     if pilas.ventana is not None:
-        pilas.ventana.push_handlers(on_key_press=_al_pulsar_overlay)
+        pilas.ventana.push_handlers(
+            on_key_press=_al_pulsar_overlay,
+            on_mouse_press=_al_click_mouse,
+            on_mouse_scroll=_al_scroll_mouse)
 
     pilas.escena.cuando_pulsa_tecla = al_pulsar
     if archivo:

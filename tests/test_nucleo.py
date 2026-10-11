@@ -4517,6 +4517,53 @@ def test_personaje_capas_manifiesto(tmp_path):
     assert not pj2._capas
 
 
+def test_personaje_capas_autogrilla(tmp_path):
+    """agregar_capa deduce columnas/filas/variantes si el tamaño de
+    celda coincide con el base (ej. base 32x4 con 4 var y capa 8x4)."""
+    from pilas3d import sprites
+    # Crear imagen base 32x4 celdas de 2x2 px = 64x8 px
+    rgba_base = bytes(255 for _ in range(64 * 8 * 4))
+    ruta_base = str(tmp_path / 'base_auto.png')
+    sprites.escribir_imagen(ruta_base, 64, 8, rgba_base)
+    # Crear imagen capa 8x4 celdas de 2x2 px = 16x8 px
+    rgba_capa = bytes(200 for _ in range(16 * 8 * 4))
+    ruta_capa = str(tmp_path / 'capa_auto.png')
+    sprites.escribir_imagen(ruta_capa, 16, 8, rgba_capa)
+
+    pilas = crear_pilas()
+    pj = pilas.actores.PersonajeCapas(
+        ruta_base, columnas=32, filas=4, variantes=4)
+    assert pj._paso == 8
+    capa = pj.agregar_capa(ruta_capa)
+    assert capa.columnas == 8
+    assert capa.filas == 4
+    assert capa.variantes == 1
+    assert capa._paso == 8
+
+
+def test_editor_explorador_seleccion():
+    """El explorador permite elegir con ENTER, ESPACIO, DERECHA o
+    click de mouse, refresca la UI y resalta el slot de la capa."""
+    from pilas3d import personaje_editor as E
+    p = E.main('juego_nuevo/data/personaje_base4x8.personaje.json',
+               ejecutar=False)
+    pj = E.estado['pj']
+    s = p.simbolos
+
+    E.abrir_explorador(para_capa=True)
+    assert E.estado['modo'] == 'explorar_capa'
+    idx = E.exp['entradas'].index('personaje_cabello_c4x8.png')
+    E.exp['sel'] = idx
+    E._tecla_explorador(s.ENTER)
+
+    assert E.estado['modo'] == 'editar'
+    assert len(pj._capas) == 1
+    assert 'capa agregada' in E.info.texto
+    assert 'capa 1: personaje_cabello' in E.lista.texto
+    capa = pj._capas[0]
+    assert capa.columnas == 8 and capa.filas == 4
+
+
 def test_sprites_webp(tmp_path):
     """a_webp codifica con un encoder externo; escribir_imagen lo
     usa cuando la salida es .webp; pyglet la lee igual."""

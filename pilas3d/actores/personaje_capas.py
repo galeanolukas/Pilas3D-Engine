@@ -110,9 +110,35 @@ class PersonajeCapas(PersonajeSprite):
         self._nivel_capas += 1
         if not (isinstance(hoja, str)
                 and hoja.lower().endswith('.json')):
-            kw.setdefault('columnas', self.columnas)
-            kw.setdefault('filas', self.filas)
-            kw.setdefault('variantes', self.variantes)
+            cols = kw.get('columnas')
+            fils = kw.get('filas')
+            vars_ = kw.get('variantes')
+            if cols is None or fils is None:
+                try:
+                    img_base = self.pilas.imagenes.cargar(self.imagen)
+                    img_capa = self.pilas.imagenes.cargar(hoja)
+                    cw = img_base.width / float(self.columnas)
+                    ch = img_base.height / float(self.filas)
+                    if cw > 0 and ch > 0:
+                        c_auto = int(round(img_capa.width / cw))
+                        f_auto = int(round(img_capa.height / ch))
+                        if c_auto > 0 and f_auto > 0:
+                            if cols is None:
+                                cols = c_auto
+                            if fils is None:
+                                fils = f_auto
+                            if vars_ is None:
+                                paso_base = max(
+                                    1, self.columnas // self.variantes)
+                                vars_ = max(1, cols // paso_base)
+                except Exception:
+                    pass
+            kw.setdefault('columnas',
+                          cols if cols is not None else self.columnas)
+            kw.setdefault('filas',
+                          fils if fils is not None else self.filas)
+            kw.setdefault('variantes',
+                          vars_ if vars_ is not None else self.variantes)
             kw.setdefault('variante', self._variante)
             kw.setdefault('direcciones', dict(self._mapa))
             kw.setdefault('espejar', dict(self._espejar))
