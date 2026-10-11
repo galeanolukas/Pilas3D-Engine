@@ -110,7 +110,7 @@ PANEL = 250   # ancho del panel lateral en px
 PIE = 110     # alto del panel inferior en px
 
 # actores de UI, creados por main()
-panel_der = panel_inf = lista = info = ayuda = None
+panel_der = panel_inf = lista = info = ayuda = ayuda2 = None
 
 
 # -- slots ------------------------------------------------------------
@@ -146,11 +146,11 @@ def _valor_prop(pj, nombre):
 
 def _ajustar_prop(pj, nombre, delta):
     if nombre == 'columnas':
-        pj.columnas = min(16, max(1, pj.columnas + delta))
+        pj.columnas = min(64, max(1, pj.columnas + delta))
         pj.cuadro %= pj._paso
         pj.cuadro_quieto %= pj._paso
     elif nombre == 'filas':
-        pj.filas = min(16, max(1, pj.filas + delta))
+        pj.filas = min(32, max(1, pj.filas + delta))
         pj._fila %= pj.filas
         for e in pj._estados.values():
             e['fila'] %= pj.filas
@@ -214,6 +214,10 @@ def organizar_layout():
     info.y = PIE - 25
     ayuda.x = 10
     ayuda.y = PIE - 50
+    # la ayuda reparte su texto en dos columnas sobre el ancho
+    # disponible de la barra inferior (vista 3D + panel)
+    ayuda2.x = max(10, int(w * 0.52))
+    ayuda2.y = PIE - 50
 
 
 def refrescar_ui():
@@ -242,8 +246,7 @@ def refrescar_ui():
     celda = ''
     if estado['hoja']:
         try:
-            from pilas3d import imagenes
-            img = imagenes.cargar(pj.imagen)
+            img = pilas.imagenes.cargar(pj.imagen)
             cw, ch = img.width / pj.columnas, img.height / pj.filas
             celda = ' celda %gx%g' % (cw, ch)
             if cw != int(cw) or ch != int(ch):
@@ -488,7 +491,7 @@ def al_pulsar(tecla):
 def main(archivo=None, salida=None, ejecutar=True):
     """Abre el editor. Con ``ejecutar=False`` deja todo listo sin
     entrar al loop (para pruebas o para seguir desde IPython)."""
-    global pilas, panel_der, panel_inf, lista, info, ayuda
+    global pilas, panel_der, panel_inf, lista, info, ayuda, ayuda2
 
     pilas = pilas3d.iniciar(ancho=800, alto=600,
                             titulo='pilas3d - editor de personaje')
@@ -504,12 +507,14 @@ def main(archivo=None, salida=None, ejecutar=True):
     info = pilas.actores.Texto('', tamano=15)
     info.color = pilas.colores.amarillo
     ayuda = pilas.actores.Texto(
-        "↑/↓: slot - +/-: valor - WASD/flechas: mover - ESPACIO: "
-        "preview - M: espejo\n"
-        "E/B: estado +/- - X: cíclica - K: quedarse - N: siguiente - "
-        "O: cargar\n"
-        "T: hoja a webp - G: guardar - ESC: salir - "
-        "botón derecho: cámara",
+        "↑/↓: elegir slot - +/-: ajustar valor\n"
+        "WASD/flechas: mover - ESPACIO: preview - M: espejo\n"
+        "E/B: estado +/- - X: cíclica - K: quedarse",
+        x=10, y=PIE - 50, tamano=12)
+    ayuda2 = pilas.actores.Texto(
+        "N: siguiente - O: cargar hoja/json\n"
+        "T: hoja a webp - G: guardar\n"
+        "ESC: salir - botón derecho: cámara",
         x=10, y=PIE - 50, tamano=12)
 
     organizar_layout()
