@@ -108,7 +108,7 @@ estado = {'pj': None, 'sel': 0, 'indice': -1, 'modo': 'editar',
 
 exp = {'dir': os.path.expanduser('~'), 'sel': 0, 'entradas': []}
 
-PANEL = 250   # ancho del panel lateral en px
+PANEL = 280   # ancho del panel lateral en px
 PIE = 110     # alto del panel inferior en px
 
 # actores de UI, creados por main()
@@ -182,7 +182,7 @@ def _detalle_slot(pj, tipo, nombre):
         if nombre in pj._espejar:
             return '%s ~ %s' % (nombre, pj._espejar[nombre])
         if nombre in pj._mapa:
-            return '%s → fila %d' % (nombre, pj._mapa[nombre])
+            return '%s -> fila %d' % (nombre, pj._mapa[nombre])
         return '%s (sin fila)' % nombre
     if tipo == 'capa':
         c = pj._capas[nombre]
@@ -195,10 +195,10 @@ def _detalle_slot(pj, tipo, nombre):
     extras = []
     if e['velocidad']:
         extras.append('v%d' % e['velocidad'])
-    extras.append('cíclica' if e['ciclica'] else '1 vez')
+    extras.append('ciclica' if e['ciclica'] else '1 vez')
     if e['quedarse']:
         extras.append('quedarse')
-    return '%s → fila %d (%s)' % (nombre, e['fila'],
+    return '%s -> fila %d (%s)' % (nombre, e['fila'],
                                   ', '.join(extras))
 
 
@@ -268,9 +268,9 @@ def refrescar_ui():
         estado['hoja'] or os.path.basename(str(pj.imagen)),
         _detalle_slot(pj, tipo, nombre), grilla, celda)
     ayuda.texto = (
-        "↑/↓: elegir slot - +/-: ajustar valor\n"
+        "Arriba/Abajo: elegir slot - +/-: ajustar valor\n"
         "WASD/flechas: mover - ESPACIO: preview - M: espejo\n"
-        "E/B: estado +/- - X: cíclica - K: quedarse")
+        "E/B: estado +/- - X: ciclica - K: quedarse")
     ayuda2.texto = (
         "N: siguiente - O: cargar hoja/json\n"
         "C: agregar capa - B: quitar capa/estado\n"
@@ -350,18 +350,22 @@ def _pintar_explorador():
     titulo = ('Elegir hoja para CAPA (ropa, cabello...)'
               if estado['modo'] == 'explorar_capa'
               else 'Elegir hoja .png/.jpg/.webp o .personaje.json')
-    info.texto = "%s - dir: %s" % (titulo, exp['dir'])
+    sel_nombre = exp['entradas'][exp['sel']] if exp['entradas'] else ''
+    info.texto = ">> %s << | %s - dir: %s" % (sel_nombre, titulo, exp['dir'])
     ini = max(0, min(exp['sel'] - 7, len(exp['entradas']) - 14))
-    lista.texto = '\n'.join(
-        ('>> ' if ini + k == exp['sel'] else '   ') + e
-        for k, e in enumerate(exp['entradas'][ini:ini + 14]))
+    lineas = []
+    for k, e in enumerate(exp['entradas'][ini:ini + 14]):
+        marca = '>> ' if ini + k == exp['sel'] else '   '
+        e_vis = (e[:25] + '..') if len(e) > 28 else e
+        lineas.append(marca + e_vis)
+    lista.texto = '\n'.join(lineas)
     ayuda.texto = (
-        "ENTER / ESPACIO / →: seleccionar archivo o carpeta\n"
-        "↑ / ↓ / rueda: mover selección - RePág/AvPág: saltar 10\n"
-        "ESC / ←: cancelar y volver a la edición")
+        "ENTER / ESPACIO / ->: seleccionar archivo o carpeta\n"
+        "Flechas / rueda: mover seleccion - RePag/AvPag: saltar 10\n"
+        "ESC / <-: cancelar y volver a la edicion")
     ayuda2.texto = (
         "Click en la lista: elegir con el mouse\n"
-        "Doble click: confirmar selección")
+        "Doble click: confirmar seleccion")
 
 
 def abrir_explorador(para_capa=False):
