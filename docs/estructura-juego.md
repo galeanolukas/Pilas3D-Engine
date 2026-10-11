@@ -63,6 +63,7 @@ en `.gitignore`: son assets locales pesados — no viajan al repo.
 | `Cartel` | imagen estática que mira a la cámara (árbol, item) |
 | `Animacion` | hoja de cuadros genérica (fuego, explosión, prop) |
 | `PersonajeSprite` | **personaje 2D**: fila por dirección, quieto/caminar automático, espejo y estados |
+| `PersonajeCapas` | igual + capas apiladas (ropa/cabello) sincronizadas |
 | `ModeloGLTF` | personaje 3D riggeado con clips |
 
 `PersonajeSprite` usa la convención LPC: la hoja tiene una fila por
@@ -112,6 +113,45 @@ personaje viaja como un par `.png` + `.personaje.json` portable.
 Los kwargs explícitos (`ancho=`, `velocidad=`...) ganan al
 manifiesto. `pj.guardar('nuevo.personaje.json')` escribe uno desde
 código.
+
+#### Variantes de color en la misma hoja
+
+Si la hoja repite al personaje en bloques horizontales de N columnas
+(por ejemplo 16 columnas = 4 poses × 4 tonos de piel), el manifiesto
+declara `variantes` y el ciclo anima solo los `columnas/variantes`
+cuadros del bloque activo:
+
+```python
+pj = pilas.actores.PersonajeSprite('heroes.personaje.json')
+pj.definir_variante(2)            # o pj.variante = 2 — cambio en caliente
+pj.variantes                      # 4
+```
+
+Ideal para un selector de personajes: mismo arte, mismo manifiesto,
+varios colores. En el editor el slot `variante` cicla con ←/→.
+
+#### `PersonajeCapas` — paper-doll (ropa, pelo encima del cuerpo)
+
+`PersonajeCapas` apila varias hojas sincronizadas como un solo
+personaje: todas comparten fila, cuadro, variante y espejo del base.
+Las capas se resuelven relativas al manifiesto igual que la hoja:
+
+```python
+pj = pilas.actores.PersonajeCapas('data/personaje_base.png',
+                                  columnas=4, filas=3)
+pj.agregar_capa('data/personaje_ropa1.png')
+pj.agregar_capa('data/personaje_cabello.png')
+pj.quitar_capa()                  # o quitar_capa(0)
+
+# y desde el manifiesto:
+#   { "hoja": "base.png", "capas": ["ropa.png", "cabello.png"] }
+```
+
+Cada capa puede ser un string (usa la grilla del base) o un dict
+`{"hoja": ..., "columnas": ..., "filas": ..., "variantes": ...}` — o
+un `.personaje.json` propio, si la prenda tiene otra grilla. En el
+editor: **C** agrega capa por el explorador, y **B** sobre un slot
+`capa` la quita; **G** las guarda al manifiesto.
 
 ### El `.glb` es el formato ideal
 

@@ -64,6 +64,7 @@ class PersonajeSprite(Animacion):
         kw = {k: v for k, v in kw.items() if v is not None}
         estados_man = {}
         variante_man = 0
+        man = {}
         if isinstance(imagen, str) and imagen.lower().endswith('.json'):
             man, imagen, columnas, filas = _leer_manifiesto(
                 imagen, columnas, filas)
@@ -76,6 +77,8 @@ class PersonajeSprite(Animacion):
             for k in ('ancho', 'alto', 'velocidad'):
                 if k in man:
                     kw.setdefault(k, man[k])
+        #: manifiesto de origen (vacío si se construyó con kwargs)
+        self._manifiesto = man
         if columnas is None:
             raise ValueError(
                 "PersonajeSprite necesita 'columnas' (o un "
@@ -143,12 +146,20 @@ class PersonajeSprite(Animacion):
         """Escribe el ``.personaje.json`` del personaje. Si la hoja
         es una ruta absoluta la guarda relativa al JSON para que el
         par .png + .json sea portable."""
-        hoja = self.imagen
-        if isinstance(hoja, str) and os.path.isabs(hoja):
-            base = os.path.dirname(os.path.abspath(ruta))
-            hoja = os.path.relpath(hoja, base)
+        base = os.path.dirname(os.path.abspath(ruta))
+        man = self.manifiesto()
+        # rutas absolutas se guardan relativas al JSON para que
+        # el par .png + .json sea portable
+        if isinstance(man.get('hoja'), str) and os.path.isabs(man['hoja']):
+            man['hoja'] = os.path.relpath(man['hoja'], base)
+        for i, c in enumerate(man.get('capas') or ()):
+            if isinstance(c, str) and os.path.isabs(c):
+                man['capas'][i] = os.path.relpath(c, base)
+            elif isinstance(c, dict) and os.path.isabs(c.get('hoja', '')):
+                man['capas'][i] = dict(
+                    c, hoja=os.path.relpath(c['hoja'], base))
         with open(ruta, 'w') as f:
-            json.dump(self.manifiesto(hoja=hoja), f, indent=2)
+            json.dump(man, f, indent=2)
         return ruta
 
     # -- dirección / fila ------------------------------------------------
@@ -373,18 +384,36 @@ def _leer_manifiesto(ruta, columnas, filas):
     if 'hoja' not in man:
         raise ValueError("%s: el manifiesto no tiene 'hoja'" % ruta)
     hoja = man['hoja']
+    dir_json = os.path.dirname(os.path.abspath(ruta))
     if not os.path.isabs(hoja):
-        junto = os.path.join(os.path.dirname(os.path.abspath(ruta)),
-                             hoja)
-        if not os.path.exists(junto):
-            # hoja empaquetada en el motor (pilas3d/data/...) o
-            # encontrable como la resuelve actor.imagen
-            from pilas3d.imagenes import resolver
-            try:
-                hoja = resolver(hoja)
-            except IOError:
-                hoja = junto       # que pyglet dé su error habitual
-        else:
-            hoja = junto
+        hoja = _resolver_hoja(dir_json, hoja)
+    capas = man.get('capas')
+    if isinstance(capas, list):
+        # las hojas de las capas se resuelven como 'hoja':
+        # relativas al JSON o empaquetadas en pilas3d/data
+        resueltas = []
+        for c in capas:
+            if isinstance(c, str) and not os.path.isabs(c):
+                resueltas.append(_resolver_hoja(dir_json, c))
+            elif isinstance(c, dict) and not os.path.isabs(
+                    c.get('hoja', '')):
+                resueltas.append(
+                    dict(c, hoja=_resolver_hoja(dir_json, c['hoja'])))
+            else:
+                resueltas.append(c)
+        man['capas'] = resueltas
     return man, hoja, man.get('columnas', columnas), \
         man.get('filas', filas)
+
+
+def _resolver_hoja(dir_json, hoja):
+    """Hoja relativa a la carpeta del JSON; si no está, la busca el
+    resolvedor de imágenes (pilas3d/data/, cwd...)."""
+    junto = os.path.join(dir_json, hoja)
+    if os.path.exists(junto):
+        return junto
+    from pilas3d.imagenes import resolver
+    try:
+        return resolver(hoja)
+    except IOError:
+        return junto           # que pyglet dé su error habitual

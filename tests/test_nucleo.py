@@ -4413,6 +4413,71 @@ def test_personaje_sprite_variantes_manifiesto(tmp_path):
     assert pj._uv_desplazamiento[0] == pytest.approx(4 / 16.0)
 
 
+def test_personaje_capas_sincroniza_capas():
+    """PersonajeCapas: las capas replican posición, fila, cuadro,
+    variante y espejo del personaje base cada frame."""
+    pilas = crear_pilas()
+    pj = pilas.actores.PersonajeCapas(
+        'base.png', columnas=16, filas=3, variantes=4,
+        direcciones={'abajo': 0, 'izquierda': 0, 'derecha': 0,
+                     'arriba': 0})
+    ropa = pj.agregar_capa('ropa.png')            # misma grilla
+    pelo = pj.agregar_capa('pelo.png',
+                           columnas=4, filas=3, variantes=1)
+    assert len(pj.capas) == 2
+    pj.definir_variante(2)
+    pj.definir_cuadro(3)
+    ropa.actualizar(); pelo.actualizar()
+    # la capa con grilla igual copia las UVs del base
+    assert ropa._uv_escala == pj._uv_escala
+    assert ropa._uv_desplazamiento == pj._uv_desplazamiento
+    # la capa 4-cols sin variantes usa su propio encuadre:
+    # cuadro 3 de su grilla (escala 1/4 por columna)
+    assert pelo._uv_escala == (0.25, 1.0 / 3)
+    assert pelo._uv_desplazamiento[0] == pytest.approx(3 / 4.0)
+    # posición casi igual, solo el epsilon hacia cámara
+    assert abs(ropa.x - pj.x) < 0.02 and abs(ropa.z - pj.z) < 0.02
+    # mover el base arrastra las capas
+    pj.x = 5.0
+    ropa.actualizar(); pelo.actualizar()
+    assert abs(ropa.x - 5.0) < 0.02
+
+
+def test_personaje_capas_manifiesto(tmp_path):
+    """El .personaje.json declara capas (string o dict) y
+    guardar() las conserva relativas al JSON."""
+    import json
+    (tmp_path / 'base.png').write_bytes(b'x')
+    (tmp_path / 'ropa.png').write_bytes(b'x')
+    (tmp_path / 'p.personaje.json').write_text(json.dumps({
+        'hoja': 'base.png', 'columnas': 16, 'filas': 3,
+        'direcciones': {'abajo': 0, 'izquierda': 0, 'derecha': 0,
+                        'arriba': 0},
+        'variantes': 4,
+        'capas': [{'hoja': 'ropa.png', 'columnas': 4, 'filas': 3,
+                   'variantes': 1}]}))
+    pilas = crear_pilas()
+    pj = pilas.actores.PersonajeCapas(
+        str(tmp_path / 'p.personaje.json'))
+    assert len(pj._capas) == 1
+    capa = pj._capas[0]
+    assert capa.columnas == 4 and capa.filas == 3
+    assert capa.imagen == str(tmp_path / 'ropa.png')
+    # round-trip: guardar y releer mantiene la capa
+    pj.guardar(str(tmp_path / 'p2.personaje.json'))
+    man = json.loads((tmp_path / 'p2.personaje.json').read_text())
+    assert man['capas'][0]['hoja'] == 'ropa.png'
+    pj2 = pilas.actores.PersonajeCapas(
+        str(tmp_path / 'p2.personaje.json'))
+    assert len(pj2._capas) == 1
+    # quitar y eliminar limpia las capas de la escena
+    pj2.quitar_capa()
+    assert pj2._capas == []
+    pj2.agregar_capa(str(tmp_path / 'ropa.png'))
+    pj2.eliminar()
+    assert not pj2._capas
+
+
 def test_sprites_webp(tmp_path):
     """a_webp codifica con un encoder externo; escribir_imagen lo
     usa cuando la salida es .webp; pyglet la lee igual."""

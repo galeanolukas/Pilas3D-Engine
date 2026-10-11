@@ -17,6 +17,7 @@ from pilas3d.actores.mapa import Mapa
 from pilas3d.actores.cartel import Cartel
 from pilas3d.actores.animacion import Animacion
 from pilas3d.actores.personaje_sprite import PersonajeSprite
+from pilas3d.actores.personaje_capas import PersonajeCapas
 from pilas3d.actores.modelo import Modelo
 from pilas3d.actores.sombra import Sombra
 from pilas3d.actores.cielo import Cielo
@@ -96,6 +97,20 @@ class Actores(object):
         return PersonajeSprite(
             self._pilas, imagen, columnas, filas=filas, x=x, y=y,
             z=z, ancho=ancho, alto=alto, velocidad=velocidad, **kw)
+
+    def PersonajeCapas(self, imagen, capas=None, columnas=None,
+                       filas=4, x=0, y=0, z=0, ancho=None, alto=None,
+                       velocidad=None, **kw):
+        """``PersonajeSprite`` con hojas apiladas (paper-doll):
+        las capas (ropa, cabello...) siguen al personaje y muestran
+        el mismo fotograma de su propia grilla. ``capas`` es una
+        lista de hojas o dicts {'hoja', 'columnas', 'filas',
+        'variantes'}; el ``.personaje.json`` puede traer 'capas'.
+        """
+        return PersonajeCapas(
+            self._pilas, imagen, capas=capas or (), columnas=columnas,
+            filas=filas, x=x, y=y, z=z, ancho=ancho, alto=alto,
+            velocidad=velocidad, **kw)
 
     def Modelo(self, ruta, x=0, y=0, z=0, escala=1.0):
         """Modelo estático (.obj). Si la ruta es ``.glb``/``.gltf``

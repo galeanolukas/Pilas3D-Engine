@@ -17,6 +17,7 @@ Teclas:
   ESPACIO       previsualiza el slot (pose o estado)
   M             espejar la dirección desde otra (cicla por fuentes)
   E / B         crea / borra estados (atacar, morir, saltar...)
+  C / B         apila una capa (ropa, cabello) / la quita
   X / K         estado cíclico / quedarse en el último cuadro
   N             siguiente personaje (manifiestos y hojas de ejemplo)
   O             explorador: carga una hoja .png/.jpg o .json externa
@@ -30,7 +31,8 @@ import os
 import sys
 
 import pilas3d
-from pilas3d.actores.personaje_sprite import PersonajeSprite
+from pilas3d.actores.personaje_sprite import PersonajeSprite  # noqa: F401
+from pilas3d.actores.personaje_capas import PersonajeCapas  # noqa: F401
 
 pilas = None      # instancia de pilas3d.iniciar, la crea main()
 
@@ -123,6 +125,7 @@ def _slots():
     if pj is not None:
         filas += [('estado', n) for n in pj._estados
                   if n not in DIRECCIONES]
+        filas += [('capa', i) for i in range(len(pj._capas))]
     return filas
 
 
@@ -181,6 +184,11 @@ def _detalle_slot(pj, tipo, nombre):
         if nombre in pj._mapa:
             return '%s → fila %d' % (nombre, pj._mapa[nombre])
         return '%s (sin fila)' % nombre
+    if tipo == 'capa':
+        c = pj._capas[nombre]
+        return 'capa %d: %s (%dx%d v%d)' % (
+            nombre + 1, os.path.basename(str(c.imagen)),
+            c.columnas, c.filas, c.variantes)
     e = pj._estados[nombre]
     extras = []
     if e['velocidad']:
@@ -266,14 +274,14 @@ def cargar(ruta, **kw):
     if estado['pj'] is not None:
         estado['pj'].eliminar()
     if ruta.lower().endswith('.json'):
-        pj = pilas.actores.PersonajeSprite(ruta, y=0.9)
+        pj = pilas.actores.PersonajeCapas(ruta, y=0.9)
         estado['salida'] = ruta
     else:
         kw.setdefault('columnas', 4)
         kw.setdefault('filas', 4)
         kw.setdefault('ancho', 1.4)
         kw.setdefault('alto', 1.8)
-        pj = pilas.actores.PersonajeSprite(
+        pj = pilas.actores.PersonajeCapas(
             ruta, y=0.9, velocidad=8, **kw)
         salida = os.path.splitext(ruta)[0] + '.personaje.json'
         carpeta = os.path.dirname(salida)
@@ -329,16 +337,18 @@ def _listar_dir():
 
 
 def _pintar_explorador():
-    info.texto = "Elegir hoja .png/.jpg o .personaje.json - dir: %s" \
-        % exp['dir']
+    titulo = ('Elegir hoja para CAPA (ropa, cabello...)'
+              if estado['modo'] == 'explorar_capa'
+              else 'Elegir hoja .png/.jpg o .personaje.json')
+    info.texto = "%s - dir: %s" % (titulo, exp['dir'])
     ini = max(0, min(exp['sel'] - 7, len(exp['entradas']) - 14))
     lista.texto = '\n'.join(
         ('>> ' if ini + k == exp['sel'] else '   ') + e
         for k, e in enumerate(exp['entradas'][ini:ini + 14]))
 
 
-def abrir_explorador():
-    estado['modo'] = 'explorar'
+def abrir_explorador(para_capa=False):
+    estado['modo'] = 'explorar_capa' if para_capa else 'explorar'
     if estado['pj'] is not None:
         exp['dir'] = os.path.dirname(
             os.path.abspath(str(estado['pj'].imagen))) or exp['dir']
@@ -367,9 +377,15 @@ def _tecla_explorador(t):
             exp['sel'] = 0
             _listar_dir()
         else:
+            destino = estado['modo']
             estado['modo'] = 'editar'
             try:
-                cargar(os.path.join(exp['dir'], e))
+                ruta = os.path.join(exp['dir'], e)
+                if destino == 'explorar_capa':
+                    estado['pj'].agregar_capa(ruta)
+                    info.texto = 'capa + %s' % e
+                    return
+                cargar(ruta)
             except Exception as ex:
                 info.texto = 'no se pudo cargar: %s' % ex
             return
@@ -405,6 +421,10 @@ def al_pulsar(tecla):
         return
     if pj is None:
         return
+    if tecla == s.c:
+        # elige una hoja y la apila como capa (ropa, cabello...)
+        abrir_explorador(para_capa=True)
+        return
     slots = _slots()
     tipo, nombre = slots[estado['sel'] % len(slots)]
     if tecla == s.ARRIBA:
@@ -422,6 +442,12 @@ def al_pulsar(tecla):
                 % pj.filas
             pj._espejar.pop(nombre, None)
             pj.definir_direccion(nombre)
+        elif tipo == 'capa':
+            # +/- cambia las columnas de la grilla de la capa
+            capa = pj._capas[nombre]
+            capa.columnas = min(64, max(1, capa.columnas + delta))
+            capa.cuadro %= capa._paso
+            capa._encuadrar()
         else:
             est = pj._estados[nombre]
             est['fila'] = (est['fila'] + delta) % pj.filas
@@ -468,6 +494,9 @@ def al_pulsar(tecla):
                 del pj._espejar[nombre]
         if nombre in pj._mapa or nombre in pj._espejar:
             pj.definir_direccion(nombre)
+    elif tipo == 'capa' and tecla == s.b:
+        pj.quitar_capa(nombre)
+        estado['sel'] = 0
     elif tipo == 'estado':
         est = pj._estados[nombre]
         if tecla == s.x:
@@ -513,8 +542,8 @@ def main(archivo=None, salida=None, ejecutar=True):
         x=10, y=PIE - 50, tamano=12)
     ayuda2 = pilas.actores.Texto(
         "N: siguiente - O: cargar hoja/json\n"
-        "T: hoja a webp - G: guardar\n"
-        "ESC: salir - botón derecho: cámara",
+        "C: agregar capa - B: quitar capa/estado\n"
+        "T: hoja a webp - G: guardar - ESC: salir",
         x=10, y=PIE - 50, tamano=12)
 
     organizar_layout()
