@@ -4564,6 +4564,51 @@ def test_editor_explorador_seleccion():
     assert capa.columnas == 8 and capa.filas == 4
 
 
+def test_personaje_capas_definir_variante_capa():
+    """definir_variante_capa cambia el color de una capa por indice o nombre."""
+    pilas = crear_pilas()
+    pj = pilas.actores.PersonajeCapas(
+        'base.png', columnas=32, filas=4, variantes=4)
+    c1 = pj.agregar_capa('pelo.png', columnas=32, filas=4, variantes=4)
+    c2 = pj.agregar_capa('ropa.png', columnas=32, filas=4, variantes=4)
+
+    pj.definir_variante_capa(0, 2)
+    assert c1.variante == 2
+    pj.definir_variante_capa('ropa', 3)
+    assert c2.variante == 3
+
+    pj.definir_seguir_variante_capa('pelo', True)
+    assert c1.seguir_variante is True
+    pj.definir_variante(1)
+    c1.actualizar()
+    assert c1.variante == 1
+
+
+def test_editor_slots_variantes_capa():
+    """El editor incluye slots para variante, variantes y sync de cada capa."""
+    from pilas3d import personaje_editor as E
+    p = E.main('juego_nuevo/data/personaje_base4x4x8.personaje.json',
+               ejecutar=False)
+    pj = E.estado['pj']
+    s = p.simbolos
+
+    slots = E._slots()
+    assert ('capa', 0) in slots
+    assert ('capa_var', 0) in slots
+    assert ('capa_vars', 0) in slots
+    assert ('capa_sync', 0) in slots
+
+    idx_var = slots.index(('capa_var', 0))
+    E.estado['sel'] = idx_var
+    c = pj._capas[0]
+    var_ini = c.variante
+    E.al_pulsar(s.MAS)
+    assert c.variante == (var_ini + 1) % c.variantes
+
+    man = pj.manifiesto()
+    assert man['capas'][0]['variante'] == c.variante
+
+
 def test_sprites_webp(tmp_path):
     """a_webp codifica con un encoder externo; escribir_imagen lo
     usa cuando la salida es .webp; pyglet la lee igual."""

@@ -154,11 +154,17 @@ editor: **C** agrega capa por el explorador, y **B** sobre un slot
 `capa` la quita; **G** las guarda al manifiesto.
 
 La variante de cada capa es **independiente** (pelo de otro color
-que la piel): `capa.variante = n` o el dict `"variante": n`. En el
-editor, **+/-** sobre un slot `capa` cicla su color. Para que la
-capa siga siempre al base (ropa acorde al tono de piel) usá
-`agregar_capa(hoja, seguir_variante=True)` o `"seguir_variante":
-true` en el dict.
+que la piel): `capa.variante = n`, `pj.definir_variante_capa('cabello', n)`
+o en el manifiesto con dict `{"hoja": "cabello.png", "variante": n}`.
+En el editor aparecen slots dedicados para cada capa:
+- `capa N: <archivo>`: cabecera (+/- cicla color, B la elimina)
+- `variante: N / total`: color activo de la capa (+/- para cambiar)
+- `variantes: N`: cantidad de variantes en la hoja (+/- para ajustar)
+- `seguir base: no / si`: copiar color del personaje base (+/- o ESPACIO)
+
+Para que la capa siga siempre al base (ropa acorde al tono de piel) usá
+`agregar_capa(hoja, seguir_variante=True)` o `"seguir_variante": true`
+en el dict.
 
 ### El `.glb` es el formato ideal
 

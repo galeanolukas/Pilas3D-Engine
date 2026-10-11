@@ -125,7 +125,11 @@ def _slots():
     if pj is not None:
         filas += [('estado', n) for n in pj._estados
                   if n not in DIRECCIONES]
-        filas += [('capa', i) for i in range(len(pj._capas))]
+        for i in range(len(pj._capas)):
+            filas.append(('capa', i))
+            filas.append(('capa_var', i))
+            filas.append(('capa_vars', i))
+            filas.append(('capa_sync', i))
     return filas
 
 
@@ -186,11 +190,18 @@ def _detalle_slot(pj, tipo, nombre):
         return '%s (sin fila)' % nombre
     if tipo == 'capa':
         c = pj._capas[nombre]
-        sync = '~' if c.seguir_variante else ' '
-        return 'capa %d: %s (%dx%d%svar %d/%d)' % (
-            nombre + 1, os.path.basename(str(c.imagen)),
-            c.columnas, c.filas, sync,
-            c.variante + 1, c.variantes)
+        sync = ' [sync]' if c.seguir_variante else ''
+        return 'capa %d: %s%s' % (
+            nombre + 1, os.path.basename(str(c.imagen)), sync)
+    if tipo == 'capa_var':
+        c = pj._capas[nombre]
+        return '  variante: %d / %d' % (c.variante + 1, c.variantes)
+    if tipo == 'capa_vars':
+        c = pj._capas[nombre]
+        return '  variantes: %d' % c.variantes
+    if tipo == 'capa_sync':
+        c = pj._capas[nombre]
+        return '  seguir base: %s' % ('si' if c.seguir_variante else 'no')
     e = pj._estados[nombre]
     extras = []
     if e['velocidad']:
@@ -264,9 +275,30 @@ def refrescar_ui():
         except Exception:
             celda = ' (hoja ilegible)'
     tipo, nombre = slots[estado['sel']]
-    info.texto = '%s | %s | %s%s' % (
-        estado['hoja'] or os.path.basename(str(pj.imagen)),
-        _detalle_slot(pj, tipo, nombre), grilla, celda)
+    if tipo == 'capa':
+        c = pj._capas[nombre]
+        info.texto = '%s | capa %d: %s | grilla %dx%d (%d var)%s' % (
+            estado['hoja'] or os.path.basename(str(pj.imagen)),
+            nombre + 1, os.path.basename(str(c.imagen)),
+            c.columnas, c.filas, c.variantes, celda)
+    elif tipo == 'capa_var':
+        c = pj._capas[nombre]
+        info.texto = 'capa %d (%s) | color activo: %d de %d (+/- para cambiar color)' % (
+            nombre + 1, os.path.basename(str(c.imagen)),
+            c.variante + 1, c.variantes)
+    elif tipo == 'capa_vars':
+        c = pj._capas[nombre]
+        info.texto = 'capa %d (%s) | total variantes en hoja: %d (+/- para ajustar grilla)' % (
+            nombre + 1, os.path.basename(str(c.imagen)), c.variantes)
+    elif tipo == 'capa_sync':
+        c = pj._capas[nombre]
+        info.texto = 'capa %d (%s) | seguir color del personaje: %s (+/- o ESPACIO para alternar)' % (
+            nombre + 1, os.path.basename(str(c.imagen)),
+            'si' if c.seguir_variante else 'no')
+    else:
+        info.texto = '%s | %s | %s%s' % (
+            estado['hoja'] or os.path.basename(str(pj.imagen)),
+            _detalle_slot(pj, tipo, nombre), grilla, celda)
     ayuda.texto = (
         "Arriba/Abajo: elegir slot - +/-: ajustar valor\n"
         "WASD/flechas: mover - ESPACIO: preview - M: espejo\n"
@@ -532,12 +564,20 @@ def al_pulsar(tecla):
                 % pj.filas
             pj._espejar.pop(nombre, None)
             pj.definir_direccion(nombre)
-        elif tipo == 'capa':
-            # +/- cicla la variante de la capa (color de pelo,
-            # de ropa...); queda independiente de la del base
+        elif tipo in ('capa', 'capa_var'):
             capa = pj._capas[nombre]
             capa.seguir_variante = False
             capa.variante = (capa.variante + delta) % capa.variantes
+        elif tipo == 'capa_vars':
+            capa = pj._capas[nombre]
+            capa.variantes = max(1, min(capa.columnas, capa.variantes + delta))
+            capa.variante %= capa.variantes
+            capa._encuadrar()
+        elif tipo == 'capa_sync':
+            capa = pj._capas[nombre]
+            capa.seguir_variante = not capa.seguir_variante
+            if capa.seguir_variante:
+                capa.variante = pj.variante % capa.variantes
         else:
             est = pj._estados[nombre]
             est['fila'] = (est['fila'] + delta) % pj.filas
@@ -547,6 +587,15 @@ def al_pulsar(tecla):
                 pj.definir_direccion(nombre)
         elif tipo == 'estado':
             pj.reproducir_estado(nombre)
+        elif tipo in ('capa', 'capa_var'):
+            capa = pj._capas[nombre]
+            capa.seguir_variante = False
+            capa.variante = (capa.variante + 1) % capa.variantes
+        elif tipo == 'capa_sync':
+            capa = pj._capas[nombre]
+            capa.seguir_variante = not capa.seguir_variante
+            if capa.seguir_variante:
+                capa.variante = pj.variante % capa.variantes
     elif tecla == s.g:
         pj.guardar(estado['salida'])
         info.texto = 'guardado %s' % estado['salida']
@@ -584,7 +633,7 @@ def al_pulsar(tecla):
                 del pj._espejar[nombre]
         if nombre in pj._mapa or nombre in pj._espejar:
             pj.definir_direccion(nombre)
-    elif tipo == 'capa' and tecla == s.b:
+    elif tipo in ('capa', 'capa_var', 'capa_vars', 'capa_sync') and tecla == s.b:
         pj.quitar_capa(nombre)
         estado['sel'] = 0
     elif tipo == 'estado':

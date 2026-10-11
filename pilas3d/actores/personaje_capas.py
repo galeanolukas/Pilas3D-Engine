@@ -153,6 +153,38 @@ class PersonajeCapas(PersonajeSprite):
         capa.eliminar()
         return capa
 
+    def _obtener_capa(self, capa):
+        import os
+        if isinstance(capa, int):
+            if 0 <= capa < len(self._capas):
+                return self._capas[capa]
+            return None
+        nombre = str(capa).lower()
+        for c in self._capas:
+            if nombre in os.path.basename(str(c.imagen)).lower():
+                return c
+        return None
+
+    def definir_variante_capa(self, capa, variante):
+        """Elige el bloque de color de una capa (ej. 0=marrón, 1=rubio...).
+        ``capa`` puede ser un índice (0, 1...) o texto del archivo ('cabello')."""
+        c = self._obtener_capa(capa)
+        if c is not None:
+            c.seguir_variante = False
+            c.definir_variante(variante)
+            return c
+        return None
+
+    def definir_seguir_variante_capa(self, capa, seguir=True):
+        """Activa o desactiva la sincronización del color de la capa con el base."""
+        c = self._obtener_capa(capa)
+        if c is not None:
+            c.seguir_variante = bool(seguir)
+            if c.seguir_variante:
+                c.definir_variante(self.variante % c.variantes)
+            return c
+        return None
+
     def manifiesto(self, hoja=None):
         man = super(PersonajeCapas, self).manifiesto(hoja=hoja)
         if self._capas:
