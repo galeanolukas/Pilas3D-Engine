@@ -28,6 +28,15 @@ muerte...) que toman el control hasta terminar::
     per.agregar_estado('atacar', fila=4, ciclica=False)
     per.agregar_estado('morir', fila=5, ciclica=False, quedarse=True)
     per.reproducir_estado('atacar')
+
+Hojas con **variantes de color**: si cada bloque de K columnas
+repite la misma animación con otro color (típico de selectores de
+personaje), ``variantes`` indica cuántos bloques hay y el ciclo se
+acota a ``columnas / variantes`` cuadros::
+
+    per = pilas.actores.PersonajeSprite('heroes.png', columnas=16,
+        filas=3, variantes=4)       # 4 colores x 4 cuadros
+    per.definir_variante(2)         # dibuja el bloque de color 2
 """
 
 import json
@@ -46,7 +55,7 @@ class PersonajeSprite(Animacion):
 
     def __init__(self, pilas, imagen, columnas=None, filas=4,
                  direcciones=None, espejar=None, cuadro_quieto=0,
-                 animar_solo_al_moverse=True, **kw):
+                 animar_solo_al_moverse=True, variantes=1, **kw):
         # ``imagen`` puede ser un ``.personaje.json``: el manifiesto
         # trae hoja, grilla, direcciones, estados y tamaño
         # (la fábrica pasa None en los kwargs sin tocar: se filtran
@@ -54,6 +63,7 @@ class PersonajeSprite(Animacion):
         # Animacion puedan aplicar)
         kw = {k: v for k, v in kw.items() if v is not None}
         estados_man = {}
+        variante_man = 0
         if isinstance(imagen, str) and imagen.lower().endswith('.json'):
             man, imagen, columnas, filas = _leer_manifiesto(
                 imagen, columnas, filas)
@@ -61,6 +71,8 @@ class PersonajeSprite(Animacion):
             espejar = man.get('espejar', espejar)
             cuadro_quieto = man.get('cuadro_quieto', cuadro_quieto)
             estados_man = man.get('estados', {})
+            variantes = man.get('variantes', variantes)
+            variante_man = man.get('variante', 0)
             for k in ('ancho', 'alto', 'velocidad'):
                 if k in man:
                     kw.setdefault(k, man[k])
@@ -81,6 +93,11 @@ class PersonajeSprite(Animacion):
         self.animar_solo_al_moverse = animar_solo_al_moverse
         self._direccion = 'abajo'
         self._fila = self._mapa.get('abajo', 0) % filas
+        #: bloques de columnas = variantes del mismo personaje
+        # (p. ej. colores); 1 = la fila entera es una sola animación
+        self.variantes = max(1, int(variantes))
+        #: variante activa (0 .. variantes-1)
+        self._variante = variante_man % self.variantes
         self._flip = False
         self._moviendo = False
         self._x_prev = None
@@ -109,14 +126,18 @@ class PersonajeSprite(Animacion):
                         ('velocidad', 'ciclica', 'quedarse')
                         if e.get(k) not in (None, False)})
             estados[n] = cfg
-        return {'hoja': hoja or self.imagen,
-                'columnas': self.columnas, 'filas': self.filas,
+        man = {'hoja': hoja or self.imagen,
+               'columnas': self.columnas, 'filas': self.filas,
                 'direcciones': dict(self._mapa),
                 'espejar': dict(self._espejar),
                 'cuadro_quieto': self.cuadro_quieto,
                 'velocidad': self.velocidad,
                 'ancho': self.ancho, 'alto': self.alto,
                 'estados': estados}
+        if self.variantes > 1:
+            man['variantes'] = self.variantes
+            man['variante'] = self.variante
+        return man
 
     def guardar(self, ruta):
         """Escribe el ``.personaje.json`` del personaje. Si la hoja
@@ -164,9 +185,31 @@ class PersonajeSprite(Animacion):
         self._fila = self._mapa.get(fuente, 0) % self.filas
         self._encuadrar()
 
+    # -- variantes (bloques de columnas, p. ej. colores) ---------------
+
+    @property
+    def _paso(self):
+        """Cuadros que ocupa cada variante dentro de la fila."""
+        return max(1, self.columnas // self.variantes)
+
+    @property
+    def variante(self):
+        """Índice del bloque de columnas activo (color, skin...)."""
+        return self._variante
+
+    @variante.setter
+    def variante(self, valor):
+        self._variante = int(valor) % self.variantes
+        self._encuadrar()
+
+    def definir_variante(self, indice):
+        """Elige el bloque de columnas a animar (el 'color' del
+        personaje en hojas con variantes lado a lado)."""
+        self.variante = indice
+
     def _encuadrar(self):
         """Aplica ``cuadro`` restringido a la fila activa (con flip)."""
-        col = self.cuadro % self.columnas
+        col = self._variante * self._paso + self.cuadro % self._paso
         ancho = 1.0 / self.columnas
         if self._flip:
             self._uv_escala = (-ancho, 1.0 / self.filas)
@@ -182,7 +225,7 @@ class PersonajeSprite(Animacion):
         self._encuadrar()
 
     def definir_cuadro(self, cuadro):
-        self.cuadro = cuadro % self.columnas
+        self.cuadro = cuadro % self._paso
         self._encuadrar()
 
     # -- estados extra (atacar, morir, saltar...) ------------------------
@@ -247,14 +290,14 @@ class PersonajeSprite(Animacion):
         pasos = int(self._acumulado)
         self._acumulado -= pasos
         nuevo = self.cuadro + pasos
-        if nuevo < self.columnas:
+        if nuevo < self._paso:
             self.definir_cuadro(nuevo)
             return True
         # terminó la pasada
         if est['ciclica']:
-            self.definir_cuadro(nuevo % self.columnas)
+            self.definir_cuadro(nuevo % self._paso)
             return True
-        self.definir_cuadro(self.columnas - 1)
+        self.definir_cuadro(self._paso - 1)
         if est['al_terminar']:
             est['al_terminar'](self)
         if est['quedarse']:

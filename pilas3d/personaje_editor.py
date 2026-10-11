@@ -33,8 +33,8 @@ pilas = None      # instancia de pilas3d.iniciar, la crea main()
 
 DIRECCIONES = ['abajo', 'izquierda', 'derecha', 'arriba']
 NOMBRES_ESTADO = ['atacar', 'morir', 'saltar', 'correr', 'especial']
-PROPS = ['columnas', 'filas', 'cuadro_quieto', 'velocidad',
-         'ancho', 'alto']
+PROPS = ['columnas', 'filas', 'variantes', 'variante',
+         'cuadro_quieto', 'velocidad', 'ancho', 'alto']
 
 # hojas que trae el motor para empezar sin archivos propios; la
 # mayoría viene de pilas-engine 1.x con la grilla que su actor
@@ -128,6 +128,10 @@ def _valor_prop(pj, nombre):
         return pj.columnas
     if nombre == 'filas':
         return pj.filas
+    if nombre == 'variantes':
+        return pj.variantes
+    if nombre == 'variante':
+        return pj.variante
     if nombre == 'cuadro_quieto':
         return pj.cuadro_quieto
     if nombre == 'velocidad':
@@ -140,8 +144,8 @@ def _valor_prop(pj, nombre):
 def _ajustar_prop(pj, nombre, delta):
     if nombre == 'columnas':
         pj.columnas = min(16, max(1, pj.columnas + delta))
-        pj.cuadro %= pj.columnas
-        pj.cuadro_quieto %= pj.columnas
+        pj.cuadro %= pj._paso
+        pj.cuadro_quieto %= pj._paso
     elif nombre == 'filas':
         pj.filas = min(16, max(1, pj.filas + delta))
         pj._fila %= pj.filas
@@ -149,8 +153,13 @@ def _ajustar_prop(pj, nombre, delta):
             e['fila'] %= pj.filas
         for d in pj._mapa:
             pj._mapa[d] %= pj.filas
+    elif nombre == 'variantes':
+        pj.variantes = min(pj.columnas, max(1, pj.variantes + delta))
+        pj.variante %= pj.variantes
+    elif nombre == 'variante':
+        pj.variante = (pj.variante + delta) % pj.variantes
     elif nombre == 'cuadro_quieto':
-        pj.cuadro_quieto = (pj.cuadro_quieto + delta) % pj.columnas
+        pj.cuadro_quieto = (pj.cuadro_quieto + delta) % pj._paso
     elif nombre == 'velocidad':
         pj.velocidad = min(30, max(1, pj.velocidad + delta))
     elif nombre == 'ancho':
@@ -225,6 +234,8 @@ def refrescar_ui():
     lista.texto = '\n'.join(lineas)
     # info: archivo, grilla real y celda en píxeles
     grilla = 'grilla %dx%d' % (pj.columnas, pj.filas)
+    if pj.variantes > 1:
+        grilla += ' x%d var' % pj.variantes
     celda = ''
     if estado['hoja']:
         try:

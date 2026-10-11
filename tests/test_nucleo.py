@@ -4371,6 +4371,48 @@ def test_personaje_sprite_manifiesto_hoja_en_data(tmp_path):
     assert os.path.exists(pj.imagen)
 
 
+def test_personaje_sprite_variantes_de_color():
+    """Hoja 16x3 con 4 bloques de 4 columnas (un color por bloque):
+    el ciclo se acota a _paso cuadros y la variante elige el bloque."""
+    pilas = crear_pilas()
+    pj = pilas.actores.PersonajeSprite(
+        'hoja.png', columnas=16, filas=3, variantes=4,
+        direcciones={'abajo': 0, 'izquierda': 0, 'derecha': 0,
+                     'arriba': 0})
+    assert pj._paso == 4
+    # el ciclo camina solo dentro del bloque (cols 0..3)
+    pj.definir_cuadro(3)
+    assert pj._uv_desplazamiento[0] == pytest.approx(3 / 16.0)
+    pj.definir_cuadro(4)                        # envuelve al bloque
+    assert pj._uv_desplazamiento[0] == pytest.approx(0.0)
+    # variante 2 -> columnas 8..11
+    pj.definir_variante(2)
+    pj.definir_cuadro(0)
+    assert pj._uv_desplazamiento[0] == pytest.approx(8 / 16.0)
+    pj.definir_cuadro(3)
+    assert pj._uv_desplazamiento[0] == pytest.approx(11 / 16.0)
+    # la variante viaja al manifiesto y vuelve
+    man = pj.manifiesto()
+    assert man['variantes'] == 4 and man['variante'] == 2
+
+
+def test_personaje_sprite_variantes_manifiesto(tmp_path):
+    """El .personaje.json puede traer 'variantes' y 'variante'."""
+    import json
+    (tmp_path / 'h.png').write_bytes(b'x')
+    (tmp_path / 'h.personaje.json').write_text(json.dumps({
+        'hoja': 'h.png', 'columnas': 16, 'filas': 3,
+        'direcciones': {'abajo': 0, 'izquierda': 0, 'derecha': 0,
+                        'arriba': 0},
+        'variantes': 4, 'variante': 1}))
+    pilas = crear_pilas()
+    pj = pilas.actores.PersonajeSprite(
+        str(tmp_path / 'h.personaje.json'))
+    assert pj.variantes == 4 and pj.variante == 1
+    pj.definir_cuadro(0)
+    assert pj._uv_desplazamiento[0] == pytest.approx(4 / 16.0)
+
+
 def test_sprites_webp(tmp_path):
     """a_webp codifica con un encoder externo; escribir_imagen lo
     usa cuando la salida es .webp; pyglet la lee igual."""
