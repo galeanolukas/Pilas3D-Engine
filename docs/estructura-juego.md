@@ -153,6 +153,13 @@ un `.personaje.json` propio, si la prenda tiene otra grilla. En el
 editor: **C** agrega capa por el explorador, y **B** sobre un slot
 `capa` la quita; **G** las guarda al manifiesto.
 
+La variante de cada capa es **independiente** (pelo de otro color
+que la piel): `capa.variante = n` o el dict `"variante": n`. En el
+editor, **+/-** sobre un slot `capa` cicla su color. Para que la
+capa siga siempre al base (ropa acorde al tono de piel) usá
+`agregar_capa(hoja, seguir_variante=True)` o `"seguir_variante":
+true` en el dict.
+
 ### El `.glb` es el formato ideal
 
 Un `.glb` autocontenido trae malla + texturas + esqueleto + clips:

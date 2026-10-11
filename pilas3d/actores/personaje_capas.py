@@ -31,18 +31,20 @@ class _Capa(PersonajeSprite):
     #: separación hacia la cámara por nivel de capa (unidades)
     SEPARACION = 0.006
 
-    def __init__(self, pilas, base, nivel, hoja, **kw):
+    def __init__(self, pilas, base, nivel, hoja, seguir_variante=False,
+                 **kw):
         self._base = base
         self._nivel = nivel
+        #: True para que la capa copie la variante del base cada frame
+        #: (la ropa cambia de color junto a la piel); False deja la
+        #: variante propia (pelo de un color distinto a la piel)
+        self.seguir_variante = seguir_variante
         kw.setdefault('x', base.x)
         kw.setdefault('y', base.y)
         kw.setdefault('z', base.z)
         kw.setdefault('ancho', base.ancho)
         kw.setdefault('alto', base.alto)
         kw.setdefault('velocidad', base.velocidad)
-        kw.setdefault('direcciones', dict(base._mapa))
-        kw.setdefault('espejar', dict(base._espejar))
-        kw.setdefault('variantes', base.variantes)
         super(_Capa, self).__init__(pilas, hoja, **kw)
         self.radio_de_colision = 0.0      # las capas no colisionan
 
@@ -57,7 +59,8 @@ class _Capa(PersonajeSprite):
         # mismo fotograma dentro de la grilla propia
         self._fila = b._fila % self.filas
         self._flip = b._flip
-        self._variante = b._variante % self.variantes
+        if self.seguir_variante:
+            self._variante = b._variante % self.variantes
         self.cuadro = b.cuadro
         self._encuadrar()
         self._transparencia = b._transparencia
@@ -95,19 +98,26 @@ class PersonajeCapas(PersonajeSprite):
         """Los actores-capa apilados sobre el personaje base."""
         return list(self._capas)
 
-    def agregar_capa(self, hoja, **kw):
+    def agregar_capa(self, hoja, seguir_variante=False, **kw):
         """Apila una hoja encima del personaje (ropa, cabello...).
 
-        ``columnas``/``filas``/``variantes`` por defecto son las de
-        la base; pasar otras si la capa tiene su propia grilla
-        (una capa ``.personaje.json`` trae las suyas)."""
+        ``columnas``/``filas``/``variantes``/``variante`` por defecto
+        son las de la base; pasar otras si la capa tiene su propia
+        grilla o color (una capa ``.personaje.json`` trae las suyas).
+        ``seguir_variante=True`` ata la variante de la capa a la del
+        base (la ropa sigue al tono de piel); por defecto la capa
+        mantiene su propia variante (pelo de otro color)."""
         self._nivel_capas += 1
         if not (isinstance(hoja, str)
                 and hoja.lower().endswith('.json')):
             kw.setdefault('columnas', self.columnas)
             kw.setdefault('filas', self.filas)
             kw.setdefault('variantes', self.variantes)
-        capa = _Capa(self.pilas, self, self._nivel_capas, hoja, **kw)
+            kw.setdefault('variante', self._variante)
+            kw.setdefault('direcciones', dict(self._mapa))
+            kw.setdefault('espejar', dict(self._espejar))
+        capa = _Capa(self.pilas, self, self._nivel_capas, hoja,
+                     seguir_variante=seguir_variante, **kw)
         self._capas.append(capa)
         return capa
 
@@ -123,13 +133,20 @@ class PersonajeCapas(PersonajeSprite):
             base_grid = (self.columnas, self.filas, self.variantes)
             capas = []
             for c in self._capas:
-                if (c.columnas, c.filas, c.variantes) == base_grid:
+                otra_grid = (c.columnas, c.filas, c.variantes) != base_grid
+                if not otra_grid and not c._variante \
+                        and not c.seguir_variante:
                     capas.append(c.imagen)          # string simple
-                else:
-                    capas.append({'hoja': c.imagen,
-                                  'columnas': c.columnas,
-                                  'filas': c.filas,
-                                  'variantes': c.variantes})
+                    continue
+                d = {'hoja': c.imagen}
+                if otra_grid:
+                    d.update(columnas=c.columnas, filas=c.filas,
+                             variantes=c.variantes)
+                if c._variante:
+                    d['variante'] = c._variante
+                if c.seguir_variante:
+                    d['seguir_variante'] = True
+                capas.append(d)
             man['capas'] = capas
         return man
 

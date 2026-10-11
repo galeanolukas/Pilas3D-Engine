@@ -55,7 +55,8 @@ class PersonajeSprite(Animacion):
 
     def __init__(self, pilas, imagen, columnas=None, filas=4,
                  direcciones=None, espejar=None, cuadro_quieto=0,
-                 animar_solo_al_moverse=True, variantes=1, **kw):
+                 animar_solo_al_moverse=True, variantes=1,
+                 variante=None, **kw):
         # ``imagen`` puede ser un ``.personaje.json``: el manifiesto
         # trae hoja, grilla, direcciones, estados y tamaño
         # (la fábrica pasa None en los kwargs sin tocar: se filtran
@@ -77,6 +78,8 @@ class PersonajeSprite(Animacion):
             for k in ('ancho', 'alto', 'velocidad'):
                 if k in man:
                     kw.setdefault(k, man[k])
+        if variante is not None:
+            variante_man = variante
         #: manifiesto de origen (vacío si se construyó con kwargs)
         self._manifiesto = man
         if columnas is None:

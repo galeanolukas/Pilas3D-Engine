@@ -186,9 +186,11 @@ def _detalle_slot(pj, tipo, nombre):
         return '%s (sin fila)' % nombre
     if tipo == 'capa':
         c = pj._capas[nombre]
-        return 'capa %d: %s (%dx%d v%d)' % (
+        sync = '~' if c.seguir_variante else ' '
+        return 'capa %d: %s (%dx%d%svar %d/%d)' % (
             nombre + 1, os.path.basename(str(c.imagen)),
-            c.columnas, c.filas, c.variantes)
+            c.columnas, c.filas, sync,
+            c.variante + 1, c.variantes)
     e = pj._estados[nombre]
     extras = []
     if e['velocidad']:
@@ -389,7 +391,7 @@ def _tecla_explorador(t):
             except Exception as ex:
                 info.texto = 'no se pudo cargar: %s' % ex
             return
-    if estado['modo'] == 'explorar':
+    if estado['modo'].startswith('explorar'):
         _pintar_explorador()
     else:
         refrescar_ui()
@@ -443,11 +445,11 @@ def al_pulsar(tecla):
             pj._espejar.pop(nombre, None)
             pj.definir_direccion(nombre)
         elif tipo == 'capa':
-            # +/- cambia las columnas de la grilla de la capa
+            # +/- cicla la variante de la capa (color de pelo,
+            # de ropa...); queda independiente de la del base
             capa = pj._capas[nombre]
-            capa.columnas = min(64, max(1, capa.columnas + delta))
-            capa.cuadro %= capa._paso
-            capa._encuadrar()
+            capa.seguir_variante = False
+            capa.variante = (capa.variante + delta) % capa.variantes
         else:
             est = pj._estados[nombre]
             est['fila'] = (est['fila'] + delta) % pj.filas
@@ -543,7 +545,7 @@ def main(archivo=None, salida=None, ejecutar=True):
     ayuda2 = pilas.actores.Texto(
         "N: siguiente - O: cargar hoja/json\n"
         "C: agregar capa - B: quitar capa/estado\n"
-        "T: hoja a webp - G: guardar - ESC: salir",
+        "+/- en capa: su color - T: webp - G: guardar - ESC: salir",
         x=10, y=PIE - 50, tamano=12)
 
     organizar_layout()

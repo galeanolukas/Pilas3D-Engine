@@ -4414,21 +4414,23 @@ def test_personaje_sprite_variantes_manifiesto(tmp_path):
 
 
 def test_personaje_capas_sincroniza_capas():
-    """PersonajeCapas: las capas replican posición, fila, cuadro,
-    variante y espejo del personaje base cada frame."""
+    """PersonajeCapas: las capas replican posición, fila, cuadro
+    y espejo del personaje base cada frame; la variante puede
+    ser propia (color de pelo) o seguir a la del base."""
     pilas = crear_pilas()
     pj = pilas.actores.PersonajeCapas(
         'base.png', columnas=16, filas=3, variantes=4,
         direcciones={'abajo': 0, 'izquierda': 0, 'derecha': 0,
                      'arriba': 0})
-    ropa = pj.agregar_capa('ropa.png')            # misma grilla
+    ropa = pj.agregar_capa('ropa.png', seguir_variante=True)
     pelo = pj.agregar_capa('pelo.png',
                            columnas=4, filas=3, variantes=1)
     assert len(pj.capas) == 2
     pj.definir_variante(2)
     pj.definir_cuadro(3)
     ropa.actualizar(); pelo.actualizar()
-    # la capa con grilla igual copia las UVs del base
+    # la capa ligada copia la variante y las UVs del base
+    assert ropa.variante == 2
     assert ropa._uv_escala == pj._uv_escala
     assert ropa._uv_desplazamiento == pj._uv_desplazamiento
     # la capa 4-cols sin variantes usa su propio encuadre:
@@ -4443,6 +4445,27 @@ def test_personaje_capas_sincroniza_capas():
     assert abs(ropa.x - 5.0) < 0.02
 
 
+def test_personaje_capas_variante_independiente():
+    """Una capa mantiene su propia variante (pelo de otro color
+    que la piel); con seguir_variante la copia del base."""
+    pilas = crear_pilas()
+    pj = pilas.actores.PersonajeCapas(
+        'base.png', columnas=16, filas=3, variantes=4,
+        direcciones={'abajo': 0, 'izquierda': 0, 'derecha': 0,
+                     'arriba': 0})
+    pelo = pj.agregar_capa('pelo.png')       # misma grilla 16x3x4
+    pelo.variante = 3                        # color propio
+    pj.definir_variante(1)
+    pelo.actualizar()
+    assert pelo.variante == 3                # no siguió al base
+    pelo.seguir_variante = True
+    pelo.actualizar()
+    assert pelo.variante == 1                # ahora sí
+    # kwarg variante: la capa arranca en otro color
+    otra = pj.agregar_capa('ropa.png', variante=2)
+    assert otra.variante == 2
+
+
 def test_personaje_capas_manifiesto(tmp_path):
     """El .personaje.json declara capas (string o dict) y
     guardar() las conserva relativas al JSON."""
@@ -4454,23 +4477,39 @@ def test_personaje_capas_manifiesto(tmp_path):
         'direcciones': {'abajo': 0, 'izquierda': 0, 'derecha': 0,
                         'arriba': 0},
         'variantes': 4,
-        'capas': [{'hoja': 'ropa.png', 'columnas': 4, 'filas': 3,
-                   'variantes': 1}]}))
+        'capas': [{'hoja': 'ropa.png', 'columnas': 16, 'filas': 3,
+                   'variantes': 4}]}))
     pilas = crear_pilas()
     pj = pilas.actores.PersonajeCapas(
         str(tmp_path / 'p.personaje.json'))
     assert len(pj._capas) == 1
     capa = pj._capas[0]
-    assert capa.columnas == 4 and capa.filas == 3
+    assert capa.columnas == 16 and capa.filas == 3
     assert capa.imagen == str(tmp_path / 'ropa.png')
     # round-trip: guardar y releer mantiene la capa
     pj.guardar(str(tmp_path / 'p2.personaje.json'))
     man = json.loads((tmp_path / 'p2.personaje.json').read_text())
-    assert man['capas'][0]['hoja'] == 'ropa.png'
+    # misma grilla que el base → la capa se guarda como string
+    assert man['capas'][0] == 'ropa.png'
     pj2 = pilas.actores.PersonajeCapas(
         str(tmp_path / 'p2.personaje.json'))
     assert len(pj2._capas) == 1
+    # una capa con variante propia / seguir_variante se conserva
+    pj2._capas[0].variante = 2
+    pj2.agregar_capa(str(tmp_path / 'base.png'), seguir_variante=True)
+    pj2.guardar(str(tmp_path / 'p3.personaje.json'))
+    man3 = json.loads((tmp_path / 'p3.personaje.json').read_text())
+    # misma grilla + variante propia → dict con 'variante' solamente
+    assert man3['capas'][0] == {'hoja': 'ropa.png', 'variante': 2}
+    assert man3['capas'][0]['variante'] == 2
+    assert man3['capas'][1]['seguir_variante'] is True
+    pj3 = pilas.actores.PersonajeCapas(
+        str(tmp_path / 'p3.personaje.json'))
+    assert pj3._capas[0].variante == 2
+    assert pj3._capas[1].seguir_variante is True
+    pj3.eliminar()
     # quitar y eliminar limpia las capas de la escena
+    pj2.quitar_capa()
     pj2.quitar_capa()
     assert pj2._capas == []
     pj2.agregar_capa(str(tmp_path / 'ropa.png'))
