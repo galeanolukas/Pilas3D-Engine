@@ -46,8 +46,8 @@ pilas = None
 
 MITAD = 12          # grilla 24x24 centrada en el origen
 ALTO = 10           # altura máxima de construcción
-PANEL = 250
-PIE = 90
+PANEL = 280
+PIE = 110
 
 TIPOS = ['cesped', 'tierra', 'piedra', 'ladrillo', 'arena']
 
@@ -75,7 +75,7 @@ def buscar_props():
 PROPS = buscar_props()
 
 marcador = marca_spawn = lista = info = panel_der = panel_inf = None
-guias = []
+ayuda = ayuda2 = None
 
 
 # -- cursor / picking ---------------------------------------------------
@@ -227,8 +227,10 @@ def _poner_prop(celda):
 
 def _punto_terreno(celda):
     """Centro de la celda (i, k) del terreno en coordenadas de mundo."""
-    i, k = celda
+    i, k = celda[0], celda[-1]
     t = estado['terreno']
+    if t is None:
+        return 0, 0, 0
     x = t.x + (i + 0.5 - t.celdas / 2.0) * t.tamano_celda
     z = t.z + (k + 0.5 - t.celdas / 2.0) * t.tamano_celda
     y = t.altura_suelo(x, z)
@@ -242,8 +244,10 @@ def _prop_cercano(celda, radio=1.6):
     if estado['escenario'] == 'terreno':
         x, y, z = _punto_terreno(celda)
         return _prop_cercano_xyz(x, y, z, radio)
-    i, j, k = celda
-    return _prop_cercano_xyz(i + 0.5, j + 0.5, k + 0.5, radio)
+    if len(celda) >= 3:
+        i, j, k = celda[:3]
+        return _prop_cercano_xyz(i + 0.5, j + 0.5, k + 0.5, radio)
+    return None
 
 
 def _prop_cercano_xyz(cx, cy, cz, radio=1.6):
@@ -349,11 +353,51 @@ def _esculpir(delta):
 
 
 def al_click(x, y, boton, mod):
-    """El mouse es solo para orbitar: poner/sacar va por teclado
-    (ENTER/B y X). ``CTRL+click`` queda como atajo de precisión."""
+    s = pilas.simbolos
+    w, h = pilas.ventana.width, pilas.ventana.height
+
+    # Click dentro del panel derecho (paleta / explorador)
+    if boton == s.BOTON_IZQUIERDO and x >= w - PANEL and y >= PIE:
+        if estado['modo'] == 'mapas':
+            dy = (h - 25) - y
+            linea = int(dy // 16)
+            ini = max(0, min(exp['sel'] - 7, len(exp['entradas']) - 14))
+            idx = ini + linea
+            if 0 <= idx < len(exp['entradas']):
+                if exp['sel'] == idx:
+                    _tecla_mapas(s.ENTER)
+                else:
+                    exp['sel'] = idx
+                    _pintar_explorador()
+            return True
+
+        if estado['modo'] == 'editar':
+            dy = (h - 25) - y
+            linea = int(dy // 18)
+            # Fila 0 es título, fila 1 vacía; items arrancan en fila 2
+            if linea >= 2:
+                item_idx = linea - 2
+                if estado['escenario'] == 'terreno' and estado['paleta'] == 'bloques':
+                    tiles = _tiles_terreno()
+                    if 0 <= item_idx < len(tiles):
+                        estado['tile'] = item_idx
+                        refrescar_ui()
+                        return True
+                elif estado['paleta'] == 'props':
+                    if 0 <= item_idx < len(PROPS):
+                        estado['prop'] = item_idx
+                        refrescar_ui()
+                        return True
+                else:
+                    if 0 <= item_idx < len(TIPOS):
+                        estado['tipo'] = item_idx
+                        refrescar_ui()
+                        return True
+            return True
+
     if estado['modo'] != 'editar':
         return None
-    s = pilas.simbolos
+
     # fuera del area 3D (paneles laterales/inferior) no se edita
     ax, ay, aw, ah = pilas.ventana.area_3d or (0, 0, 10 ** 9, 10 ** 9)
     if not (ax <= x < ax + aw and ay <= y < ay + ah):
@@ -364,6 +408,33 @@ def al_click(x, y, boton, mod):
     if boton == s.BOTON_MEDIO and (mod & s.MOD_CTRL):
         _sacar_bloque()
         return True
+    return None
+
+
+def al_scroll(x, y, sx, sy):
+    s = pilas.simbolos
+    if estado['modo'] == 'mapas':
+        if sy > 0:
+            exp['sel'] = (exp['sel'] - 1) % max(1, len(exp['entradas']))
+        elif sy < 0:
+            exp['sel'] = (exp['sel'] + 1) % max(1, len(exp['entradas']))
+        _pintar_explorador()
+        return True
+
+    w = pilas.ventana.width if pilas.ventana else 800
+    if estado['modo'] == 'editar' and x >= w - PANEL:
+        d = -1 if sy > 0 else 1
+        if estado['paleta'] == 'props' and PROPS:
+            estado['prop'] = (estado['prop'] + d) % len(PROPS)
+        elif estado['escenario'] == 'terreno':
+            tiles = _tiles_terreno()
+            if tiles:
+                estado['tile'] = (estado['tile'] + d) % len(tiles)
+        else:
+            estado['tipo'] = (estado['tipo'] + d) % len(TIPOS)
+        refrescar_ui()
+        return True
+
     return None
 
 
@@ -384,12 +455,13 @@ def organizar_layout():
     lista.y = h - 25
     lista.ancho = PANEL - 16
     info.x = 10
-    info.y = 70
-    # guia de controles: columnas repartidas por todo el panel
-    paso = (w - 20) / float(len(guias))
-    for n, g in enumerate(guias):
-        g.x = 10 + n * paso
-        g.y = 40
+    info.y = PIE - 25
+    if ayuda is not None:
+        ayuda.x = 10
+        ayuda.y = PIE - 48
+    if ayuda2 is not None:
+        ayuda2.x = max(10, int(w * 0.50))
+        ayuda2.y = PIE - 48
 
 
 def _tiles_terreno():
@@ -398,6 +470,13 @@ def _tiles_terreno():
 
 
 def refrescar_ui():
+    if estado['modo'] == 'mapas':
+        _pintar_explorador()
+        return
+    if estado['modo'] == 'nombre':
+        _pintar_nombre()
+        return
+
     if estado['escenario'] == 'terreno' \
             and estado['paleta'] == 'bloques':
         tiles = _tiles_terreno()
@@ -411,32 +490,78 @@ def refrescar_ui():
             estado['terreno'].agua if estado['terreno'] else '-'))
         pack = getattr(estado['terreno'], '_material_nombre',
                        None) if estado['terreno'] else None
-        lineas.append('pack: %s (U cicla, H altura)' % (
-            pack or 'baldosas'))
-        nspawn = 'sí' if estado['spawn'] else 'no'
+        lineas.append('pack: %s' % (pack or 'baldosas'))
+        lineas.append('')
+        nspawn = 'si' if estado['spawn'] else 'no'
         lineas.append('spawn: %s | props: %d' % (nspawn,
                                                len(estado['props'])))
         lista.texto = '\n'.join(lineas)
+        if ayuda is not None:
+            ayuda.texto = (
+                "ENTER/B: colina - X: pozo\n"
+                "P: pintar - 1-3/Flechas: baldosa\n"
+                "Z/C: brush - W: agua - T: lomas")
+        if ayuda2 is not None:
+            ayuda2.texto = (
+                "U: material - H: heightmap\n"
+                "Y: voxels - M: props - S: spawn\n"
+                "N: nuevo - G/O: guardar - L: cargar")
         _info_extra()
         return
+
     if estado['paleta'] == 'props':
-        lineas = ['paleta de PROPS (M bloques)', '']
+        lineas = ['paleta de PROPS (M: bloques)', '']
         if not PROPS:
             lineas.append('   (sin modelos en modelos/props/)')
         for n, ruta in enumerate(PROPS):
             marca = '>> ' if n == estado['prop'] else '   '
             nom = os.path.basename(ruta)[:24]
             lineas.append('%s%s' % (marca, nom))
+        lineas.append('')
+        nspawn = 'si' if estado['spawn'] else 'no'
+        lineas.append('spawn: %s | props: %d' % (nspawn,
+                                               len(estado['props'])))
+        target = _prop_objetivo()
+        if target is not None:
+            lineas.append('--------------------')
+            nom = os.path.basename(getattr(target, 'ruta', 'prop'))[:18]
+            lineas.append('prop: %s' % nom)
+            lineas.append('escala: %.2f (Z/C)' % getattr(target, 'escala', 1.0))
+            lineas.append('rot_y: %d (R)' % getattr(target, 'rotacion_y', 0))
+            lineas.append('y: %.2f (F/V)' % target.y)
+
+        lista.texto = '\n'.join(lineas)
+        if ayuda is not None:
+            ayuda.texto = (
+                "ENTER: colocar - X: borrar prop\n"
+                "Flechas/rueda: elegir modelo\n"
+                "D: mover mouse - R: girar 45")
+        if ayuda2 is not None:
+            ayuda2.texto = (
+                "F/V: altura Y - Z/C: escala\n"
+                "M: bloques - S: spawn - N: nuevo\n"
+                "G/O: guardar - L: cargar - ESC: salir")
     else:
-        lineas = ['paleta de bloques (M props)', '']
+        lineas = ['paleta de bloques (M: props)', '']
         for n, tipo in enumerate(TIPOS):
             marca = '>> ' if n == estado['tipo'] else '   '
             lineas.append('%s%s' % (marca, tipo))
-    lineas.append('')
-    nspawn = 'sí' if estado['spawn'] else 'no'
-    lineas.append('spawn: %s | props: %d' % (nspawn,
-                                           len(estado['props'])))
-    lista.texto = '\n'.join(lineas)
+        lineas.append('')
+        nspawn = 'si' if estado['spawn'] else 'no'
+        lineas.append('spawn: %s | props: %d' % (nspawn,
+                                               len(estado['props'])))
+        lista.texto = '\n'.join(lineas)
+        if ayuda is not None:
+            ayuda.texto = (
+                "ENTER/B: poner - X: sacar bloque\n"
+                "1-5 / Flechas: tipo de bloque\n"
+                "Q/E: columna - S: spawn - T: base")
+        if ayuda2 is not None:
+            ayuda2.texto = (
+                "M: props - Y: terreno heightmap\n"
+                "N: nuevo - G/O: guardar - L: cargar\n"
+                "Drag / ESPACIO: orbitar - ESC: salir")
+
     _info_extra()
 
 
@@ -446,7 +571,7 @@ def _info_extra():
     if estado['escenario'] == 'terreno':
         tiles = _tiles_terreno()
         sel = tiles[estado['tile']] if tiles else '-'
-        info.texto = "%s | terreno %s | celda: %s | brush %d" % (
+        info.texto = "%s | terreno: %s | celda: %s | brush: %d" % (
             archivo, sel, celda, estado['brush'])
         return
     nb = len(estado['mundo'].bloques) if estado['mundo'] else 0
@@ -455,7 +580,7 @@ def _info_extra():
             else '(sin props)'
     else:
         sel = TIPOS[estado['tipo']]
-    info.texto = "%s | %s | celda: %s | bloques: %d" % (
+    info.texto = "%s | tipo: %s | celda: %s | bloques: %d" % (
         archivo, sel, celda, nb)
 
 
@@ -599,8 +724,20 @@ def terreno_base():
 # -- modos overlay: nombre para guardar / lista de mapas -----------------
 
 def _pintar_nombre():
-    info.texto = "nombre del mapa (ENTER guarda, ESC cancela)"
-    lista.texto = '>> %s_' % nombrar['texto']
+    ext = '.terreno.json' if estado['escenario'] == 'terreno' else '.mapa.json'
+    info.texto = ">> %s%s << | escribir nombre del mapa" % (
+        nombrar['texto'], ext)
+    lista.texto = 'Guardar mapa como:\n\n>> %s_\n\n(mapas/%s%s)' % (
+        nombrar['texto'], nombrar['texto'], ext)
+    if ayuda is not None:
+        ayuda.texto = (
+            "Escribi el nombre y pulsa ENTER\n"
+            "BACKSPACE: borrar caracter\n"
+            "ESC: cancelar y volver")
+    if ayuda2 is not None:
+        ayuda2.texto = (
+            "Se guardara en mapas/<nombre>%s\n"
+            "Compatible con pilas.mapas.cargar()" % ext)
 
 
 def _listar_dir():
@@ -614,16 +751,30 @@ def _listar_dir():
     mapas = [f for f in ent
              if f.endswith('.mapa.json') or f.endswith('.terreno.json')]
     exp['entradas'] = ['..'] + dirs + mapas
-    exp['sel'] = min(exp['sel'], len(exp['entradas']) - 1)
+    exp['sel'] = max(0, min(exp['sel'], len(exp['entradas']) - 1))
 
 
 def _pintar_explorador():
-    info.texto = "cargar mapa - dir: %s (ESC cancela)" \
-        % os.path.abspath(exp['dir'])
+    sel_nombre = exp['entradas'][exp['sel']] if exp['entradas'] else ''
+    info.texto = ">> %s << | cargar mapa - dir: %s" % (
+        sel_nombre, os.path.abspath(exp['dir']))
     ini = max(0, min(exp['sel'] - 7, len(exp['entradas']) - 14))
-    lista.texto = '\n'.join(
-        ('>> ' if ini + k == exp['sel'] else '   ') + e
-        for k, e in enumerate(exp['entradas'][ini:ini + 14]))
+    lineas = []
+    for k, e in enumerate(exp['entradas'][ini:ini + 14]):
+        marca = '>> ' if ini + k == exp['sel'] else '   '
+        e_vis = (e[:24] + '..') if len(e) > 26 else e
+        lineas.append(marca + e_vis)
+    lista.texto = '\n'.join(lineas)
+    if ayuda is not None:
+        ayuda.texto = (
+            "ENTER / ESPACIO / ->: abrir mapa/dir\n"
+            "Flechas / rueda: mover seleccion\n"
+            "RePag / AvPag: saltar 10 entradas")
+    if ayuda2 is not None:
+        ayuda2.texto = (
+            "Click en la lista: elegir con mouse\n"
+            "Doble click: confirmar carga\n"
+            "ESC / <-: volver a la edicion")
 
 
 def _abrir_lista_mapas():
@@ -636,13 +787,15 @@ def _abrir_lista_mapas():
 
 def _tecla_nombre(t):
     s = pilas.simbolos
+    teclas_enter = (s.ENTER, getattr(s, 'NUM_ENTER', s.ENTER),
+                    getattr(s, 'RETURN', s.ENTER))
     if t == s.ESCAPE:
         estado['modo'] = 'editar'
         refrescar_ui()
     elif t == s.BACKSPACE:
         nombrar['texto'] = nombrar['texto'][:-1]
         _pintar_nombre()
-    elif t == s.ENTER:
+    elif t in teclas_enter:
         nombre = nombrar['texto'].strip() or 'nivel'
         estado['modo'] = 'editar'
         ruta = guardar_mapa(nombre)
@@ -652,23 +805,47 @@ def _tecla_nombre(t):
 
 def _tecla_mapas(t):
     s = pilas.simbolos
-    if t == s.ESCAPE:
+    teclas_elegir = (s.ENTER, getattr(s, 'NUM_ENTER', s.ENTER),
+                     getattr(s, 'RETURN', s.ENTER), s.ESPACIO, s.DERECHA)
+    teclas_atras = (s.ESCAPE, s.BACKSPACE)
+    repag = getattr(s, 'PAGEUP', None)
+    avpag = getattr(s, 'PAGEDOWN', None)
+
+    if t in teclas_atras:
         estado['modo'] = 'editar'
         refrescar_ui()
         return
+    if t == s.IZQUIERDA:
+        padre = os.path.dirname(os.path.abspath(exp['dir']))
+        if padre and padre != os.path.abspath(exp['dir']):
+            exp['dir'] = padre
+            exp['sel'] = 0
+            _listar_dir()
+        else:
+            estado['modo'] = 'editar'
+            refrescar_ui()
+        return
     if t == s.ARRIBA:
-        exp['sel'] = (exp['sel'] - 1) % len(exp['entradas'])
+        exp['sel'] = (exp['sel'] - 1) % max(1, len(exp['entradas']))
     elif t == s.ABAJO:
-        exp['sel'] = (exp['sel'] + 1) % len(exp['entradas'])
-    elif t == s.ENTER:
+        exp['sel'] = (exp['sel'] + 1) % max(1, len(exp['entradas']))
+    elif repag and t == repag:
+        exp['sel'] = max(0, exp['sel'] - 10)
+    elif avpag and t == avpag:
+        exp['sel'] = min(max(0, len(exp['entradas']) - 1), exp['sel'] + 10)
+    elif t in teclas_elegir:
+        if not exp['entradas']:
+            return
         e = exp['entradas'][exp['sel']]
         if e == '..':
             exp['dir'] = os.path.dirname(
                 os.path.abspath(exp['dir']))
             exp['sel'] = 0
+            _listar_dir()
         elif e.startswith('['):
             exp['dir'] = os.path.join(exp['dir'], e[1:-1])
             exp['sel'] = 0
+            _listar_dir()
         else:
             estado['modo'] = 'editar'
             cargar_mapa(os.path.join(exp['dir'], e))
@@ -702,19 +879,24 @@ def al_pulsar(tecla):
     s = pilas.simbolos
     if estado['modo'] != 'editar':
         return
+    if tecla == s.ESCAPE:
+        pilas.terminar()
+        return
     digitos = [s._1, s._2, s._3, s._4, s._5]
     if tecla == s.ENTER or tecla == s.b:
         _poner_bloque()
     elif tecla in digitos and estado['paleta'] == 'bloques':
+        idx = digitos.index(tecla)
         if estado['escenario'] == 'terreno':
             tiles = _tiles_terreno()
-            if tiles:
-                estado['tile'] = digitos.index(tecla) % len(tiles)
+            if tiles and idx < len(tiles):
+                estado['tile'] = idx
         else:
-            estado['tipo'] = digitos.index(tecla)
+            if idx < len(TIPOS):
+                estado['tipo'] = idx
         refrescar_ui()
-    elif tecla == s.IZQUIERDA or tecla == s.DERECHA:
-        d = -1 if tecla == s.IZQUIERDA else 1
+    elif tecla in (s.ARRIBA, s.ABAJO, s.IZQUIERDA, s.DERECHA):
+        d = -1 if tecla in (s.ARRIBA, s.IZQUIERDA) else 1
         if estado['paleta'] == 'props' and PROPS:
             estado['prop'] = (estado['prop'] + d) % len(PROPS)
         elif estado['escenario'] == 'terreno':
@@ -741,6 +923,8 @@ def al_pulsar(tecla):
                 estado['terreno'] = pilas.actores.Terreno(
                     celdas=MITAD * 2)
         estado['archivo'] = None
+        estado['celda'] = None
+        estado['golpe'] = None
         refrescar_ui()
         info.texto = "modo " + estado['escenario']
     elif tecla == s.p and estado['escenario'] == 'terreno':
@@ -848,7 +1032,7 @@ def _marcar_spawn():
 def main(directorio='mapas', ejecutar=True):
     """Abre el editor de mapas. Devuelve ``pilas``."""
     global pilas, marcador, marca_spawn, lista, info
-    global panel_der, panel_inf, guias
+    global panel_der, panel_inf, ayuda, ayuda2
 
     pilas = pilas3d.iniciar(titulo="pilas3d - editor de mapas")
     pilas.escena.fondo = pilas.colores.gris_oscuro
@@ -866,23 +1050,12 @@ def main(directorio='mapas', ejecutar=True):
 
     panel_der = pilas.actores.Panel(color=pilas.colores.negro)
     panel_inf = pilas.actores.Panel(color=pilas.colores.negro)
-    lista = pilas.actores.Texto("", tamano=13, ancho=PANEL - 16)
+    lista = pilas.actores.Texto("", tamano=12, ancho=PANEL - 16)
     info = pilas.actores.Texto("", tamano=15)
     info.color = pilas.colores.amarillo
-    del guias[:]
-    for txt in (
-            "ENTER/B: poner - X: sacar\n"
-            "drag o espacio: orbitar",
-            "M: paleta - 1-5: elegir\n"
-            "R: girar - D: agarrar",
-            "F/V Z/C: alto/escala\n"
-            "Q/E: columna - S: spawn",
-            "T: base - N: nuevo\n"
-            "G/O: guardar - L: cargar",
-            "Y: terreno - P: pinta\n"
-            "Z/C,W: brush,agua\n"
-            "U/H: pack/heightmap"):
-        guias.append(pilas.actores.Texto(txt, tamano=10))
+
+    ayuda = pilas.actores.Texto("", tamano=12)
+    ayuda2 = pilas.actores.Texto("", tamano=12)
 
     organizar_layout()
     pilas.tareas.siempre(0.5, organizar_layout)
@@ -895,7 +1068,8 @@ def main(directorio='mapas', ejecutar=True):
         pilas.ventana.push_handlers(
             on_key_press=_al_pulsar_overlay,
             on_text=_al_texto_overlay,
-            on_mouse_press=al_click)
+            on_mouse_press=al_click,
+            on_mouse_scroll=al_scroll)
     pilas.escena.cuando_pulsa_tecla = al_pulsar
 
     camara = pilas.escena.camara

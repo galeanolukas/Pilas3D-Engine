@@ -16,7 +16,7 @@ se guardan en `mapas/<nombre>.mapa.json` y los juegos los cargan con
 | `ENTER` o `B` | poner bloque en la celda marcada (`CTRL+click` también) |
 | `X` | sacar el bloque golpeado |
 | cualquier botón + drag | orbitar la cámara (`ESPACIO` + mover el mouse también; rueda: zoom) |
-| `←` / `→` | cambiar tipo de bloque / prop en la paleta |
+| `↑` / `↓` / `←` / `→` o click | cambiar tipo de bloque / prop en la paleta (rueda de mouse también) |
 | `M` | alternar paleta: bloques ↔ props (`modelos/props/*.glb/.gltf/.obj`) |
 | `R` | girar el prop bajo el cursor 45° (paleta props) |
 | `D` | agarrar el prop bajo el cursor — sigue al mouse como fantasma; `D` o `ENTER` suelta |

@@ -2364,6 +2364,51 @@ def test_mapas_terreno_se_persiste(tmp_path):
     assert dict(cargado.bloques) == antes
 
 
+def test_mapa_editor_gui():
+    """mapa_editor: PANEL=280, navegación con flechas arriba/abajo,
+    scroll y click en paleta, explorador (L) y guardado con nombre."""
+    from pilas3d import mapa_editor as M
+    p = M.main(ejecutar=False)
+    s = p.simbolos
+    w, h = p.ventana.width, p.ventana.height
+
+    # PANEL = 280 para consistencia con personaje_editor
+    assert M.PANEL == 280
+    assert M.PIE == 110
+
+    # Navegación con flechas ARRIBA / ABAJO
+    assert M.estado['tipo'] == 0
+    M.al_pulsar(s.ABAJO)
+    assert M.estado['tipo'] == 1
+    M.al_pulsar(s.ARRIBA)
+    assert M.estado['tipo'] == 0
+
+    # Click en la paleta lateral
+    M.al_click(w - 100, h - 25 - int(5 * 18) - 5, s.BOTON_IZQUIERDO, 0)
+    assert M.estado['tipo'] == 3
+
+    # Scroll del mouse en la paleta lateral
+    M.al_scroll(w - 100, 300, 0, -1)
+    assert M.estado['tipo'] == 4
+    M.al_scroll(w - 100, 300, 0, 1)
+    assert M.estado['tipo'] == 3
+
+    # Explorador de mapas (L)
+    M.al_pulsar(s.l)
+    assert M.estado['modo'] == 'mapas'
+    ini_sel = M.exp['sel']
+    M._tecla_mapas(s.ABAJO)
+    assert M.exp['sel'] == (ini_sel + 1) % len(M.exp['entradas'])
+    M._tecla_mapas(s.ESCAPE)
+    assert M.estado['modo'] == 'editar'
+
+    # Guardar con nombre (O)
+    M.al_pulsar(s.o)
+    assert M.estado['modo'] == 'nombre'
+    M._tecla_nombre(s.ESCAPE)
+    assert M.estado['modo'] == 'editar'
+
+
 # -- globo de diálogo --------------------------------------------------------
 
 def test_camara_proyectar():
