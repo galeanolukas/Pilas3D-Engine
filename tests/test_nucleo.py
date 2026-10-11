@@ -4371,6 +4371,23 @@ def test_personaje_sprite_manifiesto_hoja_en_data(tmp_path):
     assert os.path.exists(pj.imagen)
 
 
+def test_sprites_webp(tmp_path):
+    """a_webp codifica con un encoder externo; escribir_imagen lo
+    usa cuando la salida es .webp; pyglet la lee igual."""
+    import shutil
+    if not (shutil.which('cwebp') or shutil.which('convert')
+            or shutil.which('ffmpeg')):
+        pytest.skip('sin encoder webp instalado')
+    from pilas3d import sprites
+    rgba = bytes(255 for _ in range(8 * 8 * 4))
+    ruta = str(tmp_path / 'h.webp')
+    sprites.escribir_imagen(ruta, 8, 8, rgba)
+    assert os.path.getsize(ruta) > 0
+    import pyglet
+    img = pyglet.image.load(ruta)
+    assert img.width == 8 and img.height == 8
+
+
 def test_movimiento_relativo_a_camara():
     """WASD se interpreta en pantalla: 'arriba' se aleja de la
     cámara, 'derecha' va a la derecha de la vista."""

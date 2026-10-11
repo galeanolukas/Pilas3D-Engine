@@ -19,6 +19,11 @@ Qué hace:
   abajo, para que no "salte" al animar.
 - **Manifiesto**: junto al PNG escribe ``hoja.sprites.json`` con
   ``columnas``/``filas`` para leer desde el juego.
+- **WebP**: si ``salida`` termina en ``.webp`` la hoja se escribe
+  en WebP (~85% menos peso) usando un encoder externo —``cwebp``,
+  ImageMagick ``convert`` o ``ffmpeg``, el primero instalado—;
+  el motor la lee igual (gdkpixbuf). La entrada también acepta
+  ``.webp``.
 
 Uso desde Python::
 
@@ -51,6 +56,48 @@ def escribir_png(ruta, ancho, alto, rgba):
     with open(ruta, 'wb') as f:
         f.write(png)
     return len(png)
+
+
+def a_webp(entrada, salida=None, calidad=90):
+    """Convierte ``entrada`` (PNG/JPG/WebP legible) a WebP con un
+    encoder externo — el primero instalado entre ``cwebp``,
+    ImageMagick ``convert`` y ``ffmpeg``. Devuelve la ruta
+    escrita; sin encoder lanza RuntimeError."""
+    import os
+    import shutil
+    import subprocess
+    salida = salida or os.path.splitext(entrada)[0] + '.webp'
+    if shutil.which('cwebp'):
+        cmd = ['cwebp', '-quiet', '-q', str(calidad), entrada,
+               '-o', salida]
+    elif shutil.which('convert'):
+        cmd = ['convert', entrada, '-quality', str(calidad), salida]
+    elif shutil.which('ffmpeg'):
+        cmd = ['ffmpeg', '-y', '-loglevel', 'error', '-i', entrada,
+               '-quality', str(calidad), salida]
+    else:
+        raise RuntimeError(
+            'no hay encoder WebP: instalá cwebp (paquete webp), '
+            'ImageMagick o ffmpeg')
+    subprocess.check_call(cmd)
+    return salida
+
+
+def escribir_imagen(ruta, ancho, alto, rgba):
+    """Escribe la hoja en ``ruta``: PNG con stdlib, o WebP si la
+    extensión es ``.webp`` (vía PNG temporal + encoder externo)."""
+    if ruta.lower().endswith('.webp'):
+        import os
+        import tempfile
+        fd, tmp = tempfile.mkstemp(suffix='.png')
+        os.close(fd)
+        try:
+            escribir_png(tmp, ancho, alto, rgba)
+            a_webp(tmp, ruta)
+        finally:
+            os.unlink(tmp)
+        return os.path.getsize(ruta)
+    return escribir_png(ruta, ancho, alto, rgba)
 
 
 def _decodificar(ruta):
@@ -326,7 +373,7 @@ def convertir(entrada, salida, columnas=None, filas=None,
                     else:
                         hoja[di:di + 4] = bytes((r, g, b, 255))
 
-    n = escribir_png(salida, cols * CW, len(grid) * CH, hoja)
+    n = escribir_imagen(salida, cols * CW, len(grid) * CH, hoja)
     man = {'columnas': cols, 'filas': len(grid),
            'celda_ancho': CW, 'celda_alto': CH,
            'cuadros': sum(len(f) for f in grid),
@@ -344,9 +391,10 @@ def cli(argv=None):
         prog='pilas3d-sprites',
         description='Convierte una imagen en hoja de sprites PNG '
                     'con transparencia para PersonajeSprite/Animacion')
-    p.add_argument('entrada', help='imagen fuente (.jpg/.png)')
+    p.add_argument('entrada', help='imagen fuente (.jpg/.png/.webp)')
     p.add_argument('-o', '--salida', required=True,
-                   help='PNG de salida')
+                   help='hoja de salida: .png (stdlib) o .webp '
+                        '(encoder externo: cwebp/convert/ffmpeg)')
     p.add_argument('--columnas', type=int, default=None,
                    help='grilla regular en vez de auto-detectar')
     p.add_argument('--filas', type=int, default=None,

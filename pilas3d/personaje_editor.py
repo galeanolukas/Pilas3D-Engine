@@ -416,6 +416,25 @@ def al_pulsar(tecla):
         pj.guardar(estado['salida'])
         info.texto = 'guardado %s' % estado['salida']
         return
+    elif tecla == s.t:
+        # comprime la hoja a WebP junto al manifest; repointa el
+        # actor a la nueva imagen (el motor la lee por gdkpixbuf)
+        from pilas3d import imagenes, sprites
+        base = os.path.dirname(os.path.abspath(estado['salida']))
+        nombre = os.path.splitext(
+            os.path.basename(str(pj.imagen)))[0] + '.webp'
+        try:
+            dest = sprites.a_webp(
+                imagenes.resolver(str(pj.imagen)),
+                os.path.join(base, nombre))
+        except Exception as ex:
+            info.texto = 'webp: %s' % ex
+            return
+        pj.imagen = dest
+        pj._textura = None
+        estado['hoja'] = nombre
+        info.texto = 'hoja -> %s' % nombre
+        return
     elif tipo == 'dir' and tecla == s.m:
         # cicla: sin espejo -> espejar desde cada otra dirección
         otras = [d for d in DIRECCIONES if d != nombre]
@@ -473,7 +492,8 @@ def main(archivo=None, salida=None, ejecutar=True):
         "M: espejo\n"
         "E/B: estado +/- - X: cíclica - K: quedarse - N: siguiente - "
         "O: cargar\n"
-        "G: guardar - ESC: salir - botón derecho: cámara",
+        "T: hoja a webp - G: guardar - ESC: salir - "
+        "botón derecho: cámara",
         x=10, y=PIE - 50, tamano=12)
 
     organizar_layout()
