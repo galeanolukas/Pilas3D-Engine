@@ -9,8 +9,11 @@ lateral con la lista de slots y barra de estado abajo.
     pilas3d-personaje vikingo.personaje.json   # manifiesto
 
 Teclas:
-  flechas       elegir slot / ajustar su valor (fila, grilla, vel)
-  WASD          mueve el sprite — se ve la fila según la dirección
+  flechas ↑/↓   elegir slot (↑/↓ también mueven al personaje:
+                para probar el movimiento sin tocar el editor
+                sirven las 4 flechas libremente)
+  + / -         ajustar el valor del slot (fila, grilla, vel...)
+  WASD/flechas  mueve el sprite — se ve la fila según la dirección
   ESPACIO       previsualiza el slot (pose o estado)
   M             espejar la dirección desde otra (cicla por fuentes)
   E / B         crea / borra estados (atacar, morir, saltar...)
@@ -405,8 +408,10 @@ def al_pulsar(tecla):
         estado['sel'] = (estado['sel'] - 1) % len(slots)
     elif tecla == s.ABAJO:
         estado['sel'] = (estado['sel'] + 1) % len(slots)
-    elif tecla in (s.IZQUIERDA, s.DERECHA):
-        delta = -1 if tecla == s.IZQUIERDA else 1
+    elif tecla in (s.MENOS, s.NUM_MENOS, s.MAS, s.NUM_MAS, s.IGUAL):
+        # +/- ajustan el valor; las flechas quedan libres para
+        # probar el movimiento (control fusiona WASD + flechas)
+        delta = -1 if tecla in (s.MENOS, s.NUM_MENOS) else 1
         if tipo == 'prop':
             _ajustar_prop(pj, nombre, delta)
         elif tipo == 'dir':
@@ -499,8 +504,8 @@ def main(archivo=None, salida=None, ejecutar=True):
     info = pilas.actores.Texto('', tamano=15)
     info.color = pilas.colores.amarillo
     ayuda = pilas.actores.Texto(
-        "flechas: slot/valor - WASD: mover - ESPACIO: preview - "
-        "M: espejo\n"
+        "↑/↓: slot - +/-: valor - WASD/flechas: mover - ESPACIO: "
+        "preview - M: espejo\n"
         "E/B: estado +/- - X: cíclica - K: quedarse - N: siguiente - "
         "O: cargar\n"
         "T: hoja a webp - G: guardar - ESC: salir - "

@@ -34,6 +34,11 @@ CTRL = _k.LCTRL
 ALT = _k.LALT
 SHIFT = _k.LSHIFT
 CAPSLOCK = _k.CAPSLOCK
+MAS = _k.PLUS            # '+' del teclado principal
+MENOS = _k.MINUS
+IGUAL = _k.EQUAL         # '=' (en algunos layouts '+' va con '=')
+NUM_MAS = _k.NUM_ADD     # '+' del teclado numérico
+NUM_MENOS = _k.NUM_SUBTRACT
 
 # modificadores (para el segundo argumento de los handlers: click,
 # tecla...): ``if mod & pilas.simbolos.MOD_CTRL``
