@@ -211,14 +211,43 @@ class Terreno(Actor):
             self._nivel_agua = None
             return
         if self._agua is None:
-            lado = self.celdas * self.tamano_celda
             self._agua = self.pilas.actores.Plano(
-                x=self.x, z=self.z, ancho=lado, profundidad=lado)
+                x=self.x, z=self.z, ancho=1, profundidad=1)
             self._agua.color = colores.celeste
             self._agua.transparencia = 40
         self._nivel_agua = nivel
         self._agua.y = self.y + (nivel or 0)
-        self._agua.x, self._agua.z = self.x, self.z
+        self._ubicar_agua()
+
+    def _reconstruir_gl(self):
+        super(Terreno, self)._reconstruir_gl()
+        if self._agua is not None:
+            self._ubicar_agua()
+
+    def _ubicar_agua(self):
+        """Acota el plano de agua a la zona sumergida. Si abarcara
+        todo el mapa se vería a través de los píxeles con alfa de las
+        baldosas (pasto.png y piedra tienen transparencias)."""
+        c, tc = self.celdas, self.tamano_celda
+        i0 = i1 = k0 = k1 = None
+        for i in range(c + 1):
+            for k, h in enumerate(self.alturas[i]):
+                if h < self._nivel_agua:
+                    i0 = i if i0 is None else min(i0, i)
+                    i1 = i if i1 is None else max(i1, i)
+                    k0 = k if k0 is None else min(k0, k)
+                    k1 = k if k1 is None else max(k1, k)
+        a = self._agua
+        if i0 is None:
+            # nada queda bajo el nivel: el plano queda chico y tapado
+            a.ancho = a.profundidad = tc
+            a.x, a.z = self.x, self.z
+        else:
+            a.ancho = (i1 - i0 + 1) * tc
+            a.profundidad = (k1 - k0 + 1) * tc
+            a.x = self.x + ((i0 + i1) / 2.0 - c / 2.0) * tc
+            a.z = self.z + ((k0 + k1) / 2.0 - c / 2.0) * tc
+        a._reconstruir_gl()
 
     # -- pack de texturas compuestas -------------------------------------------
 
